@@ -4,4 +4,5 @@ node_modules
 .agents
 .claude
 .windsurf
+.opencode
 /src/generated/prisma
