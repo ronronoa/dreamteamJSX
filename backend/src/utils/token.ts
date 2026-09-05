@@ -6,7 +6,7 @@ import type { Role } from "@/generated/prisma/client";
 
 const AccessTokenPayloadSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["user", "admin", "moderator"]),
+  role: z.enum(["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER", "MEMBER"]),
 });
 
 const RefreshTokenPayloadSchema = z.object({
