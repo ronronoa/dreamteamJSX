@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState} from "react";
 import type { ReactNode } from "react";
-import { checkSession, logout as apiLogout} from "../api/auth";
+import { refresh as apiRefresh,login as apiLogin, logout as apiLogout} from "../api/auth";
 import type { UserSession } from "../types/auth";
 
 
@@ -8,6 +8,7 @@ import type { UserSession } from "../types/auth";
 interface AuthContextType {
   session: UserSession | null;
   loading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -31,8 +32,16 @@ export function AuthProvider({children}: {children: ReactNode}){
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
+  async function login(username: string, password: string) {
+    const data = await apiLogin(username, password);
+    if (!data) return false;
+    setSession(data);
+    return true;
+  }
+
   async function refresh(){
-    const data = await checkSession();
+    const data = await apiRefresh();
+    if (!data) return;
     setSession(data);
   }
 
@@ -44,12 +53,14 @@ export function AuthProvider({children}: {children: ReactNode}){
   }, [])
 
   async function logout(){
+    setLoading(true);
     await apiLogout();
     setSession(null);
+    setLoading(false);
   }
 
   return (
-    <AuthContext.Provider value={{session, loading, refresh, logout}}>
+    <AuthContext.Provider value={{session, loading, login, refresh, logout}}>
       {children}
     </AuthContext.Provider>
 

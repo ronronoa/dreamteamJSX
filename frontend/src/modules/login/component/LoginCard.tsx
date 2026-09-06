@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../../context/AuthContext";
-import { login } from "../../../api/auth";
 import { ROUTES } from "../../../routes";
 import CommonInput from "../../../components/common/widgets/CommonInput";
 import CommonButton from "../../../components/common/widgets/CommonButton";
@@ -31,28 +30,25 @@ export default function LoginCard({
   const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
-  const { refresh } = useAuth();
+  const { login } = useAuth();
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
-
     setError("");
     setSubmitting(true);
 
     try {
-      const session = await login(username, password);
+      const success = await login(username, password);
 
-      if (!session) {
+      if (!success) {
         setError("Invalid username or password.");
         return;
+
       }
 
-      await refresh();
       navigate(ROUTES.ROOT);
-
     } catch {
       setError("Unable to sign in. Please try again.");
-
     } finally {
       setSubmitting(false);
     }

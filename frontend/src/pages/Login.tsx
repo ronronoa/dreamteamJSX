@@ -20,44 +20,11 @@ export default function Login() {
 
   return (
     <>
-      <ForgotPasswordModal
-        open={isForgotPassModalOpen}
-        onClose={() => setIsForgotPassModalOpen(false)}
-      />
+      <ForgotPasswordModal open={isForgotPassModalOpen} onClose={() => setIsForgotPassModalOpen(false)} />
+      <ContactAdminModal open={isContactAdminModalOpen} onClose={() => setIsContactAdminModalOpen(false)} />
 
-      <ContactAdminModal
-        open={isContactAdminModalOpen}
-        onClose={() => setIsContactAdminModalOpen(false)}
-      />
-
-      <CommonBackground
-        className="
-          min-h-screen
-          sm:flex
-          items-center
-          justify-center
-          px-4 py-8
-        "
-      >
-
-        <div
-          className="
-            w-full
-            max-w-5xl
-            lg:max-w-400
-
-            flex flex-col
-            lg:flex-row
-
-            items-center
-            justify-center
-
-            gap-16
-            lg:gap-40
-
-            modal-open
-          "
-        >
+      <CommonBackground className="min-h-screen sm:flex items-center justify-center px-4 py-8" >
+        <div className=" w-full max-w-5xl lg:max-w-400 flex flex-col lg:flex-row items-center justify-center gap-16 lg:gap-40 modal-open" >
 
           <Title />
 
@@ -71,7 +38,6 @@ export default function Login() {
           />
 
         </div>
-
       </CommonBackground>
     </>
   );

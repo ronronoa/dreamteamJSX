@@ -25,7 +25,7 @@ export async function logout(): Promise<void>{
   });
 }
 
-export async function checkSession(): Promise<UserSession | null> {
+export async function refresh(): Promise<UserSession | null> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
