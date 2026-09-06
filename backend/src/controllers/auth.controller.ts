@@ -73,6 +73,8 @@ export const authController = {
 
       setRefreshCookie(res, result.refreshToken);
 
+      console.log("Login success")
+
       res.status(200).json({
         user: result.user,
         accessToken: result.accessToken,

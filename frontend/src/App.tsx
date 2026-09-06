@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 import { ROUTES } from "./routes"
 
 import ProtectedRoute from "./components/ProtectRoute"
-import PublicRoute from "./components/PublicRoute"
+// import PublicRoute from "./components/PublicRoute"
 import Home from "./pages/Home"
 import Login from "./pages/Login"
 import ChooseForm from "./pages/ChooseForm"
@@ -25,15 +25,11 @@ function App() {
           }/>
 
           <Route path={ROUTES.LOGIN} element={
-            <PublicRoute>
               <Login/>
-            </PublicRoute>
           }/>
 
           <Route path={ROUTES.CHOOSE_FORM} element={
-            <PublicRoute>
               <ChooseForm/>
-            </PublicRoute>
           }/>
 
           <Route path={ROUTES.CREATE_FORM} element={<CreateForm/>}/>
