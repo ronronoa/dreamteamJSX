@@ -1,7 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import Logo from "../components/common/widgets/Logo";
+import Title from "../modules/login/component/Title";
 
 import { login } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,7 @@ import { ROUTES } from "../routes";
 import ForgotPasswordModal from "../components/common/modals/ForgetPassModal";
 import ContactAdminModal from "../components/common/modals/ContactAdminModal";
 import CommonButton from "../components/common/widgets/CommonButton";
+import CommonBackground from "../components/common/background/CommonBackground";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +28,8 @@ export default function Login() {
   const { refresh } = useAuth();
 
 
- const handleSubmit = async (e: React.FormEvent) => {
+  // const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.SubmitEvent){
     e.preventDefault();
     setError("");
     setSubmitting(true);
@@ -61,32 +63,12 @@ export default function Login() {
         onClose={() => setIsContactAdminModalOpen(false)}
       />
 
-      <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-[#1c052f] via-[#451d7e] to-[#5d1e76] px-4">
+      <CommonBackground className="min-h-screen sm:flex items-center justify-center px-4 py-8">
 
 
-        <div className="w-full max-w-5xl lg:max-w-400 flex flex-col md:flex-row items-center justify-center gap-16 lg:gap-40">
+        <div className="w-full max-w-5xl lg:max-w-400 flex flex-col lg:flex-row items-center justify-center gap-16 lg:gap-40 modal-open">
 
-          <section className="flex flex-col items-center text-center gap-6">
-            <Logo size={180} />
-
-            <div>
-              <h1 className="text-white text-2xl lg:text-4xl font-bold leading-snug">
-                DISASTER RISK REDUCTION
-                <br />
-                AND MANAGEMENT OFFICE
-              </h1>
-              <p className="text-white text-xl lg:text-2xl font-semibold mt-6">
-                Emergency Logistics Management System
-              </p>
-            </div>
-
-            <CommonButton
-              variant="someKindOfUniquePurpleToOrange"
-              onClick={() => navigate(ROUTES.CREATE_FORM)}
-            >
-              Create Report
-            </CommonButton>
-          </section>
+          <Title/>
 
           <section className="w-full max-w-125 bg-[#fdf8f5] rounded-3xl shadow-2xl px-10 py-10 mb-5">
             <p className="text-xs font-bold tracking-widest text-orange-500 mb-1">
@@ -149,16 +131,18 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+                <div>
+                  {error && <p className="text-sm text-red-600">{error}</p>}
+                </div>
                 <a
-                  className="text-sm font-medium text-orange-500 hover:text-orange-600 hover:cursor-pointer"
+                  className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:cursor-pointer"
                   onClick={() => setIsForgotPassModalOpen(true)}
                 >
                   Forgot password?
                 </a>
               </div>
 
-              {error && <p className="fixed -translate-y-7.5 text-sm text-red-600">{error}</p>}
               <CommonButton
                 type="submit"
                 disabled={submitting}
@@ -170,6 +154,7 @@ export default function Login() {
 
               <div className="flex justify-center">
                 <CommonButton
+                  type="button"
                   onClick={() => setIsContactAdminModalOpen(true)}
                   variant="none"
                   className="shadow-none font-medium! text-purple-600 hover:text-purple-800"
@@ -181,7 +166,7 @@ export default function Login() {
 
           </section>
         </div>
-      </div>
+      </CommonBackground>
 
     </>
   );

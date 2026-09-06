@@ -21,9 +21,7 @@ function App() {
         <Routes>
 
           <Route path={ROUTES.ROOT} element={
-            <ProtectedRoute>
-              <Home/>
-            </ProtectedRoute>
+            <Home/>
           }/>
 
           <Route path={ROUTES.LOGIN} element={
@@ -42,9 +40,9 @@ function App() {
 
 
           <Route path={ROUTES.ADMIN_DASHBOARD} element={
-            // <ProtectedRoute>
+            <ProtectedRoute skip={ true }>
               <AdminDashBoard/>
-            // </ProtectedRoute>
+            </ProtectedRoute>
           }/>
 
 
