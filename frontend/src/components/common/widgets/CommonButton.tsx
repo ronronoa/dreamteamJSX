@@ -47,13 +47,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * </CommonButton>
  * ```
  */
-export default function CommonButton({
-  children,
-  variant = "purple",
-  className = "",
-  ...props
-}: ButtonProps) {
-
+export default function CommonButton({ children, variant = "purple", className = "", ...props }: ButtonProps) {
 
   return (
     <button
