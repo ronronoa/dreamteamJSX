@@ -1,17 +1,12 @@
-import { API_URL } from "../api/config";
+import { API_URL } from "./config";
+import type { UserSession } from "../types/auth";
 
-
-// temporary stuff
-export interface Session {
-  userId: string;
-  username: string;
-}
 
 /*
  * TODO:
  * Change later for backend endpoint
  */
-export async function login(email: string, password: string): Promise<Session | null>{
+export async function login(email: string, password: string): Promise<UserSession | null>{
   const res = await fetch(`${API_URL}/accounts/login`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
@@ -30,7 +25,7 @@ export async function logout(): Promise<void>{
   });
 }
 
-export async function checkSession(): Promise<Session | null> {
+export async function checkSession(): Promise<UserSession | null> {
   try {
     const res = await fetch(`${API_URL}/accounts/check-session`, {
       method: "GET",

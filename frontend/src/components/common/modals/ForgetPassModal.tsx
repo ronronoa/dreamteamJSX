@@ -2,6 +2,7 @@ import { Mail, KeyRound, ArrowLeft, X } from "lucide-react";
 import Modal from "./Modal";
 import CommonButton from "../widgets/CommonButton";
 import { useState } from "react";
+import CommonInput from "../widgets/CommonInput";
 
 interface ForgotPasswordModalProps {
   open: boolean;
@@ -38,32 +39,19 @@ export default function ForgotPasswordModal({
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Forgot Password</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-semibold text-gray-800 mb-1.5"
-          >
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail
-              size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@gmail.com"
-              className="w-full rounded-xl bg-white pl-10 pr-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 shadow-sm"
-            />
-          </div>
-        </div>
-
+        <CommonInput
+          id="email"
+          label="Email Address"
+          type="text"
+          required
+          placeholder="admin@gmail.com"
+          icon={<Mail size={18}/>}
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+          />
 
         <CommonButton
-          variant="orangeLinear"
+          variant="purple"
           className="mt-8 w-full flex items-center justify-center gap-2"
         >
           <span>
@@ -75,7 +63,7 @@ export default function ForgotPasswordModal({
         <CommonButton
           onClick={() => onClose()}
           variant="none"
-          className="text-[#d07a45] shadow-none w-full flex items-center justify-center gap-2"
+          className="text-black shadow-none w-full flex items-center justify-center gap-2"
         >
           <span>
             <ArrowLeft/>

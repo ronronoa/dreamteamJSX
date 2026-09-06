@@ -59,7 +59,7 @@ export default function Modal({
     >
       <div
         className={`
-        w-full max-w-lg rounded-3xl bg-[#f4e3d7] p-6 shadow-2xl
+        w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto
         modal-open
         ${className}
         `}

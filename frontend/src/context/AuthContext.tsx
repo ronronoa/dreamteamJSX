@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState} from "react";
 import type { ReactNode } from "react";
 import { checkSession, logout as apiLogout} from "../api/auth";
-import type { Session } from "../api/auth";
+import type { UserSession } from "../types/auth";
 
 
 /** Authentication state and actions shared throughout the app. */
 interface AuthContextType {
-  session: Session | null;
+  session: UserSession | null;
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
@@ -28,7 +28,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
  * ```
  */
 export function AuthProvider({children}: {children: ReactNode}){
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function refresh(){
