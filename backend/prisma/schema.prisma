@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,23 +7,80 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───────────────────────────────────────────────
+
 enum Role {
+  SUPER_ADMIN
   DEPARTMENT_HEAD
   DEPUTY
   TEAM_LEADER
   MEMBER
 }
 
-model User {
-  user_id      String   @id @default(uuid())
-  name         String
-  username     String   @unique
-  passwordHash String
-  role         Role     @default(MEMBER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+enum OperationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  ARCHIVED
+}
 
-  refreshTokens RefreshToken[]
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum InventoryTransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+}
+
+enum PatientRequestType {
+  INTER_FACILITY_TRANSFER
+  PICK_UP
+  DROP_OFF
+}
+
+enum DispatchType {
+  DROP_OFF
+  PICK_UP
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model User {
+  user_id           String    @id @default(uuid())
+  name              String
+  username          String    @unique
+  passwordHash      String
+  pinHash           String?
+  pinFailedAttempts Int       @default(0)
+  pinLockedUntil    DateTime?
+  role              Role      @default(MEMBER)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  refreshTokens         RefreshToken[]
+  submittedOperations   OperationLog[]               @relation("SubmittedBy")
+  validatedOperations   OperationLog[]               @relation("ValidatedBy")
+  drivenDispatches      VehicularDispatch[]          @relation("DispatchDriver")
+  submittedDispatches   VehicularDispatch[]          @relation("DispatchSubmitter")
+  operationResponders   OperationResponder[]
+  patientResponders     PatientResponder[]
+  dispatchResponders    VehicularDispatchResponder[]
+  inventoryTransactions InventoryTransaction[]
+  operationEdits        OperationLogEdit[]
+  operationArchives     OperationLogArchive[]
+  inventoryArchives     InventoryArchive[]
+  submittedPatients     PatientLog[]                 @relation("PatientSubmittedBy")
+  operationImages       OperationImageAttachment[]
+  patientImages         PatientImageAttachment[]
 }
 
 model RefreshToken {
@@ -41,4 +93,297 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model ResponseTeam {
+  team_id   String   @id @default(uuid())
+  team_name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  operations OperationLog[]
+}
+
+model OperationLog {
+  operation_id        String          @id @default(uuid())
+  team_id             String
+  operation_date      DateTime
+  name_of_caller      String
+  nature_of_operation String
+  event_description   String
+  submitted_by        String
+  validated_by        String?
+  status              OperationStatus @default(PENDING)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  team            ResponseTeam               @relation(fields: [team_id], references: [team_id])
+  submitter       User                       @relation("SubmittedBy", fields: [submitted_by], references: [user_id])
+  validator       User?                      @relation("ValidatedBy", fields: [validated_by], references: [user_id])
+  responders      OperationResponder[]
+  personsInvolved PersonsInvolved[]
+  inventoryItems  OperationInventory[]
+  edits           OperationLogEdit[]
+  archive         OperationLogArchive?
+  dispatches      VehicularDispatch[]
+  images          OperationImageAttachment[]
+
+  @@index([team_id])
+  @@index([submitted_by])
+  @@index([status])
+  @@index([operation_date])
+}
+
+model OperationResponder {
+  operation_id String
+  user_id      String
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  user      User         @relation(fields: [user_id], references: [user_id])
+
+  @@id([operation_id, user_id])
+}
+
+model PersonsInvolved {
+  person_id    String  @id @default(uuid())
+  operation_id String
+  full_name    String
+  age          Int
+  sex          Gender
+  contact_no   String?
+  address      String?
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+
+  @@index([operation_id])
+}
+
+model Vehicle {
+  vehicle_id   String        @id @default(uuid())
+  vehicle_name String
+  plate_number String        @unique
+  status       VehicleStatus @default(AVAILABLE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  dispatches VehicularDispatch[]
+}
+
+model InventoryItem {
+  item_id        String   @id @default(uuid())
+  item_name      String
+  category       String
+  unit           String
+  stock_quantity Int      @default(0)
+  stock_type     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  transactions   InventoryTransaction[]
+  operationItems OperationInventory[]
+  archive        InventoryArchive?
+
+  @@index([category])
+}
+
+model InventoryTransaction {
+  transaction_id   String                   @id @default(uuid())
+  item_id          String
+  user_id          String
+  transaction_type InventoryTransactionType
+  quantity         Int
+  transaction_date DateTime                 @default(now())
+
+  item InventoryItem @relation(fields: [item_id], references: [item_id])
+  user User          @relation(fields: [user_id], references: [user_id])
+
+  @@index([item_id])
+  @@index([user_id])
+}
+
+model OperationInventory {
+  operation_id String
+  item_id      String
+  quantity     Int
+
+  operation OperationLog  @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  item      InventoryItem @relation(fields: [item_id], references: [item_id])
+
+  @@id([operation_id, item_id])
+}
+
+model OperationLogEdit {
+  edit_id      String   @id @default(uuid())
+  operation_id String
+  admin_id     String
+  edit_notes   String?
+  editedAt     DateTime @default(now())
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  admin     User         @relation(fields: [admin_id], references: [user_id])
+
+  @@index([operation_id])
+}
+
+model OperationLogArchive {
+  archive_id   String   @id @default(uuid())
+  operation_id String   @unique
+  archived_by  String
+  archivedAt   DateTime @default(now())
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id])
+  archiver  User         @relation(fields: [archived_by], references: [user_id])
+}
+
+model InventoryArchive {
+  archive_id  String   @id @default(uuid())
+  item_id     String   @unique
+  archived_by String
+  archivedAt  DateTime @default(now())
+
+  item     InventoryItem @relation(fields: [item_id], references: [item_id])
+  archiver User          @relation(fields: [archived_by], references: [user_id])
+}
+
+model Patient {
+  patient_id     String   @id @default(uuid())
+  full_name      String
+  birthday       DateTime
+  sex            Gender
+  contact_person String
+  contact_number String
+  phase          String?
+  package        String?
+  block          String?
+  lot            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patientLogs PatientLog[]
+  images      PatientImageAttachment[]
+
+  @@index([full_name])
+}
+
+model PatientLog {
+  patient_log_id          String             @id @default(uuid())
+  patient_id              String
+  log_date                DateTime
+  type_of_request         PatientRequestType
+  submitted_by            String
+  name_of_caller          String?
+  bp                      String?
+  pr                      String?
+  spo2                    String?
+  temp                    String?
+  medical_assessment      String?
+  hospital_name           String?
+  hospital_representative String?
+  hospital_in_time        DateTime?
+  hospital_out_time       DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  patient    Patient             @relation(fields: [patient_id], references: [patient_id])
+  submitter  User                @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id])
+  responders PatientResponder[]
+  dispatches VehicularDispatch[]
+
+  @@index([patient_id])
+  @@index([submitted_by])
+}
+
+model PatientResponder {
+  patient_log_id String
+  user_id        String
+
+  patientLog PatientLog @relation(fields: [patient_log_id], references: [patient_log_id], onDelete: Cascade)
+  user       User       @relation(fields: [user_id], references: [user_id])
+
+  @@id([patient_log_id, user_id])
+}
+
+model VehicularDispatch {
+  dispatch_id    String        @id @default(uuid())
+  operation_id   String?
+  patient_log_id String?
+  dispatch_date  DateTime
+  submitted_by   String
+  vehicle_id     String?
+  driver_id      String?
+  depart_time    DateTime?
+  arrival_time   DateTime?
+  brgy_in_time   DateTime?
+  brgy_out_time  DateTime?
+  dispatch_type  DispatchType?
+  from_location  String?
+  to_location    String?
+  odometer_in    Int?
+  odometer_out   Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  operation  OperationLog?                @relation(fields: [operation_id], references: [operation_id])
+  patientLog PatientLog?                  @relation(fields: [patient_log_id], references: [patient_log_id])
+  vehicle    Vehicle?                     @relation(fields: [vehicle_id], references: [vehicle_id])
+  driver     User?                        @relation("DispatchDriver", fields: [driver_id], references: [user_id])
+  submitter  User                         @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id])
+  responders VehicularDispatchResponder[]
+  passengers CivilianPassenger[]
+
+  @@index([operation_id])
+  @@index([patient_log_id])
+}
+
+model VehicularDispatchResponder {
+  dispatch_id String
+  user_id     String
+
+  dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id], onDelete: Cascade)
+  user     User              @relation(fields: [user_id], references: [user_id])
+
+  @@id([dispatch_id, user_id])
+}
+
+model CivilianPassenger {
+  passenger_id String  @id @default(uuid())
+  dispatch_id  String
+  full_name    String
+  age          Int
+  sex          Gender
+  contact_no   String?
+  barangay     String?
+  address      String?
+
+  dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id], onDelete: Cascade)
+
+  @@index([dispatch_id])
+}
+
+model OperationImageAttachment {
+  attachment_id String   @id @default(uuid())
+  operation_id  String
+  image_url     String
+  file_type     String?
+  uploaded_by   String
+  uploadedAt    DateTime @default(now())
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  uploader  User         @relation(fields: [uploaded_by], references: [user_id])
+
+  @@index([operation_id])
+}
+
+model PatientImageAttachment {
+  attachment_id String   @id @default(uuid())
+  patient_id    String
+  image_url     String
+  file_type     String?
+  uploaded_by   String
+  uploadedAt    DateTime @default(now())
+
+  patient  Patient @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade)
+  uploader User    @relation(fields: [uploaded_by], references: [user_id])
+
+  @@index([patient_id])
 }
