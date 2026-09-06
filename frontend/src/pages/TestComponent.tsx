@@ -34,7 +34,7 @@ export default function TestComponent() {
   const [isContactAdminModalOpen, setIsContactAdminModalOpen] = useState(false);
   const [backgroundActive, setBackgroundActive] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
 
   return (

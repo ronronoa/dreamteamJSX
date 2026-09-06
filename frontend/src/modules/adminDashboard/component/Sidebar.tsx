@@ -15,8 +15,7 @@ import {
 import type { ReactNode } from "react";
 
 import Logo from "../../../components/common/widgets/Logo";
-import { useNavigate } from "react-router";
-import { ROUTES } from "../../../routes";
+import { useAuth } from "../../../context/AuthContext";
 
 
 interface SidebarProps {
@@ -30,7 +29,8 @@ export default function Sidebar({
   onClose,
 }: SidebarProps) {
 
-  const navigate = useNavigate();
+  const { logout } = useAuth();
+
 
 
   return (
@@ -221,7 +221,7 @@ export default function Sidebar({
           <SidebarItem
             icon={<LogOut size={15} />}
             label="Sign Out"
-            onClick={() => navigate(ROUTES.LOGIN)}
+            onClick={() => logout()}
           />
 
         </div>
@@ -273,7 +273,7 @@ function SidebarItem({
         px-3 py-2.5
         rounded-lg
 
-        text-left text-[10px]
+        text-left
 
         transition
 
