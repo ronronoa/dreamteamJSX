@@ -173,6 +173,7 @@ export const authService = {
     ]);
 
     return {
+      user: toSafeUser(storedToken.user), // added because whenever webiste gets refreshed theres no other way to get user: {...} other than signIn() or signUp()      
       accessToken,
       refreshToken: newRefreshToken,
     };

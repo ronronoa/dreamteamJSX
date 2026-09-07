@@ -73,6 +73,8 @@ export const authController = {
 
       setRefreshCookie(res, result.refreshToken);
 
+      console.log("Login success")
+
       res.status(200).json({
         user: result.user,
         accessToken: result.accessToken,
@@ -95,7 +97,9 @@ export const authController = {
 
       setRefreshCookie(res, result.refreshToken);
 
-      res.status(200).json({ accessToken: result.accessToken });
+      res.status(200).json({ 
+        user: result.user, // added because whenever webiste gets refreshed theres no other way to get user: {...} other than signIn() or signUp()
+        accessToken: result.accessToken });
     } catch (err) {
       next(err);
     }
