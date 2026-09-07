@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import Modal from "./Modal";
 import CommonButton from "../widgets/CommonButton";
-import CommonInput from "../widgets/CommonInput";
 
 interface ContactAdminModalProps {
   open: boolean;
@@ -46,24 +45,53 @@ export default function ContactAdminModal({
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <CommonInput
-          id="fullName"
-          label="Full Name"
-          type="text"
-          required
-          placeholder="Juan Dela Cruz"
-          icon={<User size={18}/>}
-        />
+        <div>
+          <label
+            htmlFor="fullName"
+            className="block text-sm font-semibold text-gray-800 mb-1.5"
+          >
+            Full Name
+          </label>
 
-        <CommonInput
-          id="email"
-          label="Email Address"
-          type="email"
-          required
-          placeholder="juan.delacruz@gmail.com"
-          icon={<Mail size={18}/>}
-        />
+          <div className="relative">
+            <User
+              size={18}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
 
+            <input
+              id="fullName"
+              required
+              type="text"
+              placeholder="Juan Dela Cruz"
+              className="w-full rounded-xl bg-white pl-10 pr-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-semibold text-gray-800 mb-1.5"
+          >
+            Email Address
+          </label>
+
+          <div className="relative">
+            <Mail
+              size={18}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              id="email"
+              type="email"
+              required
+              placeholder="juan.delacruz@gmail.com"
+              className="w-full rounded-xl bg-white pl-10 pr-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 shadow-sm"
+            />
+          </div>
+        </div>
 
         <div>
           <label
@@ -78,6 +106,7 @@ export default function ContactAdminModal({
               size={18}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
             />
+
             <select
               id="role"
               defaultValue=""
@@ -88,9 +117,8 @@ export default function ContactAdminModal({
               pl-10 pr-10 py-3
               text-sm text-gray-800
               outline-none
-              focus:ring-2 focus:ring-purple-400
+              focus:ring-2 focus:ring-orange-400
               shadow-sm
-              border-2
               invalid:text-gray-400
               "
             >
@@ -133,14 +161,14 @@ export default function ContactAdminModal({
               required
               rows={4}
               placeholder="Please specify why you need access to the system..."
-              className="w-full resize-none rounded-xl bg-white pl-10 pr-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-purple-400 shadow-sm border-2 invalid:text-gray-400"
+              className="w-full resize-none rounded-xl bg-white pl-10 pr-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 shadow-sm"
             />
           </div>
         </div>
 
         <CommonButton
           type="submit"
-          variant="purple"
+          variant="orangeLinear"
           className="mt-5 w-full flex items-center justify-center gap-2"
         >
           <span>
@@ -153,7 +181,7 @@ export default function ContactAdminModal({
           type="button"
           onClick={onClose}
           variant="none"
-          className="text-black shadow-none w-full"
+          className="text-[#d07a45] shadow-none w-full"
         >
           Cancel
         </CommonButton>

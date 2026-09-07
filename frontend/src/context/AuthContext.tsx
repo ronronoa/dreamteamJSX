@@ -1,14 +1,13 @@
 import { createContext, useContext, useEffect, useState} from "react";
 import type { ReactNode } from "react";
-import { refresh as apiRefresh,login as apiLogin, logout as apiLogout} from "../api/auth";
-import type { UserSession } from "../types/auth";
+import { checkSession, logout as apiLogout} from "../api/auth";
+import type { Session } from "../api/auth";
 
 
 /** Authentication state and actions shared throughout the app. */
 interface AuthContextType {
-  session: UserSession | null;
+  session: Session | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -29,19 +28,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
  * ```
  */
 export function AuthProvider({children}: {children: ReactNode}){
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function login(username: string, password: string) {
-    const data = await apiLogin(username, password);
-    if (!data) return false;
-    setSession(data);
-    return true;
-  }
-
   async function refresh(){
-    const data = await apiRefresh();
-    if (!data) return;
+    const data = await checkSession();
     setSession(data);
   }
 
@@ -53,14 +44,12 @@ export function AuthProvider({children}: {children: ReactNode}){
   }, [])
 
   async function logout(){
-    setLoading(true);
     await apiLogout();
     setSession(null);
-    setLoading(false);
   }
 
   return (
-    <AuthContext.Provider value={{session, loading, login, refresh, logout}}>
+    <AuthContext.Provider value={{session, loading, refresh, logout}}>
       {children}
     </AuthContext.Provider>
 

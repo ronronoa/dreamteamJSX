@@ -1,20 +1,18 @@
-import { Navigate } from "react-router";
-import LoadingScreen from "../components/common/LoadingScreen";
 import { useAuth } from "../context/AuthContext"
-import { ROUTES } from "../routes";
 
-/**
- * Page to check user's session and navigate them according to their current session
- **/
-export default function Home() {
-  const { session, loading } = useAuth();
+export default function Home(){
+  const { session, logout } = useAuth();
 
-  if (loading) return <LoadingScreen/>;
-  if (!session) return <Navigate to={ROUTES.LOGIN} replace/>;
+  return(
+    <>
+      <div className="flex flex-col">
 
-  const role = session.user?.role;
-  if (role === 'DEPARTMENT_HEAD' || role === 'DEPUTY' || role === 'TEAM_LEADER') { return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace/>; }
-  if (role === 'MEMBER') { return <Navigate to={ROUTES.CHOOSE_FORM} replace/>; }
+          <h1>hello {session?.username}</h1>
 
-  return <Navigate to={ROUTES.CHOOSE_FORM} replace/>;
+        <div >
+          <button className="cursor-pointer hover:text-red-500" onClick={logout}>logout</button>
+        </div >
+      </div>
+    </>
+  )
 }

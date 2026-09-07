@@ -1,17 +1,22 @@
-import { API_URL } from "./config";
-import type { UserSession } from "../types/auth";
+import { API_URL } from "../api/config";
 
+
+// temporary stuff
+export interface Session {
+  userId: string;
+  username: string;
+}
 
 /*
  * TODO:
  * Change later for backend endpoint
  */
-export async function login(username: string, password: string): Promise<UserSession | null>{
-  const res = await fetch(`${API_URL}/auth/signin`, {
+export async function login(email: string, password: string): Promise<Session | null>{
+  const res = await fetch(`${API_URL}/accounts/login`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     credentials: "include",
-    body: JSON.stringify({username, password}),
+    body: JSON.stringify({email, password}),
   });
   if (!res.ok) return null;
   return await res.json();
@@ -19,16 +24,16 @@ export async function login(username: string, password: string): Promise<UserSes
 
 
 export async function logout(): Promise<void>{
-  await fetch(`${API_URL}/auth/logout`, {
+  await fetch(`${API_URL}/accounts/logout`, {
     method: "POST",
     credentials: "include"
   });
 }
 
-export async function refresh(): Promise<UserSession | null> {
+export async function checkSession(): Promise<Session | null> {
   try {
-    const res = await fetch(`${API_URL}/auth/refresh`, {
-      method: "POST",
+    const res = await fetch(`${API_URL}/accounts/check-session`, {
+      method: "GET",
       credentials: "include",
     });
 

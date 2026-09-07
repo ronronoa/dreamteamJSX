@@ -5,7 +5,7 @@ import Spinner from "./widgets/Spinner";
  */
 export default function LoadingScreen() {
   return (
-    <div className="fixed inset-0 z-999 flex items-center justify-center bg-gray-400/50 backdrop-blur-sm">
+    <div className="min-h-screen w-full flex items-center justify-center bg-white">
       <Spinner size={48} />
     </div>
   );
