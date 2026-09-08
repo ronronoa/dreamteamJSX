@@ -57,7 +57,10 @@ export const userService = {
             })
             return toSafeUser(user)
         } catch (err) {
-            
+            if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+                throw new ConflictError(`Username ${data.username} already exists.`)
+            }
+            throw err;
         }
     },
 

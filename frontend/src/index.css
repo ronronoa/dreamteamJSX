@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --default-font-family: Arial, sans-serif
+}
+
 /* /src/components/common/widgets/modal */
 @keyframes modal-open {
   from {

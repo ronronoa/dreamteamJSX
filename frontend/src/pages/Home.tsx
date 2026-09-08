@@ -1,18 +1,31 @@
-import { useAuth } from "../context/AuthContext"
+import { Navigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
+import { ROUTES } from "../routes";
 
-export default function Home(){
-  const { session, logout } = useAuth();
+const ADMIN_ROLES = [
+  "SUPER_ADMIN",
+  "DEPARTMENT_HEAD",
+  "DEPUTY",
+  "TEAM_LEADER",
+];
 
-  return(
-    <>
-      <div className="flex flex-col">
+/**
+ * Redirects users based on their authentication status and role.
+ */
+export default function Home() {
+  const { session, loading } = useAuth();
 
-          <h1>hello {session?.username}</h1>
+  if (loading) return
 
-        <div >
-          <button className="cursor-pointer hover:text-red-500" onClick={logout}>logout</button>
-        </div >
-      </div>
-    </>
-  )
+  if (!session) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
+  const { role } = session.user;
+
+  if (ADMIN_ROLES.includes(role)) {
+    return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
+  }
+
+  return <Navigate to={ROUTES.CHOOSE_FORM} replace />;
 }
