@@ -1,7 +1,10 @@
 export const ROUTES = {
   ROOT: "/",
+
   LOGIN: "/login",
+
   CHOOSE_FORM: "/chooseform",
-  CREATE_FORM: "/createform",
+  OPERATIONLOG_FORM: "/operationlogform",
+
   ADMIN_DASHBOARD: "/ADMIN-DASHBOARD",
 } as const;

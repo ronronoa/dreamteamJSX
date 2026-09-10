@@ -8,8 +8,9 @@ import PublicRoute from "./components/PublicRoute"
 import Home from "./pages/Home"
 import Login from "./pages/Login"
 import ChooseForm from "./pages/ChooseForm"
-import CreateForm from "./pages/CreateForm"
 import AdminDashBoard from "./pages/AdminDashboard"
+
+import OperationLogForm from "./pages/reportForms/OperationLogForm"
 
 import TestComponent from "./pages/TestComponent"
 import LoadingScreen from "./components/common/LoadingScreen"
@@ -33,10 +34,10 @@ function App() {
         }/>
 
         <Route path={ROUTES.CHOOSE_FORM} element={
-            <ChooseForm/>
+          <ChooseForm/>
         }/>
 
-        <Route path={ROUTES.CREATE_FORM} element={<CreateForm/>}/>
+        <Route path={ROUTES.OPERATIONLOG_FORM} element={<OperationLogForm/>}/>
 
 
         <Route path={ROUTES.ADMIN_DASHBOARD} element={
