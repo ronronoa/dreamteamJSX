@@ -16,6 +16,6 @@ export default function ProtectedRoute({skip = false, children}: ProtectedRouteP
   const { session, loading } = useAuth();
 
 
-  if (session || loading && !skip) return  <>{children}</>
+  if (session || loading || skip) return  <>{children}</>
   if (!session && !skip) return <Navigate to={ROUTES.LOGIN} replace />;
 }

@@ -6,8 +6,10 @@ interface CommonCheckboxProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default function CommonCheckbox({ label, className = "", ...props }: CommonCheckboxProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-800">
-      <input type="checkbox" {...props} className={`h-4 w-4 accent-orange-500 ${className}`} />
+    <label className="flex items-center justify-start gap-2 text-sm text-gray-800">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 border-orange-500 bg-white">
+        <input type="checkbox" {...props} className={`h-6 w-6 accent-orange-500 m-0 p-0 ${className}`} />
+      </div>
       {label}
     </label>
   )

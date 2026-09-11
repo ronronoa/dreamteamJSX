@@ -7,22 +7,15 @@ export type PersonName = {
   suffix: string
 }
 
-export type PersonAddress = {
-  phase: string
-  package: string
-  block: string
-  lot: string
-}
+export const createEmptyPersonName = (): PersonName => ({
+  surname: "",
+  firstName: "",
+  middleInitial: "",
+  suffix: "",
+})
 
-export type Person = {
-  id: string
-  name: PersonName
-  birthdate: string
-  age: number | ""
-  sex: Sex
-  contactNumber: string
-  address: PersonAddress
-}
+// --------------------------------------------------------------
+// step1 operationDetails
 
 export type OperationDetails = {
   submitterName: string
@@ -46,18 +39,47 @@ export type VehicularDispatch = {
   odometerOut: string
 }
 
-export type OperationLogData = {
-  operationDetails: OperationDetails
-  dispatch: VehicularDispatch
-  people: Person[]
+export const createEmptyOperationDetails = (): OperationDetails => ({
+  submitterName: "",
+  date: "",
+  natureOfOperation: "",
+  caller: createEmptyPersonName(),
+  teamAssigned: [],
+  responders: [],
+})
+
+export const createEmptyVehicularDispatch = (): VehicularDispatch => ({
+  from: "",
+  to: "",
+  vehicle: "",
+  driver: "",
+  departTime: "",
+  departPeriod: "AM",
+  arrivalTime: "",
+  arrivalPeriod: "AM",
+  odometerIn: "",
+  odometerOut: "",
+})
+
+// --------------------------------------------------------------
+// step2 peopleInvolved
+
+export type PersonAddress = {
+  phase: string
+  package: string
+  block: string
+  lot: string
 }
 
-export const createEmptyPersonName = (): PersonName => ({
-  surname: "",
-  firstName: "",
-  middleInitial: "",
-  suffix: "",
-})
+export type Person = {
+  id: string
+  name: PersonName
+  birthdate: string
+  age: number | ""
+  sex: Sex
+  contactNumber: string
+  address: PersonAddress
+}
 
 export const createEmptyPerson = (): Person => ({
   id: crypto.randomUUID(),
@@ -67,30 +89,6 @@ export const createEmptyPerson = (): Person => ({
   sex: "",
   contactNumber: "",
   address: { phase: "", package: "", block: "", lot: "" },
-})
-
-export const createEmptyOperationLogData = (): OperationLogData => ({
-  operationDetails: {
-    submitterName: "",
-    date: "",
-    natureOfOperation: "",
-    caller: createEmptyPersonName(),
-    teamAssigned: [],
-    responders: [],
-  },
-  dispatch: {
-    from: "",
-    to: "",
-    vehicle: "",
-    driver: "",
-    departTime: "",
-    departPeriod: "AM",
-    arrivalTime: "",
-    arrivalPeriod: "AM",
-    odometerIn: "",
-    odometerOut: "",
-  },
-  people: [],
 })
 
 export const calculateAge = (birthdate: string): number | "" => {
@@ -110,3 +108,47 @@ export const calculateAge = (birthdate: string): number | "" => {
 
   return age
 }
+
+// --------------------------------------------------------------
+// step3 operationDesc & inventory
+
+export type OperationDescription = {
+  description: string
+  images: File[]
+}
+
+export type InventoryItem = {
+  id: string
+  itemName: string
+  quantity: string
+}
+
+export const createEmptyOperationDescription = (): OperationDescription => ({
+  description: "",
+  images: [],
+})
+
+export const createEmptyInventoryItem = (): InventoryItem => ({
+  id: crypto.randomUUID(),
+  itemName: "",
+  quantity: "",
+})
+
+// --------------------------------------------------------------
+// step4 summary
+
+export type OperationLogData = {
+  operationDetails: OperationDetails
+  dispatch: VehicularDispatch
+  people: Person[]
+  operationDescription: OperationDescription
+  inventory: InventoryItem[]
+}
+
+export const createEmptyOperationLogData = (): OperationLogData => ({
+  operationDetails: createEmptyOperationDetails(),
+  dispatch: createEmptyVehicularDispatch(),
+  people: [],
+  operationDescription: createEmptyOperationDescription(),
+  inventory: [],
+})

@@ -175,19 +175,21 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
           </div>
         </div>
 
-        <CommonButton
-          type="button"
-          variant="orange"
-          className="flex w-full items-center justify-center gap-2"
-          onClick={addPerson}
-        >
-          Add
-          <UserRoundPlus size={18} />
-        </CommonButton>
+        <div className="mt-auto pt-5">
+          <CommonButton
+            type="button"
+            variant="orange"
+            className="flex w-full items-center justify-center gap-2"
+            onClick={addPerson}
+          >
+            Add
+            <UserRoundPlus size={18} />
+          </CommonButton>
+        </div>
       </CommonFormSection>
 
       <CommonFormSection padded={false}>
-        <div className="h-full overflow-x-auto min-h-[100px]">
+        <div className="h-full overflow-x-auto min-h-[85px]">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-[#180024] text-left text-white">

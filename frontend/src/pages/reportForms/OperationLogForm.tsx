@@ -6,21 +6,47 @@ import CommonButton from "../../components/common/widgets/CommonButton"
 
 import OperationStep1 from "../../modules/reportForms/OperationLogForm/OperationStep1"
 import OperationStep2 from "../../modules/reportForms/OperationLogForm/OperationStep2"
+import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
+import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
+import { isFormComplete } from "../../modules/reportForms/OperationLogForm/formValidation"
 
 import {
   createEmptyOperationLogData,
   type OperationDetails,
   type OperationLogData,
   type VehicularDispatch,
+  type InventoryItem,
+  type OperationDescription,
 } from "../../types/operationLog"
 import { API_URL } from "../../api/config"
+import { useNavigate } from "react-router"
 
 export default function OperationLogForm() {
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
 
+  const navigate = useNavigate();
+
   const totalSteps = 4
+
+  const VARIANTS = {
+    enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction: number) => ({ x: direction > 0 ? "-100%" : "100%", opacity: 0 }),
+  }
+
+  const nextStep = () => {
+    if (step >= totalSteps) return
+    setDirection(1)
+    setStep((current) => current + 1)
+  }
+
+  const previousStep = () => {
+    if (step <= 1) return
+    setDirection(-1)
+    setStep((current) => current - 1)
+  }
 
   const updateOperationDetails = (patch: Partial<OperationDetails>) => {
     setFormData((current) => ({
@@ -40,22 +66,15 @@ export default function OperationLogForm() {
     setFormData((current) => ({ ...current, people }))
   }
 
-  const VARIANTS = {
-    enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (direction: number) => ({ x: direction > 0 ? "-100%" : "100%", opacity: 0 }),
+  const updateOperationDescription = (patch: Partial<OperationDescription>) => {
+    setFormData((current) => ({
+      ...current,
+      operationDescription: { ...current.operationDescription, ...patch },
+    }))
   }
 
-  const nextStep = () => {
-    if (step >= totalSteps) return
-    setDirection(1)
-    setStep((current) => current + 1)
-  }
-
-  const previousStep = () => {
-    if (step <= 1) return
-    setDirection(-1)
-    setStep((current) => current - 1)
+  const updateInventory = (inventory: InventoryItem[]) => {
+    setFormData((current) => ({ ...current, inventory }))
   }
 
   const handleSubmit = async () => {
@@ -77,13 +96,13 @@ export default function OperationLogForm() {
 
   return (
     <CommonBackground className="min-h-screen p-4">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-6xl sm:items-center">
-        <div className="mx-auto flex w-full flex-col  lg:max-h-[1000px]">
+      <section className="mx-auto flex  w-full max-w-6xl min-h-[calc(100vh-25rem)] sm:items-center modal-open">
+        <div className="mx-auto flex w-full flex-col">
           <div className="mb-5 mt-8 text-center">
             <h1 className="text-4xl font-bold text-white">OPERATION LOG FORM</h1>
           </div>
 
-          <div className="relative w-full min-h-[700px]">
+          <div className="relative w-full ">
             <AnimatePresence mode="wait" initial={false} custom={direction}>
               <motion.div
                 key={step}
@@ -104,20 +123,36 @@ export default function OperationLogForm() {
                 )}
 
                 {step === 2 && (
-                  <OperationStep2 people={formData.people} onPeopleChange={updatePeople} />
+                  <OperationStep2 
+                    people={formData.people}
+                    onPeopleChange={updatePeople}
+                  />
                 )}
+
+                {step === 3 && (
+                  <OperationStep3
+                    operationDescription={formData.operationDescription}
+                    onOperationDescriptionChange={updateOperationDescription}
+                    inventory={formData.inventory}
+                    onInventoryChange={updateInventory}
+                  />
+                )}
+
+
+                {step === 4 && <OperationStep4 formData={formData} />}
+
               </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="mt-4 flex h-14 w-full items-center justify-between rounded-md bg-white p-2">
-            {step === 1 && (
-              <CommonButton variant="none" className="min-w-[130px] bg-red-700 hover:bg-red-900 text-white">
+            {step === 1 && ( //cancle
+              <CommonButton onClick={() => navigate((-1))} variant="none" className="min-w-[130px] bg-red-700 hover:bg-red-900 text-white">
                 Cancel
               </CommonButton>
             )}
 
-            {step > 1 && (
+            {step > 1 && ( //backButton
               <CommonButton variant="gray" className="min-w-[130px]" onClick={previousStep} disabled={step === 1}>
                 Go back
               </CommonButton>
@@ -126,14 +161,22 @@ export default function OperationLogForm() {
             <span className="font-semibold">{step}/{totalSteps}</span>
 
             {step === totalSteps ? (
-              <CommonButton className="min-w-[130px]" onClick={handleSubmit}>
+              <CommonButton
+                variant={isFormComplete(formData) ? "purple" : "gray"}
+                disabled={!isFormComplete(formData)}
+                className="min-w-[130px]"
+                onClick={handleSubmit}
+              >
                 Submit
               </CommonButton>
             ) : (
-              <CommonButton className="min-w-[130px]" onClick={nextStep}>
-                Next
-              </CommonButton>
-            )}
+                <CommonButton
+                  className="min-w-[130px]"
+                  onClick={nextStep}
+                >
+                  Next
+                </CommonButton>
+              )}
           </div>
         </div>
       </section>
