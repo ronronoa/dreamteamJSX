@@ -10,10 +10,7 @@ export default function ChooseForm() {
   return (
     <CommonBackground className="min-h-screen p-4 ">
 
-      <section className="
-        mx-auto flex w-full max-w-6xl min-h-[calc(100vh-7rem)] sm:items-center
-        "
-      >
+      <section className=" mx-auto flex w-full max-w-6xl min-h-[calc(100vh-7rem)] sm:items-center " >
 
         <div className=" mx-auto w-full flex flex-col lg:min-h-[700px] lg:max-h-[1000px] modal-open">
 
@@ -36,6 +33,7 @@ export default function ChooseForm() {
             <div className="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
 
               <CommonButton
+                onClick={() => navigate((ROUTES.OPERATIONLOG_FORM))}
                 variant="orange"
                 className="flex h-32 sm:h-64 w-full flex-col items-center justify-center"
               >

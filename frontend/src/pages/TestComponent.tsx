@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, User } from "lucide-react";
+
 import Logo from "../components/common/widgets/Logo";
 import Modal from "../components/common/modals/Modal";
 import Spinner from "../components/common/widgets/Spinner";
@@ -9,6 +10,10 @@ import ForgotPasswordModal from "../components/common/modals/ForgetPassModal";
 import ContactAdminModal from "../components/common/modals/ContactAdminModal";
 import CommonBackground from "../components/common/background/CommonBackground";
 import CommonInput from "../components/common/widgets/CommonInput";
+import CommonCheckbox from "../components/common/widgets/CommonCheckbox";
+import CommonSelect from "../components/common/widgets/CommonSelect";
+import CommonTextarea from "../components/common/widgets/CommonTextarea";
+import CommonTimeInput from "../components/common/widgets/CommonTimeInput";
 
 function ShowcaseSection({ title, children, }: { title: string; children: React.ReactNode;
 }) {
@@ -35,6 +40,7 @@ export default function TestComponent() {
   const [backgroundActive, setBackgroundActive] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
+
 
 
   return (
@@ -85,6 +91,12 @@ export default function TestComponent() {
                 placeholder="admin@gmail.com"
               />
               <CommonInput id="name" label="Name" type="text" icon={<User size={18}/>} placeholder="placeholder" />
+
+              <CommonInput
+                variant="compact"
+                label="Name of Submitter (compact)"
+                placeholder="Place holder"
+              />
             </div>
           </ShowcaseSection>
 
@@ -98,12 +110,71 @@ export default function TestComponent() {
             <CommonButton variant="orangeLinear" onClick={() => setIsContactAdminModalOpen(true)}> Open ContactAdmin </CommonButton> 
           </ShowcaseSection>
 
-        <ShowcaseSection title="CommonBackground">
+          <ShowcaseSection title="CommonCheckbox">
+            <div className="flex flex-col gap-3">
+              <CommonCheckbox label="Default checkbox" />
+              <CommonCheckbox label="Checked checkbox" defaultChecked />
+              <CommonCheckbox label="Disabled checkbox" disabled />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonSelect">
+            <div className="w-full max-w-100 space-y-5">
+              <CommonSelect
+                id="department"
+                label="Department"
+                placeholder="Select a department"
+                options={[
+                  { label: "DRRMO", value: "drrmo" },
+                  { label: "BHERT", value: "bhert" },
+                  { label: "Barangay Office", value: "barangay" },
+                ]}
+              />
+
+              <CommonSelect
+                id="vehicle"
+                label="Vehicle"
+                variant="compact"
+                options={[
+                  { label: "Ambulance", value: "ambulance" },
+                  { label: "Rescue Truck", value: "rescue-truck" },
+                  { label: "Patrol Vehicle", value: "patrol" },
+                ]}
+              />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonTextarea">
+            <div className="w-full max-w-100 space-y-5">
+              <CommonTextarea
+                id="description"
+                label="Description"
+                placeholder="Enter a description..."
+                rows={5}
+              />
+
+              <CommonTextarea
+                id="compact-description"
+                label="Compact Description"
+                variant="compact"
+                placeholder="Enter a description..."
+                rows={5}
+              />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonTimeInput">
+            <div className="w-full max-w-100">
+              <CommonTimeInputShowcase />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonBackground">
             <div className="h-[250px] w-[250px] gap-2 flex flex-col">
               <CommonBackground variant="purpleGradient" className="border-2"/>
               <CommonButton variant="purple" onClick={() => setBackgroundActive(!backgroundActive)}> toggle</CommonButton> 
             </div>
-        </ShowcaseSection>
+          </ShowcaseSection>
 
         </div>
       </div>
@@ -130,4 +201,31 @@ export default function TestComponent() {
 
     </CommonBackground>
   );
+}
+
+
+
+
+
+
+function CommonTimeInputShowcase() {
+  const [time, setTime] = useState("08:30")
+  const [period, setPeriod] = useState<"AM" | "PM">("AM")
+
+  return (
+    <div className="space-y-3">
+      <CommonTimeInput
+        label="Departure Time"
+        time={time}
+        period={period}
+        onTimeChange={setTime}
+        onPeriodChange={setPeriod}
+      />
+
+      <div className="rounded-md bg-white p-3 text-sm text-slate-700">
+        <p>Selected time: {time || "None"}</p>
+        <p>Selected period: {period}</p>
+      </div>
+    </div>
+  )
 }

@@ -60,6 +60,8 @@ export default function CommonButton({ children, variant = "purple", className =
         shadow-md
         transition-colors
         disabled:opacity-60
+        disabled:cursor-not-allowed
+        disabled:scale-100
         active:scale-95
         hover:cursor-pointer
         ${className}
