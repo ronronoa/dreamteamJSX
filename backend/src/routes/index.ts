@@ -2,9 +2,11 @@ import { Router } from "express";
 import { authRoutes } from "./auth.routes";
 import { pinRoutes } from "./pin.routes";
 import { userRoutes } from "./user.routes";
+import { operationRoutes } from "./operation.routes";
 
 export const apiRouter = Router()
 
 apiRouter.use(authRoutes)
 apiRouter.use(pinRoutes)
 apiRouter.use(userRoutes)
+apiRouter.use(operationRoutes)
