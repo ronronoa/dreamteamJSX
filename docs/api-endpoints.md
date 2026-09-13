@@ -2,7 +2,7 @@
 
 ## Emergency Logistics Management System (ELMS-BDRRMO)
 
-## 1. Auth & PIN — Built
+## 1. Auth & PIN — **BUILT** ✅
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -15,7 +15,7 @@
 
 ---
 
-## 2. User Management — Phase 2
+## 2. User Management — **BUILT** ✅
 
 > Super Admin only. All endpoints require `requireAuth` + `requireRole("SUPER_ADMIN")`.
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 3. Operation Log — Phase 3-4
+## 3. Operation Log — Phase 3-4 (not built)
 
 ### 3.1 CRUD Operations
 
@@ -139,7 +139,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 4. Patient Log — Phase 5
+## 4. Patient Log — Phase 5 (not built)
 
 ### 4.1 Patient Records
 
@@ -210,7 +210,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 5. Vehicular Dispatch — Phase 5
+## 5. Vehicular Dispatch — Phase 5 (not built)
 
 ### 5.1 Dispatch CRUD
 
@@ -268,7 +268,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 6. Vehicles — Phase 5
+## 6. Vehicles — Phase 5 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -290,7 +290,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 7. Response Teams — Phase 5
+## 7. Response Teams — Phase 5 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -308,7 +308,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 8. Inventory — Phase 6
+## 8. Inventory — Phase 6 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -340,7 +340,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 9. Dashboard & KPIs — Phase 7
+## 9. Dashboard & KPIs — Phase 7 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -388,7 +388,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 10. Archiving — Phase 7
+## 10. Archiving — Phase 7 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
@@ -412,7 +412,7 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 11. Backup & Restore — Phase 8
+## 11. Backup & Restore — Phase 8 (not built)
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
