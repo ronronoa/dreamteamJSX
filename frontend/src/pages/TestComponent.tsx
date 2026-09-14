@@ -164,7 +164,7 @@ export default function TestComponent() {
           </ShowcaseSection>
 
           <ShowcaseSection title="CommonTimeInput">
-            <div className="w-full max-w-100">
+            <div className="w-full max-w-100 flex justify-center">
               <CommonTimeInputShowcase />
             </div>
           </ShowcaseSection>

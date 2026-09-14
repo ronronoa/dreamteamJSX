@@ -138,6 +138,7 @@ export const createEmptyInventoryItem = (): InventoryItem => ({
 // step4 summary
 
 export type OperationLogData = {
+  pinNumber: number | null
   operationDetails: OperationDetails
   dispatch: VehicularDispatch
   people: Person[]
@@ -146,6 +147,7 @@ export type OperationLogData = {
 }
 
 export const createEmptyOperationLogData = (): OperationLogData => ({
+  pinNumber: null,
   operationDetails: createEmptyOperationDetails(),
   dispatch: createEmptyVehicularDispatch(),
   people: [],

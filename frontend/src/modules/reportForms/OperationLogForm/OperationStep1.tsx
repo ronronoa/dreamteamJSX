@@ -2,7 +2,7 @@ import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
-import CommonFormSection from "../CommonFormSection"
+import CommonFormSection from "../component/CommonFormSection"
 
 import type { OperationDetails, VehicularDispatch } from "../../../types/operationLog"
 
@@ -80,7 +80,7 @@ export default function OperationStep1({
           <div>
             <label className="mb-1 block text-lg font-medium text-slate-900">Name of Caller</label>
 
-            <div className="grid grid-cols-[1fr_1fr_50px_50px] gap-2">
+            <div className="grid grid-cols-[1fr_1fr_80px_80px] gap-2">
               <CommonInput
                 variant="compact"
                 placeholder="Surname"

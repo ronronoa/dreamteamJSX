@@ -1,8 +1,8 @@
 import { Paperclip } from "lucide-react"
 
-import CommonFormSection from "../CommonFormSection"
-import SummaryField from "../SummaryField"
-import ImagePreviewModal from "./ImagePreviewModal"
+import CommonFormSection from "../component/CommonFormSection"
+import SummaryField from "../component/SummaryField"
+import ImagePreviewModal from "../modal/ImagePreviewModal"
 
 import type { OperationLogData, Person, PersonName } from "../../../types/operationLog"
 import { useState } from "react"

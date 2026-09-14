@@ -59,6 +59,7 @@ export default function CommonBackground({
 }: BackgroundProps) {
   return (
     <div
+      onDrop={(e) => { e.preventDefault()}}
       className={`
         w-full h-full
         ${backgrounds[variant]}
