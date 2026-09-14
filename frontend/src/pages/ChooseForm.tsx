@@ -44,6 +44,7 @@ export default function ChooseForm() {
               </CommonButton>
 
               <CommonButton
+                onClick={() => navigate((ROUTES.NEWPATIENTLOG_FORM))}
                 variant="orange"
                 className="flex h-32 sm:h-64 w-full flex-col items-center justify-center"
               >

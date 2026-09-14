@@ -1,5 +1,27 @@
 import type { OperationLogData } from "../../../types/operationLog"
 
+export function isFormEmpty(formData: OperationLogData): boolean {
+  const { operationDetails, dispatch, people, operationDescription, inventory } = formData
+
+  return (
+    !operationDetails.submitterName &&
+    !operationDetails.date &&
+    !operationDetails.natureOfOperation &&
+    !operationDetails.caller.surname &&
+    !operationDetails.caller.firstName &&
+    operationDetails.teamAssigned.length === 0 &&
+    operationDetails.responders.length === 0 &&
+    !dispatch.from &&
+    !dispatch.to &&
+    !dispatch.vehicle &&
+    !dispatch.driver &&
+    people.length === 0 &&
+    !operationDescription.description &&
+    operationDescription.images.length === 0 &&
+    inventory.length === 0
+  )
+}
+
 export const isStep1Complete = (formData: OperationLogData) => {
   const { operationDetails, dispatch } = formData
 

@@ -4,38 +4,22 @@ import { AnimatePresence, motion } from "motion/react"
 import CommonBackground from "../../components/common/background/CommonBackground"
 import CommonButton from "../../components/common/widgets/CommonButton"
 
-import OperationStep1 from "../../modules/reportForms/OperationLogForm/OperationStep1"
-import OperationStep2 from "../../modules/reportForms/OperationLogForm/OperationStep2"
-import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
-import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
-import { isFormComplete, isFormEmpty } from "../../modules/reportForms/OperationLogForm/formValidation"
-
-import {
-  createEmptyOperationLogData,
-  type OperationDetails,
-  type OperationLogData,
-  type VehicularDispatch,
-  type InventoryItem,
-  type OperationDescription,
-} from "../../types/operationLog"
-import { submitOperationLog } from "../../api/operationForm"
 import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 
-export default function OperationLogForm() {
+export default function NewPatientLogForm() {
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
-  const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();
 
-  const totalSteps = 4
+  const totalSteps = 2
   const progress = (step / totalSteps) * 100
 
   const VARIANTS = {
@@ -56,72 +40,21 @@ export default function OperationLogForm() {
     setStep((current) => current - 1)
   }
 
-  const updateOperationDetails = (patch: Partial<OperationDetails>) => {
-    setFormData((current) => ({
-      ...current, operationDetails: { ...current.operationDetails, ...patch },
-    }))
-  }
-
-  const updateDispatch = (patch: Partial<VehicularDispatch>) => {
-    setFormData((current) => ({
-      ...current, dispatch: { ...current.dispatch, ...patch },
-    }))
-  }
-
-  const updatePeople = (people: OperationLogData["people"]) => {
-    setFormData((current) => ({ ...current, people }))
-  }
-
-  const updateOperationDescription = (patch: Partial<OperationDescription>) => {
-    setFormData((current) => ({
-      ...current, operationDescription: { ...current.operationDescription, ...patch },
-    }))
-  }
-
-  const updateInventory = (inventory: InventoryItem[]) => {
-    setFormData((current) => ({ ...current, inventory })) 
-  }
-
   const openPinModal = () => {
     setPinError(undefined)
     setPinModalShow(true)
   }
 
   const handleSubmit = async (pin: string) => {
-    setIsSubmitting(true);
-    setPinError(undefined);
-
-    try {
-      await submitOperationLog(pin, formData);
-
-      setPinModalShow(false);
-    } catch (error) {
-      console.error("Failed to submit operation:", error);
-      setPinError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
 
-  useEffect(() => {
-    const hasUnsavedChanges = !isFormEmpty(formData)
-
-    function handleBeforeUnload(event: BeforeUnloadEvent) {
-      if (!hasUnsavedChanges) return
-      event.preventDefault()
-      event.returnValue = ""
-    }
-
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
-  }, [formData])
 
   return (
     <>
       {pinModalShow && (
         <PinModal
-          title="OPERATION LOG"
+          title="NEW PATIENT LOG"
           open={pinModalShow}
           onClose={() => setPinModalShow(false)}
           onSubmit={handleSubmit}
@@ -146,7 +79,7 @@ export default function OperationLogForm() {
         <section className="mx-auto flex  w-full max-w-6xl min-h-[calc(100vh-25rem)] sm:items-center modal-open">
           <div className="mx-auto flex w-full flex-col">
             <div className="mb-5 mt-8 text-center">
-              <h1 className="text-4xl font-bold text-white">OPERATION LOG FORM</h1>
+              <h1 className="text-4xl font-bold text-white">NEW PATIENT</h1>
             </div>
 
             <div className="relative w-full ">
@@ -160,33 +93,6 @@ export default function OperationLogForm() {
                   exit="exit"
                   transition={{ duration: 0.233, ease: "easeOut" }}
                 >
-                  {step === 1 && (
-                    <OperationStep1
-                      operationDetails={formData.operationDetails}
-                      onOperationDetailsChange={updateOperationDetails}
-                      dispatch={formData.dispatch}
-                      onDispatchChange={updateDispatch}
-                    />
-                  )}
-
-                  {step === 2 && (
-                    <OperationStep2 
-                      people={formData.people}
-                      onPeopleChange={updatePeople}
-                    />
-                  )}
-
-                  {step === 3 && (
-                    <OperationStep3
-                      operationDescription={formData.operationDescription}
-                      onOperationDescriptionChange={updateOperationDescription}
-                      inventory={formData.inventory}
-                      onInventoryChange={updateInventory}
-                    />
-                  )}
-
-
-                  {step === 4 && <OperationStep4 formData={formData} />}
 
                 </motion.div>
               </AnimatePresence>
@@ -218,10 +124,7 @@ export default function OperationLogForm() {
 
               {step === totalSteps ? (
                 <CommonButton
-                  variant={isFormComplete(formData) ? "purple" : "gray"}
-                  disabled={!isFormComplete(formData)}
-                  className="min-w-[130px]"
-                  onClick={openPinModal}
+                  onClick={() => setPinModalShow(true)}
                 >
                   Submit
                 </CommonButton>

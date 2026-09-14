@@ -20,7 +20,7 @@ export default function CommonFormSection({
   return (
     <section
       className={`flex w-full flex-col overflow-x-auto rounded-md bg-[#fffdfb] shadow-md ${
-        standardHeight ? "lg:min-h-[800px]" : ""
+        standardHeight ? "lg:min-h-[750px]" : ""
       } ${padded ? "p-6" : ""} ${className}`}
     >
       {title && <h2 className="mb-4 border-b border-gray-200 pb-2 text-2xl font-bold text-slate-900">{title}</h2>}

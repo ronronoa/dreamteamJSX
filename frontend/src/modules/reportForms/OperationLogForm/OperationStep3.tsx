@@ -1,14 +1,13 @@
-import { useRef, useState } from "react"
-import { Trash, Upload, PackagePlus } from "lucide-react"
+import { Trash, PackagePlus, } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonTextarea from "../../../components/common/widgets/CommonTextarea"
-import CommonFormSection from "../CommonFormSection"
-import ImagePreviewModal from "./ImagePreviewModal"
+import CommonFormSection from "../component/CommonFormSection"
 
 import type { InventoryItem, OperationDescription } from "../../../types/operationLog"
 import { createEmptyInventoryItem } from "../../../types/operationLog"
+import ImageUpload, { addImageFiles, useImageDrag } from "../component/ImageUpload"
 
 type OperationStep3Props = {
   operationDescription: OperationDescription
@@ -23,20 +22,30 @@ export default function OperationStep3({
   inventory,
   onInventoryChange,
 }: OperationStep3Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFilesSelected = (fileList: FileList | null) => {
-    if (!fileList || fileList.length === 0) return
+  const {
+    isDragging,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = useImageDrag()
 
-    const newFiles = Array.from(fileList)
-    onOperationDescriptionChange({ images: [...operationDescription.images, ...newFiles] })
+  function handleFormDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
 
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }
+    const imageFiles = Array.from(e.dataTransfer.files).filter((file) =>
+      file.type.startsWith("image/")
+    )
 
-  const removeImage = (index: number) => {
+    if (imageFiles.length === 0) return
+
+    const newImages = addImageFiles(
+      operationDescription.images,
+      imageFiles,
+    )
+
     onOperationDescriptionChange({
-      images: operationDescription.images.filter((_, i) => i !== index),
+      images: newImages,
     })
   }
 
@@ -52,15 +61,18 @@ export default function OperationStep3({
     onInventoryChange([...inventory, createEmptyInventoryItem()])
   }
 
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
 
-  const previewFile =
-    previewIndex !== null
-      ? operationDescription.images[previewIndex]
-      : null
 
   return (
-    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={(e) => {
+        handleDrop()
+        handleFormDrop(e)
+      }}
+      className="flex w-full flex-col justify-between gap-4 lg:flex-row"
+    >
       <CommonFormSection title="OPERATION DESCRIPTION">
         <div className="flex h-full flex-col">
           <div className="mb-5">
@@ -75,49 +87,13 @@ export default function OperationStep3({
             />
           </div>
 
-          <div className="mb-3 flex items-center justify-between">
-            <label className="text-lg font-medium text-slate-900">Attach Image/s</label>
-
-            <CommonButton
-              type="button"
-              variant="orange"
-              className="flex items-center gap-2 w-70"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Upload
-              <Upload size={18} />
-            </CommonButton>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFilesSelected(e.target.files)}
-            />
-          </div>
-
-          <div className="min-h-[150px] flex-1 rounded-md border border-gray-300 bg-gray-100">
-            {operationDescription.images.map((file, index) => (
-              <button
-                onClick={() => setPreviewIndex(index)}
-                key={`${file.name}-${index}`}
-                className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm italic text-gray-700 transition hover:border-purple-400 hover:bg-gray-50"
-              >
-                <span className="truncate">{file.name}</span>
-
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="text-red-500 transition  "
-                  aria-label={`Remove ${file.name}`}
-                >
-                  <Trash size={24} className="hover:fill-red-700"/>
-                </button>
-              </button>
-            ))}
-          </div>
+          <ImageUpload
+            images={operationDescription.images}
+            onImagesChange={(images) =>
+              onOperationDescriptionChange({ images })
+            }
+            isDragging={isDragging}
+          />
         </div>
       </CommonFormSection>
 
@@ -169,12 +145,6 @@ export default function OperationStep3({
           </CommonButton>
         </div>
       </CommonFormSection>
-
-      <ImagePreviewModal
-        open={previewIndex !== null}
-        onClose={() => setPreviewIndex(null)}
-        file={previewFile}
-      />
     </div>
   )
 }

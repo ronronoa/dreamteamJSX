@@ -1,5 +1,5 @@
 import {  useAuth } from "./context/AuthContext"
-import { BrowserRouter, Route, Routes } from "react-router"
+import {  HashRouter, Route, Routes } from "react-router"
 
 import { ROUTES } from "./routes"
 
@@ -11,15 +11,34 @@ import ChooseForm from "./pages/ChooseForm"
 import AdminDashBoard from "./pages/AdminDashboard"
 
 import OperationLogForm from "./pages/reportForms/OperationLogForm"
+import NewPatientLogForm from "./pages/reportForms/NewPatientLogForm"
 
 import TestComponent from "./pages/TestComponent"
 import LoadingScreen from "./components/common/LoadingScreen"
+import { useEffect } from "react"
 
 
 function App() {
   const { loading } = useAuth();
+
+useEffect(() => {
+  function preventFileDrop(event: DragEvent) {
+    if (event.dataTransfer?.types.includes("Files")) {
+      event.preventDefault();
+    }
+  }
+
+  window.addEventListener("dragover", preventFileDrop);
+  window.addEventListener("drop", preventFileDrop);
+
+  return () => {
+    window.removeEventListener("dragover", preventFileDrop);
+    window.removeEventListener("drop", preventFileDrop);
+  };
+}, []);
+
   return (
-    <BrowserRouter>
+    <HashRouter>
       {loading && <LoadingScreen />}
       <Routes>
 
@@ -38,6 +57,7 @@ function App() {
         }/>
 
         <Route path={ROUTES.OPERATIONLOG_FORM} element={<OperationLogForm/>}/>
+        <Route path={ROUTES.NEWPATIENTLOG_FORM} element={<NewPatientLogForm/>}/>
 
 
         <Route path={ROUTES.ADMIN_DASHBOARD} element={
@@ -52,7 +72,7 @@ function App() {
         <Route path="/test-components" element={<TestComponent/>}/>
 
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

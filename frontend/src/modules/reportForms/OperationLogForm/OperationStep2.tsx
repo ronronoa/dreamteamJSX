@@ -4,7 +4,7 @@ import { Trash, UserRoundPlus } from "lucide-react"
 import CommonButton from "../../../components/common/widgets/CommonButton"
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
-import CommonFormSection from "../CommonFormSection"
+import CommonFormSection from "../component/CommonFormSection"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
