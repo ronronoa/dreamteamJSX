@@ -26,18 +26,45 @@ function toDigits(time: string): Digits {
   return [hour[0] ?? "", hour[1] ?? "", minute[0] ?? "", minute[1] ?? ""]
 }
 
-/** ["0", "9", "3", "0"] -> "09:30" (always a valid 12-hour clock value) */
-function toTimeValue(digits: Digits): string {
+/**
+ * Resolves raw typed hour digits into a valid 12-hour value, plus
+ * whether the period needs to flip as a result (24-hour-style entry).
+ *
+ * 0        -> 12, no period change (e.g. "00:xx" -> 12:xx, keep current AM/PM)
+ * 1-12     -> unchanged, no period change
+ * 13-23    -> hour - 12, force PM (24-hour-style entry, e.g. 13 -> 1 PM)
+ * anything else (24+, empty) -> falls back to 12, no period change
+ */
+function resolveHour(hourDigits: string): { hour: number; periodOverride?: "AM" | "PM" } {
+  if (hourDigits === "") return { hour: 12 }
+
+  const rawHour = Number(hourDigits)
+
+  if (Number.isNaN(rawHour) || rawHour === 0 || rawHour > 23) {
+    return { hour: 12 }
+  }
+
+  if (rawHour > 12) {
+    return { hour: rawHour - 12, periodOverride: "PM" }
+  }
+
+  return { hour: rawHour }
+}
+
+/** ["0", "9", "3", "0"] -> { value: "09:30", periodOverride?: "PM" } */
+function toTimeValue(digits: Digits): { value: string; periodOverride?: "AM" | "PM" } {
   const hourDigits = `${digits[0]}${digits[1]}`
   const minuteDigits = `${digits[2]}${digits[3]}`
 
-  let hour = hourDigits === "" ? 12 : Number(hourDigits)
-  if (hour < 1 || hour > 12) hour = 12
+  const { hour, periodOverride } = resolveHour(hourDigits)
 
   let minute = minuteDigits === "" ? 0 : Number(minuteDigits)
-  if (minute > 59) minute = 59
+  if (Number.isNaN(minute) || minute > 59) minute = 59
 
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+  return {
+    value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+    periodOverride,
+  }
 }
 
 export default function CommonTimeInput({
@@ -61,9 +88,14 @@ export default function CommonTimeInput({
   }, [time])
 
   const commit = (next: Digits) => {
-    const value = toTimeValue(next)
+    const { value, periodOverride } = toTimeValue(next)
+
     lastEmitted.current = value
     onTimeChange(value)
+
+    if (periodOverride && periodOverride !== period) {
+      onPeriodChange(periodOverride)
+    }
   }
 
   const updateDigit = (index: number, rawValue: string) => {
@@ -105,11 +137,20 @@ export default function CommonTimeInput({
     }
   }
 
-  // Snap stray values like "13" or "00" back to something valid
+  // Snap stray values like "23" or "00" back to something valid
   // once the user leaves the field entirely.
   const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
-    setDigits(toDigits(toTimeValue(digits)))
+
+    // Nothing was typed — leave the field visually empty instead of
+    // silently snapping it to a fake default.
+    const isEmpty = digits.every((digit) => digit === "")
+    if (isEmpty) return
+
+    const { value } = toTimeValue(digits)
+    const next = toDigits(value)
+    setDigits(next)
+    commit(next)
   }
 
   return (
