@@ -1,3 +1,6 @@
+// --------------------------------------------------------------
+// step1 operationDetails
+
 export type Sex = "Male" | "Female" | ""
 
 export type PersonName = {
@@ -14,14 +17,11 @@ export const createEmptyPersonName = (): PersonName => ({
   suffix: "",
 })
 
-// --------------------------------------------------------------
-// step1 operationDetails
-
 export type OperationDetails = {
   submitterName: string
   date: string
   natureOfOperation: string
-  caller: PersonName
+  nameOfCaller: PersonName
   teamAssigned: string[]
   responders: string[]
 }
@@ -43,7 +43,7 @@ export const createEmptyOperationDetails = (): OperationDetails => ({
   submitterName: "",
   date: "",
   natureOfOperation: "",
-  caller: createEmptyPersonName(),
+  nameOfCaller: createEmptyPersonName(),
   teamAssigned: [],
   responders: [],
 })

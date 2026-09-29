@@ -6,6 +6,7 @@ export const ROUTES = {
   CHOOSE_FORM: "/chooseform",
   OPERATIONLOG_FORM: "/operationlogform",
   NEWPATIENTLOG_FORM: "/newpatientlogform",
+  PATIENTLOG_FORM: "/patientlogform",
 
   ADMIN_DASHBOARD: "/ADMIN-DASHBOARD",
 } as const;

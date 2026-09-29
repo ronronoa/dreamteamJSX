@@ -7,8 +7,8 @@ export function isFormEmpty(formData: OperationLogData): boolean {
     !operationDetails.submitterName &&
     !operationDetails.date &&
     !operationDetails.natureOfOperation &&
-    !operationDetails.caller.surname &&
-    !operationDetails.caller.firstName &&
+    !operationDetails.nameOfCaller.surname &&
+    !operationDetails.nameOfCaller.firstName &&
     operationDetails.teamAssigned.length === 0 &&
     operationDetails.responders.length === 0 &&
     !dispatch.from &&
@@ -29,8 +29,8 @@ export const isStep1Complete = (formData: OperationLogData) => {
     operationDetails.submitterName.trim() !== "" &&
     operationDetails.date.trim() !== "" &&
     operationDetails.natureOfOperation.trim() !== "" &&
-    operationDetails.caller.surname.trim() !== "" &&
-    operationDetails.caller.firstName.trim() !== "" &&
+    operationDetails.nameOfCaller.surname.trim() !== "" &&
+    operationDetails.nameOfCaller.firstName.trim() !== "" &&
     operationDetails.teamAssigned.length > 0 &&
     operationDetails.responders.length > 0 &&
     dispatch.from.trim() !== "" &&

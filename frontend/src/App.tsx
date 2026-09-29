@@ -12,6 +12,7 @@ import AdminDashBoard from "./pages/AdminDashboard"
 
 import OperationLogForm from "./pages/reportForms/OperationLogForm"
 import NewPatientLogForm from "./pages/reportForms/NewPatientLogForm"
+import PatientLogForm from "./pages/reportForms/PatientLogForm"
 
 import TestComponent from "./pages/TestComponent"
 import LoadingScreen from "./components/common/LoadingScreen"
@@ -58,6 +59,7 @@ useEffect(() => {
 
         <Route path={ROUTES.OPERATIONLOG_FORM} element={<OperationLogForm/>}/>
         <Route path={ROUTES.NEWPATIENTLOG_FORM} element={<NewPatientLogForm/>}/>
+        <Route path={ROUTES.PATIENTLOG_FORM} element={<PatientLogForm/>}/>
 
 
         <Route path={ROUTES.ADMIN_DASHBOARD} element={
