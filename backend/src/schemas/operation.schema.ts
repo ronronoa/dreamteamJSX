@@ -72,3 +72,71 @@ export const OperationImageIdParamSchema = z.object({
 })
 
 
+
+// ===============
+
+const genderSchema = z.enum(["Male", "Female", ""])
+
+const personNameSchema = z.object({
+  surname: z.string(),
+  firstName: z.string(),
+  middleInitial: z.string(),
+  suffix: z.string(),
+})
+
+const personAddressSchema = z.object({
+  phase: z.string(),
+  package: z.string(),
+  block: z.string(),
+  lot: z.string(),
+})
+
+const operationDetailsSchema = z.object({
+  submitterName: z.string(),
+  date: z.string(),
+  natureOfOperation: z.string(),
+  nameOfCaller: personNameSchema,
+  teamAssigned: z.array(z.string()),
+  responders: z.array(z.string()),
+})
+
+const vehicularDispatchSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  vehicle: z.string(),
+  driver: z.string(),
+  departTime: z.string(),
+  departPeriod: z.enum(["AM", "PM"]),
+  arrivalTime: z.string(),
+  arrivalPeriod: z.enum(["AM", "PM"]),
+  odometerIn: z.string(),
+  odometerOut: z.string(),
+})
+
+const personSchema = z.object({
+  id: z.string(),
+  name: personNameSchema,
+  birthdate: z.string(),
+  age: z.union([z.number(), z.literal("")]),
+  gender: genderSchema,
+  contactNumber: z.string(),
+  address: personAddressSchema,
+})
+
+const inventoryItemSchema = z.object({
+  id: z.string(),
+  itemName: z.string(),
+  quantity: z.string(),
+})
+
+export const operationLogsFormSchema = z.object({
+  pin: z.number(),
+  operationDetails: operationDetailsSchema,
+  vehicularDispatch: vehicularDispatchSchema,
+  peopleInvolved: z.array(personSchema), 
+  operationDescription: z.string(),
+  inventory: z.array(inventoryItemSchema),
+  files: z.any().optional(),
+})
+
+export type OperationLogsFormType = z.infer<typeof operationLogsFormSchema>;

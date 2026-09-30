@@ -4,7 +4,14 @@ import { Router } from "express";
 
 export const userRoutes = Router()
 
-userRoutes.use(requireAuth, requireRole("SUPER_ADMIN"))
+// userRoutes.use(requireAuth, requireRole("SUPER_ADMIN"))
+// removed as this applies globally on every route
+
+userRoutes.use(
+  "/users",
+  requireAuth,
+  requireRole("SUPER_ADMIN")
+);
 
 userRoutes.get("/users", userController.list)
 userRoutes.get("/users/:id", userController.getById)
