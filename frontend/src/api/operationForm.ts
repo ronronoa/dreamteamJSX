@@ -19,8 +19,9 @@ export async function submitOperationLog(
   formData.operationDescription.images.forEach((file) => {
     formdata.append("images", file); 
   });
+  console.log(formData)
 
-  const response = await fetch(`${API_URL}/operations`, {
+  const response = await fetch(`${API_URL}/operations/debug-submit`, {
     method: "POST",
     body: formdata,
   });

@@ -1,7 +1,7 @@
 // --------------------------------------------------------------
 // step1 operationDetails
 
-export type Sex = "Male" | "Female" | ""
+export type Gender = "Male" | "Female" | ""
 
 export type PersonName = {
   surname: string
@@ -25,9 +25,9 @@ export type OperationDetails = {
   teamAssigned: string[]
   responders: string[]
 }
-
 export type VehicularDispatch = {
   from: string
+
   to: string
   vehicle: string
   driver: string
@@ -76,7 +76,7 @@ export type Person = {
   name: PersonName
   birthdate: string
   age: number | ""
-  sex: Sex
+  gender: Gender
   contactNumber: string
   address: PersonAddress
 }
@@ -86,7 +86,7 @@ export const createEmptyPerson = (): Person => ({
   name: createEmptyPersonName(),
   birthdate: "",
   age: "",
-  sex: "",
+  gender: "",
   contactNumber: "",
   address: { phase: "", package: "", block: "", lot: "" },
 })

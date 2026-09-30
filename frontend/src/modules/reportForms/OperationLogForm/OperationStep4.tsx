@@ -39,7 +39,7 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
             <SummaryField label="Submitter Name" value={operationDetails.submitterName} />
             <SummaryField label="Date" value={operationDetails.date} />
             <SummaryField label="Nature of Operation" value={operationDetails.natureOfOperation} />
-            <SummaryField label="Caller" value={formatPersonName(operationDetails.caller)} />
+            <SummaryField label="Caller" value={formatPersonName(operationDetails.nameOfCaller)} />
             <SummaryField label="Team Assigned" value={operationDetails.teamAssigned.join(", ")} />
             <SummaryField label="Responders" value={operationDetails.responders.join(", ")} />
           </div>
@@ -83,7 +83,7 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
                 <tr key={person.id} className="border-b border-gray-200">
                   <td className="border-r border-gray-200 px-3 py-2">{formatPersonName(person.name)}</td>
                   <td className="border-r border-gray-200 px-3 py-2">{person.age}</td>
-                  <td className="border-r border-gray-200 px-3 py-2">{person.sex}</td>
+                  <td className="border-r border-gray-200 px-3 py-2">{person.gender}</td>
                   <td className="border-r border-gray-200 px-3 py-2">{person.contactNumber}</td>
                   <td className="px-3 py-2">{formatPersonAddress(person)}</td>
                 </tr>

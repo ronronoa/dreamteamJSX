@@ -110,14 +110,14 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
           <div className="flex gap-10">
             <CommonCheckbox
               label="Male"
-              checked={draft.sex === "Male"}
-              onChange={() => updateDraft({ sex: "Male" })}
+              checked={draft.gender === "Male"}
+              onChange={() => updateDraft({ gender: "Male" })}
             />
 
             <CommonCheckbox
               label="Female"
-              checked={draft.sex === "Female"}
-              onChange={() => updateDraft({ sex: "Female" })}
+              checked={draft.gender === "Female"}
+              onChange={() => updateDraft({ gender: "Female" })}
             />
           </div>
         </div>
@@ -189,7 +189,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
       </CommonFormSection>
 
       <CommonFormSection padded={false}>
-        <div className="h-full overflow-x-auto min-h-[85px]">
+        <div className="h-full overflow-x-auto min-h-21.25">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-[#180024] text-left text-white">
@@ -207,7 +207,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
                 <tr key={person.id} className="border-b border-gray-500">
                   <td className="border-r border-gray-500 px-2 py-2">{formatName(person)}</td>
                   <td className="border-r border-gray-500 px-2 py-2">{person.age}</td>
-                  <td className="border-r border-gray-500 px-2 py-2">{person.sex}</td>
+                  <td className="border-r border-gray-500 px-2 py-2">{person.gender}</td>
                   <td className="border-r border-gray-500 px-2 py-2">{person.contactNumber}</td>
                   <td className="border-r border-gray-500 px-2 py-2">{formatAddress(person)}</td>
                   <td className="px-2 text-center">
