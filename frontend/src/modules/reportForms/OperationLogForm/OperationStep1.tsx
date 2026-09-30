@@ -84,28 +84,28 @@ export default function OperationStep1({
               <CommonInput
                 variant="compact"
                 placeholder="Surname"
-                value={operationDetails.caller.surname}
+                value={operationDetails.nameOfCaller.surname}
                 onChange={(e) =>
-                  onOperationDetailsChange({ caller: { ...operationDetails.caller, surname: e.target.value } })
+                  onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, surname: e.target.value } })
                 }
               />
 
               <CommonInput
                 variant="compact"
                 placeholder="First Name"
-                value={operationDetails.caller.firstName}
+                value={operationDetails.nameOfCaller.firstName}
                 onChange={(e) =>
-                  onOperationDetailsChange({ caller: { ...operationDetails.caller, firstName: e.target.value } })
+                  onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, firstName: e.target.value } })
                 }
               />
 
               <CommonInput
                 variant="compact"
                 placeholder="M.I"
-                value={operationDetails.caller.middleInitial}
+                value={operationDetails.nameOfCaller.middleInitial}
                 onChange={(e) =>
                   onOperationDetailsChange({
-                    caller: { ...operationDetails.caller, middleInitial: e.target.value },
+                    nameOfCaller: { ...operationDetails.nameOfCaller, middleInitial: e.target.value },
                   })
                 }
               />
@@ -113,9 +113,9 @@ export default function OperationStep1({
               <CommonInput
                 variant="compact"
                 placeholder="Sfx"
-                value={operationDetails.caller.suffix}
+                value={operationDetails.nameOfCaller.suffix}
                 onChange={(e) =>
-                  onOperationDetailsChange({ caller: { ...operationDetails.caller, suffix: e.target.value } })
+                  onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, suffix: e.target.value } })
                 }
               />
             </div>

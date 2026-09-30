@@ -91,6 +91,7 @@ export default function OperationLogForm() {
     setIsSubmitting(true);
     setPinError(undefined);
 
+
     try {
       await submitOperationLog(pin, formData);
 
@@ -143,7 +144,7 @@ export default function OperationLogForm() {
       )}
 
       <CommonBackground className="min-h-screen p-4">
-        <section className="mx-auto flex  w-full max-w-6xl min-h-[calc(100vh-25rem)] sm:items-center modal-open">
+        <section className="mx-auto flex w-full max-w-6xl min-h-[calc(100vh-3rem)] sm:items-center modal-open">
           <div className="mx-auto flex w-full flex-col">
             <div className="mb-5 mt-8 text-center">
               <h1 className="text-4xl font-bold text-white">OPERATION LOG FORM</h1>
@@ -219,7 +220,7 @@ export default function OperationLogForm() {
               {step === totalSteps ? (
                 <CommonButton
                   variant={isFormComplete(formData) ? "purple" : "gray"}
-                  disabled={!isFormComplete(formData)}
+                  // disabled={!isFormComplete(formData)}
                   className="min-w-[130px]"
                   onClick={openPinModal}
                 >
