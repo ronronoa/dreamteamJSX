@@ -25,10 +25,15 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import type {
+  HourlyActivity,
+  MonthlyOperationCount,
+  PatientInterventionCount,
+} from "@/types/dashboard";
 
 // --- Data & Config ---
 
-const barData = [
+const barData: MonthlyOperationCount[] = [
   { month: "Jan", value: 30 },
   { month: "Feb", value: 48 },
   { month: "Mar", value: 28 },
@@ -38,13 +43,13 @@ const barData = [
   { month: "Jul", value: 60 },
 ];
 
-const pieData = [
+const pieData: PatientInterventionCount[] = [
   { name: "Minor", value: 35, color: "#8b5cf6" },
   { name: "Medical", value: 40, color: "#10b981" },
   { name: "Referral", value: 25, color: "#f59e0b" },
 ];
 
-const areaData = [
+const areaData: HourlyActivity[] = [
   { time: "08:00", activity: 45 },
   { time: "10:00", activity: 55 },
   { time: "12:00", activity: 70 },

@@ -6,15 +6,9 @@ import {
   Printer,
   Truck,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 import CommonButton from "@/components/common/widgets/CommonButton";
-
-interface ReportCard {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-}
+import type { ReportCard } from "@/types/reports";
 
 const reports: ReportCard[] = [
   {

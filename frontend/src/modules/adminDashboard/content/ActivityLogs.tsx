@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import DataTable from "@/components/common/DataTable";
+import TablePagination from "../component/TablePagination";
 import TableStatus from "../component/TableStatus";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import DateCell from "../component/DateCell";
@@ -61,7 +62,7 @@ const approvedLogs: ActivityLog[] = [
     date: new Date("2026-10-03T02:15:00"),
     user: "Department Head",
     userId: "USR-008",
-    role: "Adminstrator",
+    role: "Administrator",
     module: "Reports",
     action: "Generated PDF",
     recordId: "OP-067",
@@ -72,7 +73,7 @@ const approvedLogs: ActivityLog[] = [
     date: new Date("2026-10-03T02:15:00"),
     user: "Department Head",
     userId: "USR-008",
-    role: "Adminstrator",
+    role: "Administrator",
     module: "Reports",
     action: "Generated PDF",
     recordId: "OP-067",
@@ -83,7 +84,7 @@ const approvedLogs: ActivityLog[] = [
     date: new Date("2026-10-03T02:15:00"),
     user: "Department Head",
     userId: "USR-008",
-    role: "Adminstrator",
+    role: "Administrator",
     module: "Reports",
     action: "Generated PDF",
     recordId: "OP-067",
@@ -129,7 +130,6 @@ export default function ActivityLogs() {
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <DataTable
-            onRowDoubleClick={() => console.log("double click")}
             rows={approvedLogs}
             rowKey={(r) => r.id}
             columns={[
@@ -157,20 +157,7 @@ export default function ActivityLogs() {
 
           {/* Pagination */}
           <div className="flex items-center justify-center border-t border-gray-100 px-4 py-3">
-            <div className="flex items-center gap-1">
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Previous
-              </button>
-              <button className="rounded-md bg-[#5b21b6] px-3 py-1.5 text-[11px] font-semibold text-white">
-                1
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                2
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Next
-              </button>
-            </div>
+            <TablePagination />
 
           </div>
         </div>

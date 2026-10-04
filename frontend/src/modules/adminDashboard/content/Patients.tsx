@@ -5,12 +5,14 @@ import {
   Check,
   ChevronRight,
   Filter,
-  Search,
   X,
 } from "lucide-react";
 
 import DataTable from "@/components/common/DataTable";
+import TableSearch from "../component/TableSearch";
+import TablePagination from "../component/TablePagination";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import type { PatientLogRecord, PendingPatientRecord } from "@/types/patientLog";
 
 // ── Data (placeholder) ────────────────────────────────────
 
@@ -47,7 +49,7 @@ const stats: StatCardProps[] = [
   },
 ];
 
-const pendingRequests = [
+const pendingRequests: PendingPatientRecord[] = [
   {
     id: "PT-045",
     date: new Date("2026-08-29T02:15:00"),
@@ -59,9 +61,9 @@ const pendingRequests = [
   },
 ];
 
-const approvedLogs = [
+const approvedLogs: PatientLogRecord[] = [
   {
-    id: "PT-044",
+    id: "PT-043",
     date: new Date("2026-08-29T02:15:00"),
     time: "03:42 PM",
     nameOfPatient: "Bianca Del Rio",
@@ -107,7 +109,6 @@ export default function Patients() {
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <DataTable
-            onRowDoubleClick={() => console.log("double click")}
             rows={pendingRequests}
             rowKey={(r) => r.id}
             columns={[
@@ -153,17 +154,7 @@ export default function Patients() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search"
-                className="h-9 w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
-              />
-            </div>
+            <TableSearch />
             <button
               type="button"
               aria-label="Filter"
@@ -176,7 +167,6 @@ export default function Patients() {
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <DataTable
-            onRowDoubleClick={() => console.log("double click")}
             rows={approvedLogs}
             rowKey={(r) => r.id}
             columns={[
@@ -207,20 +197,7 @@ export default function Patients() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-            <div className="flex items-center gap-1">
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Previous
-              </button>
-              <button className="rounded-md bg-[#5b21b6] px-3 py-1.5 text-[11px] font-semibold text-white">
-                1
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                2
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Next
-              </button>
-            </div>
+            <TablePagination />
 
             <div className="flex items-center gap-2">
               <CommonButton compact>

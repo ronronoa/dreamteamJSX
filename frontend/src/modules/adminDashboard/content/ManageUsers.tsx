@@ -4,13 +4,15 @@ import TwoLineCell from "../component/TwoLineCell";
 
 import {
   Filter,
-  Search,
-  Pencil
+  Pencil,
 } from "lucide-react";
 
 import DataTable from "@/components/common/DataTable";
+import TableSearch from "../component/TableSearch";
+import TablePagination from "../component/TablePagination";
 import TableStatus from "../component/TableStatus";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import type { ManagedUser } from "@/types/auth";
 
 // ── Data (placeholder) ────────────────────────────────────
 
@@ -29,12 +31,12 @@ const stats: StatCardProps[] = [
 ];
 
 
-const approvedLogs = [
+const approvedLogs: ManagedUser[] = [
   {
     id: "USR-001",
     accountHolder: "Maria Santos",
     info: "Operation Lead",
-    role: "Adminstrator",
+    role: "Administrator",
     team: "Alpha",
     contact: "0917 555 0184",
     status: "Active",
@@ -43,7 +45,7 @@ const approvedLogs = [
     id: "USR-002",
     accountHolder: "Juan Dela Cruz",
     info: "Responder",
-    role: "Adminstrator",
+    role: "Administrator",
     team: "Alpha",
     contact: "0917 555 0184",
     status: "Active",
@@ -88,17 +90,7 @@ export default function ManageUsers() {
             <CommonButton compact>
               + Add New User
             </CommonButton>
-            <div className="relative">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search"
-                className="h-9 w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
-              />
-            </div>
+            <TableSearch />
             <button
               aria-label="Filter"
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
@@ -110,7 +102,6 @@ export default function ManageUsers() {
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <DataTable
-            onRowDoubleClick={() => console.log("double click")}
             rows={approvedLogs}
             rowKey={(r) => r.id}
             columns={[
@@ -143,20 +134,7 @@ export default function ManageUsers() {
 
           {/* Pagination */}
           <div className="flex items-center justify-center border-t border-gray-100 px-4 py-3">
-            <div className="flex items-center gap-1">
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Previous
-              </button>
-              <button className="rounded-md bg-[#5b21b6] px-3 py-1.5 text-[11px] font-semibold text-white">
-                1
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                2
-              </button>
-              <button className="rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50">
-                Next
-              </button>
-            </div>
+            <TablePagination />
 
           </div>
         </div>
