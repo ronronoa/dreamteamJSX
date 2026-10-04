@@ -13,9 +13,10 @@ export const ROUTES = {
     VEHICLES: "/dashboard/vehicles",
     INVENTORY: "/dashboard/inventory",
     ARCHIVES: "/dashboard/archives",
-    USERS: "/dashboard/users",
+    MANAGEUSERS: "/dashboard/manageusers",
     PROFILE: "/dashboard/profile",
     REPORTS: "/dashboard/reports",
     SETTINGS: "/dashboard/settings",
+    ACTIVITYLOGS: "/dashboard/activity",
   },
 } as const;

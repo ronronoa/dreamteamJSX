@@ -10,6 +10,7 @@ import {
   Truck,
   User,
   Users,
+  RotateCwFadingClock
 } from "lucide-react";
 
 import type { DashboardSidebarSection } from "../../components/common/layout/CommonDashboardSidebar";
@@ -29,9 +30,10 @@ const operationItems = [
 
 const archiveItem  = { label: "Archived Logs", href: D.ARCHIVES, icon: Archive };
 const profileItem  = { label: "User Profile",  href: D.PROFILE,  icon: User };
+const activityItem  = { label: "Activity Logs",  href: D.ACTIVITYLOGS,  icon: RotateCwFadingClock };
 const reportsItem  = { label: "Reports",       href: D.REPORTS,  icon: FileText };
 const settingsItem = { label: "Settings",      href: D.SETTINGS, icon: Settings };
-const usersItem    = { label: "Manage Users",  href: D.USERS,    icon: Users };
+const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Users };
 
 const defaultSections: DashboardSidebarSection[] = [];
 
@@ -49,7 +51,7 @@ const departmentHeadSections: DashboardSidebarSection[] = [
   { label: "Archives", items: [archiveItem] },
   {
     label: "Administration",
-    items: [usersItem, profileItem, reportsItem, settingsItem],
+    items: [usersItem, activityItem, profileItem, reportsItem, settingsItem],
   },
 ];
 

@@ -1,71 +1,104 @@
 import StatCard, { type StatCardProps } from "../component/StatCard";
+import type { ActivityLog } from "@/types/activityLogs";
 import TwoLineCell from "../component/TwoLineCell";
 
 
 import {
-  Filter,
-  Search,
   Pencil
 } from "lucide-react";
 
 import DataTable from "@/components/common/DataTable";
 import TableStatus from "../component/TableStatus";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import DateCell from "../component/DateCell";
+
+
+const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const activityStatusVariant: Record<
+  "Success" | "Failed" | "Warning",
+  "success" | "failed" | "warning"
+> = {
+  Success: "success",
+  Failed: "failed",
+  Warning: "warning",
+};
 
 // ── Data (placeholder) ────────────────────────────────────
 
 const stats: StatCardProps[] = [
   {
-    label: "Total Accounts",
-    value: "24",
-    sub: "Emergency portal users",
-    variant: "primary" as const,
+    label: "Total Activities",
+    value: "1,248",
+    sub: "All recorded system actions",
   },
   {
-    label: "Admins",
-    value: "3",
-    sub: "Privileged access holders",
+    label: "Today's Activities",
+    value: "36",
+    sub: DATE_FMT.format(new Date()),
+  },
+  {
+    label: "Active Users",
+    value: "12",
+    sub: "Accounts active today"
+  },
+  {
+    label: "Security / Impotant Actions",
+    value: "8",
+    sub: "Privileged actions today"
   },
 ];
 
 
-const approvedLogs = [
+const approvedLogs: ActivityLog[] = [
   {
-    id: "USR-001",
-    accountHolder: "Maria Santos",
-    info: "Operation Lead",
+    id: "ACT-001248",
+    date: new Date("2026-10-03T02:15:00"),
+    user: "Department Head",
+    userId: "USR-008",
     role: "Adminstrator",
-    team: "Alpha",
-    contact: "0917 555 0184",
-    status: "Active",
+    module: "Reports",
+    action: "Generated PDF",
+    recordId: "OP-067",
+    status: "Success",
   },
   {
-    id: "USR-002",
-    accountHolder: "Juan Dela Cruz",
-    info: "Responder",
+    id: "ACT-001247",
+    date: new Date("2026-10-03T02:15:00"),
+    user: "Department Head",
+    userId: "USR-008",
     role: "Adminstrator",
-    team: "Alpha",
-    contact: "0917 555 0184",
-    status: "Active",
+    module: "Reports",
+    action: "Generated PDF",
+    recordId: "OP-067",
+    status: "Success",
   },
   {
-    id: "USR-003",
-    accountHolder: "Ana Reyes",
-    info: "Responder",
-    role: "Team Leader",
-    team: "Beta",
-    contact: "0917 555 0184",
-    status: "Inactive",
+    id: "ACT-001246",
+    date: new Date("2026-10-03T02:15:00"),
+    user: "Department Head",
+    userId: "USR-008",
+    role: "Adminstrator",
+    module: "Reports",
+    action: "Generated PDF",
+    recordId: "OP-067",
+    status: "Success",
   },
 ];
 
 // ── Page ──────────────────────────────────────────────────
 
-export default function ManageUsers() {
+export default function ActivityLogs() {
+
   return (
     <div className="space-y-7">
       {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
         {stats.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
@@ -75,36 +108,22 @@ export default function ManageUsers() {
       {/* Approved logs */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col">
             <h2 className="text-sm font-bold text-gray-900">
-              User accounts
+              Audit Ledger
             </h2>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-              24
+            <span className="text-xs text-gray-600/60">
+              Latest activity first
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <CommonButton compact>
-              + Add New User
+            <CommonButton compact variant="gray">
+              Archive Activity Logs
             </CommonButton>
-            <div className="relative">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search"
-                className="h-9 w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
-              />
-            </div>
-            <button
-              aria-label="Filter"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-            >
-              <Filter size={14} />
-            </button>
+            <CommonButton compact>
+              Export Audit Log
+            </CommonButton>
           </div>
         </div>
 
@@ -115,21 +134,16 @@ export default function ManageUsers() {
             rowKey={(r) => r.id}
             columns={[
               { label: "ID", accessor: "id"},
-              { label: "Account Holder", render: (r) => <TwoLineCell top={r.accountHolder} bottom={r.info}/> },
-              { label: "Role", render: (r) => (
-              <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold bg-blue-400/30 text-blue-600/60`}>
-                  {r.role}
-              </span>
-              ) },
-              { label: "Team", accessor: "team" },
-              { label: "Contact", accessor: "contact" },
-              {
-                label: "Status",
-                render: (r) => (
-                  <TableStatus variant={r.status === "Active" ? "active" : "inactive"} />
-                ),
-              },
-              { label: "Actions", align: "center", render: () => (
+              { label: "Date", render: (r) => <DateCell date={r.date} /> },
+              { label: "User", render: (r) => <TwoLineCell top={r.user} bottom={r.userId}/> },
+              { label: "Role", accessor: "role" },
+              { label: "Actions", accessor: "action" },
+              { label: "Record ID", accessor: "recordId" },
+{
+  label: "Status",
+  render: (r) => <TableStatus variant={activityStatusVariant[r.status]} />,
+},
+              { label: "Details", align: "center", render: () => (
                 <button
                   type="button"
                   aria-label="Open record"

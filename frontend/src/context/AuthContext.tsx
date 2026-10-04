@@ -13,12 +13,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-/**
- * Shares the current signed-in session and authentication actions.
- *
- * Usually, use {@link useAuth} instead of consuming this context directly.
- */
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Provides authentication state to its child components.

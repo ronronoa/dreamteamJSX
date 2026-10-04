@@ -27,6 +27,7 @@ import ManagerUsers from "./modules/adminDashboard/content/ManageUsers"
 import UserProfile from "./modules/adminDashboard/content/UsersProfile"
 import Reports from "./modules/adminDashboard/content/Reports"
 import SettingsPage from "./modules/adminDashboard/content/SettingsPage"
+import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
 
 
 function App() {
@@ -80,17 +81,17 @@ useEffect(() => {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard/>} />
-          <Route path="operations" element={<Operations />} />
-          <Route path="patients" element={<Patients />} />
-          <Route path="vehicles" element={<Vehicles />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="archives" element={<Archives />} />
-          <Route path="users" element={<ManagerUsers />} />
-          <Route path="profile" element={<UserProfile />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<SettingsPage />} />
-
+          <Route index element={<Dashboard />} />
+          <Route path={ROUTES.DASHBOARD.OPERATIONS} element={<Operations />} />
+          <Route path={ROUTES.DASHBOARD.PATIENTS}   element={<Patients />} />
+          <Route path={ROUTES.DASHBOARD.VEHICLES}   element={<Vehicles />} />
+          <Route path={ROUTES.DASHBOARD.INVENTORY}  element={<Inventory />} />
+          <Route path={ROUTES.DASHBOARD.ARCHIVES}   element={<Archives />} />
+          <Route path={ROUTES.DASHBOARD.MANAGEUSERS} element={<ManagerUsers />} />
+          <Route path={ROUTES.DASHBOARD.PROFILE}    element={<UserProfile />} />
+          <Route path={ROUTES.DASHBOARD.REPORTS}    element={<Reports />} />
+          <Route path={ROUTES.DASHBOARD.SETTINGS}   element={<SettingsPage />} />
+          <Route path={ROUTES.DASHBOARD.ACTIVITYLOGS}   element={<ActivityLogs />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

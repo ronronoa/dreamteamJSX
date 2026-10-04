@@ -17,7 +17,7 @@ export default function DashboardLayout() {
   const contentName = getNavLabel(role, pathname);
 
   return (
-    <main className="min-h-screen bg-[#21052f] flex">
+    <main className="h-screen bg-[#21052f] flex">
 
       <AreYouSureModal 
         onClose={() => setIsAreYouSureModalOpen(false)}
@@ -40,7 +40,7 @@ export default function DashboardLayout() {
           contentName={contentName}
         />
 
-        <section className="flex-1 bg-white p-4 md:p-6">
+        <section className="flex-1 overflow-y-auto bg-white p-4 md:p-6">
             <Outlet/>
         </section>
       </div>
