@@ -24,7 +24,7 @@ export default function Home() {
   const { role } = session.user;
 
   if (ADMIN_ROLES.includes(role)) {
-    return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
+    return <Navigate to={ROUTES.DASHBOARD.ROOT} replace />;
   }
 
   return <Navigate to={ROUTES.CHOOSE_FORM} replace />;

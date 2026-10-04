@@ -19,7 +19,6 @@ interface LoginCardProps {
 
 export default function LoginCard({
   onForgotPassword,
-  onCreateAccount,
 }: LoginCardProps) {
 
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +54,7 @@ export default function LoginCard({
   }
 
   return (
-    <section className="w-full max-w-125 bg-[#fdf8f5] rounded-3xl shadow-2xl px-10 py-10 mb-5">
+    <section className="w-full max-w-125 bg-[#fdf8f5] rounded-3xl shadow-2xl px-10 py-10 pb-15 mb-5">
 
       <p className="text-xs font-bold tracking-widest text-orange-500 mb-1">
         BARANGAY 176-E DRRMO/BHERT —
@@ -175,23 +174,6 @@ export default function LoginCard({
           }
         </CommonButton>
 
-        <div className="flex justify-center">
-
-          <CommonButton
-            type="button"
-            onClick={onCreateAccount}
-            variant="none"
-            className="
-              shadow-none
-              font-medium!
-              text-purple-600
-              hover:text-purple-800
-            "
-          >
-            Create Account
-          </CommonButton>
-
-        </div>
 
       </form>
 

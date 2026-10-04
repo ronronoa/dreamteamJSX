@@ -12,7 +12,7 @@ export default function Title(){
       <Logo size={180} />
 
       <div>
-        <h1 className="text-white text-2xl lg:text-4xl font-bold leading-snug">
+        <h1 className="text-white text-2xl lg:text-3xl font-bold leading-snug">
           DISASTER RISK REDUCTION
           <br />
           AND MANAGEMENT OFFICE
@@ -22,11 +22,19 @@ export default function Title(){
         </p>
       </div>
 
+
       <CommonButton
         variant="someKindOfUniquePurpleToOrange"
+        className="text-xl"
+      >
+        Create Report with AI
+      </CommonButton>
+
+      <CommonButton
+        variant="orange"
         onClick={() => navigate(ROUTES.CHOOSE_FORM)}
       >
-        Create Report
+        Manual Report
       </CommonButton>
     </section>
   )
