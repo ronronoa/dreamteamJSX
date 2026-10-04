@@ -7,6 +7,6 @@ import { operationRoutes } from "./operation.routes";
 export const apiRouter = Router()
 
 apiRouter.use(authRoutes)
-apiRouter.use(pinRoutes)
+// apiRouter.use(pinRoutes) // won't need this with multer
 apiRouter.use(userRoutes)
 apiRouter.use(operationRoutes)

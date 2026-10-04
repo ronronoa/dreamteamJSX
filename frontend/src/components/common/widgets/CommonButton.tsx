@@ -3,6 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: "none" | "purple" | "orange" | "orangeLinear" | "someKindOfUniquePurpleToOrange" | "gray";
+  compact?: boolean;
 }
 
   const colors = {
@@ -10,7 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     purple: "bg-[#6d02cd] hover:bg-[#480b7f] text-white",
     orange: "bg-[#f0752a] hover:bg-[#bc4608] text-white",
     orangeLinear: "bg-linear-to-b from-[#f0752a] to-[#be4809] hover:from-[#c14a0b] text-white",
-    someKindOfUniquePurpleToOrange: "bg-linear-to-r from-purple-500 to-orange-400 hover:brightness-105 transition rounded-xl px-8 py-3 text-white font-semibold shadow-lg",
+    someKindOfUniquePurpleToOrange: "bg-linear-to-r from-purple-700 to-orange-500 hover:brightness-105 transition rounded-xl px-8 py-3 text-white font-semibold shadow-lg",
     gray: "bg-gray-200 hover:bg-gray-300 text-gray-500",
   };
 
@@ -47,15 +48,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * </CommonButton>
  * ```
  */
-export default function CommonButton({ children, variant = "purple", className = "", ...props }: ButtonProps) {
+export default function CommonButton({ children, variant = "purple", className = "", compact = false, ...props }: ButtonProps) {
 
   return (
     <button
       {...props}
       className={`
-        rounded-2xl
         ${colors[variant]}
-        px-6 py-3
+
+        ${compact ? "rounded-md px-3.5 py-1.5 text-[11px]" : "rounded-2xl px-6 py-3"}
+
         font-semibold
         shadow-md
         transition-colors

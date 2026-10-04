@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 
+import NewPatientStep1 from "../../modules/reportForms/NewPatientLogForm/NewPatientStep1"
+import NewPatientStep2 from "../../modules/reportForms/NewPatientLogForm/NewPatientStep2"
+
 import CommonBackground from "../../components/common/background/CommonBackground"
 import CommonButton from "../../components/common/widgets/CommonButton"
-
-
 
 import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
@@ -21,7 +22,7 @@ export default function PatientLogForm() {
 
   const navigate = useNavigate();
 
-  const totalSteps = 2
+  const totalSteps = 3
   const progress = (step / totalSteps) * 100
 
   const VARIANTS = {
@@ -95,6 +96,16 @@ export default function PatientLogForm() {
                   exit="exit"
                   transition={{ duration: 0.233, ease: "easeOut" }}
                 >
+
+                  {step === 1 && (
+                    <NewPatientStep1
+                    />
+                  )}
+
+                  {step === 2 && (
+                    <NewPatientStep2
+                    />
+                  )}
 
                 </motion.div>
               </AnimatePresence>

@@ -6,3 +6,5 @@ node_modules
 .windsurf
 .opencode
 /src/generated/prisma
+dist/
+uploads/

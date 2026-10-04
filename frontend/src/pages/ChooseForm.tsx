@@ -1,4 +1,4 @@
-import { Undo2, LifeBuoy, UserPlus2, Newspaper, Car } from "lucide-react";
+import { Undo2, LifeBuoy,  Newspaper, Car } from "lucide-react";
 import CommonButton from "../components/common/widgets/CommonButton";
 import CommonBackground from "../components/common/background/CommonBackground";
 import { useNavigate } from "react-router";
@@ -30,7 +30,7 @@ export default function ChooseForm() {
           </div>
 
           <div className="flex items-center justify-center">
-            <div className="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid w-full grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-3">
 
               <CommonButton
                 onClick={() => navigate((ROUTES.OPERATIONLOG_FORM))}
@@ -44,17 +44,7 @@ export default function ChooseForm() {
               </CommonButton>
 
               <CommonButton
-                onClick={() => navigate((ROUTES.NEWPATIENTLOG_FORM))}
-                variant="orange"
-                className="flex h-32 sm:h-64 w-full flex-col items-center justify-center"
-              >
-                <UserPlus2 size={200} />
-                <h1 className="mt-3 text-xl sm:text-2xl">
-                  NEW PATIENT LOG
-                </h1>
-              </CommonButton>
-
-              <CommonButton
+                onClick={() => navigate((ROUTES.PATIENTLOG_FORM))}
                 variant="orange"
                 className="flex h-32 sm:h-64 w-full flex-col items-center justify-center"
               >
@@ -63,6 +53,7 @@ export default function ChooseForm() {
                   PATIENT LOG
                 </h1>
               </CommonButton>
+
 
               <CommonButton
                 variant="orange"

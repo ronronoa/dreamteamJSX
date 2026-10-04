@@ -1,5 +1,20 @@
+export interface PendingOperationRequest {
+  id: string;
+  date: Date;
+  caller: string;
+  incident: string;
+  location: string;
+  team: string;
+}
+
+export interface OperationLogRecord extends PendingOperationRequest {
+  submittedBy: string;
+}
+
+
 // --------------------------------------------------------------
 // step1 operationDetails
+
 
 export type Gender = "Male" | "Female" | ""
 

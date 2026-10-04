@@ -13,9 +13,83 @@ interface ImageUploadProps {
   isDragging?: boolean
 }
 
-/**
- * just refer to OperationStep3.tsx for usage
- **/
+const ACCEPTED_IMAGE_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".png",
+  ".bmp",
+  ".tif",
+  ".tiff",
+  ".webp",
+]
+
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/gif",
+  "image/png",
+  "image/bmp",
+  "image/tiff",
+  "image/webp",
+]
+
+function isValidImage(file: File): boolean {
+  const extension = file.name
+    .slice(file.name.lastIndexOf("."))
+    .toLowerCase()
+
+  return (
+    ACCEPTED_IMAGE_EXTENSIONS.includes(extension) &&
+    ACCEPTED_IMAGE_TYPES.includes(file.type)
+  )
+}
+
+function getUniqueImageFiles(
+  currentImages: File[],
+  fileList: FileList | File[],
+): File[] {
+  const existingNames = new Set(
+    currentImages.map((file) => file.name)
+  )
+
+  const validFiles = Array.from(fileList).filter(isValidImage)
+
+  const newFiles = validFiles.map((file) => {
+    const lastDot = file.name.lastIndexOf(".")
+
+    const baseName =
+      lastDot === -1
+        ? file.name
+        : file.name.slice(0, lastDot)
+
+    const extension =
+      lastDot === -1
+        ? ""
+        : file.name.slice(lastDot)
+
+    let newName = file.name
+    let count = 1
+
+    while (existingNames.has(newName)) {
+      newName = `${baseName}-${count}${extension}`
+      count++
+    }
+
+    existingNames.add(newName)
+
+    if (newName === file.name) {
+      return file
+    }
+
+    return new File([file], newName, {
+      type: file.type,
+      lastModified: file.lastModified,
+    })
+  })
+
+  return [...currentImages, ...newFiles]
+}
+
 export default function ImageUpload({
   images,
   onImagesChange,
@@ -24,6 +98,7 @@ export default function ImageUpload({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [uploadError, setUploadError] = useState(false)
 
   const {
     isDragging: localIsDragging,
@@ -34,63 +109,26 @@ export default function ImageUpload({
 
   const dragging = isDragging || localIsDragging
 
-
   function handleFilesSelected(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return
+    if (!fileList || fileList.length === 0) {
+      return
+    }
 
-    const existingNames = new Set(images.map((file) => file.name))
+    const files = Array.from(fileList)
+    const hasInvalidFiles = files.some(
+      (file) => !isValidImage(file)
+    )
 
-    const newFiles = Array.from(fileList).map((file) => {
-      const lastDot = file.name.lastIndexOf(".")
+    setUploadError(hasInvalidFiles)
 
-      const baseName =
-        lastDot === -1 ? file.name : file.name.slice(0, lastDot)
-
-      const extension =
-        lastDot === -1 ? "" : file.name.slice(lastDot)
-
-      let newName = file.name
-      let count = 1
-
-      while (existingNames.has(newName)) {
-        newName = `${baseName}-${count}${extension}`
-        count++
-      }
-
-      existingNames.add(newName)
-
-      if (newName === file.name) {
-        return file
-      }
-
-      return new File([file], newName, {
-        type: file.type,
-        lastModified: file.lastModified,
-      })
-    })
-
-    onImagesChange([...images, ...newFiles])
+    onImagesChange(
+      getUniqueImageFiles(images, fileList)
+    )
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }
-
-  // function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
-  //   e.preventDefault()
-  //   setLocalIsDragging(true)
-  // }
-  //
-  // function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
-  //   e.preventDefault()
-  //   setLocalIsDragging(false)
-  // }
-  //
-  // function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-  //   e.preventDefault()
-  //   setLocalIsDragging(false)
-  //   handleFilesSelected(e.dataTransfer.files)
-  // }
 
   function removeImage(index: number) {
     onImagesChange(
@@ -124,21 +162,30 @@ export default function ImageUpload({
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept={ACCEPTED_IMAGE_EXTENSIONS.join(",")}
           className="hidden"
           onChange={(e) => handleFilesSelected(e.target.files)}
         />
       </div>
 
+      {uploadError && (
+        <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          Can't upload. Use an image in one of these formats:
+          {" "}
+          .jpg, .gif, .png, .bmp, .tif, or .webp
+        </div>
+      )}
+
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={(e) => {
+          e.preventDefault()
           handleDrop()
           handleFilesSelected(e.dataTransfer.files)
         }}
         className={`
-          min-h-[150px]
+          min-h-[300px]
           flex-1
           rounded-md
           border-2
@@ -160,7 +207,7 @@ export default function ImageUpload({
             </p>
 
             <p className="text-xs">
-              or use the Upload button
+              JPG, GIF, PNG, BMP, TIFF, or WEBP
             </p>
           </div>
         ) : (
@@ -216,42 +263,8 @@ export function addImageFiles(
   currentImages: File[],
   fileList: FileList | File[],
 ): File[] {
-  const existingNames = new Set(
-    currentImages.map((file) => file.name)
-  )
-
-  const newFiles = Array.from(fileList).map((file) => {
-    const lastDot = file.name.lastIndexOf(".")
-
-    const baseName =
-      lastDot === -1 ? file.name : file.name.slice(0, lastDot)
-
-    const extension =
-      lastDot === -1 ? "" : file.name.slice(lastDot)
-
-    let newName = file.name
-    let count = 1
-
-    while (existingNames.has(newName)) {
-      newName = `${baseName}-${count}${extension}`
-      count++
-    }
-
-    existingNames.add(newName)
-
-    if (newName === file.name) {
-      return file
-    }
-
-    return new File([file], newName, {
-      type: file.type,
-      lastModified: file.lastModified,
-    })
-  })
-
-  return [...currentImages, ...newFiles]
+  return getUniqueImageFiles(currentImages, fileList)
 }
-
 
 export function useImageDrag() {
   const [isDragging, setIsDragging] = useState(false)

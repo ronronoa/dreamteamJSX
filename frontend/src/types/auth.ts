@@ -5,6 +5,16 @@ export type Role =
 | "TEAM_LEADER"
 | "MEMBER";
 
+export interface ManagedUser {
+  id: string;
+  accountHolder: string;
+  info: string;
+  role: string;
+  team: string;
+  contact: string;
+  status: "Active" | "Inactive";
+}
+
 // export interface User {
 //   id: string;
 //   name: string;
