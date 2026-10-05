@@ -1,8 +1,5 @@
-import { Trash, PackagePlus } from "lucide-react"
-
-import CommonButton from "../../../components/common/widgets/CommonButton"
-import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonFormSection from "../component/CommonFormSection"
+import InventorySection from "../component/InventorySection"
 
 import type { InventoryItem, WaiverForm } from "@/types/patientLog"
 import { createEmptyInventoryItem } from "@/types/patientLog"
@@ -35,18 +32,6 @@ export default function PatientStep3({
   onWaiverFormChange({ images: newImages })
   }
 
-  const updateItem = (id: string, patch: Partial<InventoryItem>) => {
-    onInventoryChange(inventory.map((item) => (item.id === id ? { ...item, ...patch } : item)))
-  }
-
-  const removeItem = (id: string) => {
-    onInventoryChange(inventory.filter((item) => item.id !== id))
-  }
-
-  const addItem = () => {
-    onInventoryChange([...inventory, createEmptyInventoryItem()])
-  }
-
   return (
     <div
       onDragOver={handleDragOver}
@@ -60,61 +45,18 @@ export default function PatientStep3({
       <CommonFormSection title="WAIVER FORM">
         <div className="flex h-full flex-col">
           <ImageUpload
-  images={waiverForm.images}
-  onImagesChange={(images) => onWaiverFormChange({ images })}
+            images={waiverForm.images}
+            onImagesChange={(images) => onWaiverFormChange({ images })}
             isDragging={isDragging}
           />
         </div>
       </CommonFormSection>
 
-      <CommonFormSection title="INVENTORY">
-        <div className="flex h-full flex-col">
-          <div className="mb-2 grid grid-cols-[1fr_140px_28px] gap-2">
-            <span className="text-lg font-bold text-slate-900">Item Name</span>
-            <span className="text-right text-lg font-bold text-slate-900">Quantity</span>
-            <span />
-          </div>
-
-          <div className="flex-1 space-y-2">
-            {inventory.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1fr_140px_28px] items-center gap-2">
-                <CommonInput
-                  variant="compact"
-                  value={item.itemName}
-                  onChange={(e) => updateItem(item.id, { itemName: e.target.value })}
-                />
-
-                <CommonInput
-                  variant="compact"
-                  className="text-right"
-                  placeholder="Quantity & Type"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(item.id, { quantity: e.target.value })}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => removeItem(item.id)}
-                  className="text-red-500 transition hover:text-red-700"
-                  aria-label={`Remove ${item.itemName || "item"}`}
-                >
-                  <Trash size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <CommonButton
-            type="button"
-            variant="orange"
-            className="mt-4 flex w-full items-center justify-center gap-2"
-            onClick={addItem}
-          >
-            Add Item
-            <PackagePlus size={18} />
-          </CommonButton>
-        </div>
-      </CommonFormSection>
+      <InventorySection
+        inventory={inventory}
+        onInventoryChange={onInventoryChange}
+        createEmptyItem={createEmptyInventoryItem}
+      />
     </div>
   )
 }
