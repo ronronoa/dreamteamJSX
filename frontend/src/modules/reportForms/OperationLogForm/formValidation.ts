@@ -55,7 +55,7 @@ export const isStep2Complete = (formData: OperationLogData) => {
         person.name.firstName.trim() !== "" &&
         person.birthdate.trim() !== "" &&
         person.age !== "" &&
-        person.sex !== "" &&
+        person.gender !== "" &&
         person.contactNumber.trim() !== "" &&
         person.address.phase.trim() !== "" &&
         person.address.package.trim() !== "" &&

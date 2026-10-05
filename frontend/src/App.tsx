@@ -33,21 +33,21 @@ import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
 function App() {
   const { loading } = useAuth();
 
-useEffect(() => {
-  function preventFileDrop(event: DragEvent) {
-    if (event.dataTransfer?.types.includes("Files")) {
-      event.preventDefault();
+  useEffect(() => {
+    function preventFileDrop(event: DragEvent) {
+      if (event.dataTransfer?.types.includes("Files")) {
+        event.preventDefault();
+      }
     }
-  }
 
-  window.addEventListener("dragover", preventFileDrop);
-  window.addEventListener("drop", preventFileDrop);
+    window.addEventListener("dragover", preventFileDrop);
+    window.addEventListener("drop", preventFileDrop);
 
-  return () => {
-    window.removeEventListener("dragover", preventFileDrop);
-    window.removeEventListener("drop", preventFileDrop);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("dragover", preventFileDrop);
+      window.removeEventListener("drop", preventFileDrop);
+    };
+  }, []);
 
   return (
     <BrowserRouter>
@@ -92,6 +92,7 @@ useEffect(() => {
           <Route path={ROUTES.DASHBOARD.REPORTS}    element={<Reports />} />
           <Route path={ROUTES.DASHBOARD.SETTINGS}   element={<SettingsPage />} />
           <Route path={ROUTES.DASHBOARD.ACTIVITYLOGS}   element={<ActivityLogs />} />
+          <Route path="*" element={<Dashboard />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

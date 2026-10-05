@@ -220,7 +220,7 @@ export default function OperationLogForm() {
               {step === totalSteps ? (
                 <CommonButton
                   variant={isFormComplete(formData) ? "purple" : "gray"}
-                  // disabled={!isFormComplete(formData)}
+                  disabled={!isFormComplete(formData)}
                   className="min-w-[130px]"
                   onClick={openPinModal}
                 >

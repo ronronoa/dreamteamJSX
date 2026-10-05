@@ -23,11 +23,13 @@ const styles: Record<CommonInputVariant, { label: string; input: string }> = {
   },
 }
 
-interface CommonInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface CommonInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "autoCapitalize"> {
   label?: string
   icon?: ReactNode
   variant?: CommonInputVariant
-  showPasswordToggle?: boolean;
+  showPasswordToggle?: boolean
+  autoCapitalize?: boolean
 }
 
 /**
@@ -71,7 +73,9 @@ export default function CommonInput({
   variant = "default",
   className = "",
   showPasswordToggle = false,
+  autoCapitalize = false,
   type,
+  onChange,
   ...props
 }: CommonInputProps) {
   const { label: labelClass, input: inputClass } = styles[variant]
@@ -82,6 +86,13 @@ export default function CommonInput({
       ? "text"
       : type;
 
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (autoCapitalize) {
+      event.target.value = event.target.value.toUpperCase()
+    }
+
+    onChange?.(event)
+  }
 
   return (
     <div>
@@ -101,6 +112,7 @@ export default function CommonInput({
         <input
           {...props}
           type={inputType}
+          onChange={handleChange}
           className={`
             w-full outline-none invalid:text-gray-400
             ${icon ? "pl-10" : "pl-4"} pr-4
