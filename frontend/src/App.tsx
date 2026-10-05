@@ -28,6 +28,7 @@ import UserProfile from "./modules/adminDashboard/content/UsersProfile"
 import Reports from "./modules/adminDashboard/content/Reports"
 import SettingsPage from "./modules/adminDashboard/content/SettingsPage"
 import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
+import RoleGuard from "./components/RoleGuard"
 
 
 function App() {
@@ -77,7 +78,9 @@ function App() {
           path={ROUTES.DASHBOARD.ROOT}
           element={
             <ProtectedRoute skip={false}>
-              <DashboardLayout />
+              <RoleGuard>
+                <DashboardLayout />
+              </RoleGuard>
             </ProtectedRoute>
           }
         >

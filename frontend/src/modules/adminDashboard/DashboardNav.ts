@@ -1,4 +1,3 @@
-// src/modules/adminDashboard/component/DashboardNav.ts
 import {
   Archive,
   ClipboardList,
