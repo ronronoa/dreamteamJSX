@@ -1,6 +1,8 @@
+import type { Role } from "@/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
-import { NotFoundError } from "@/shared/errors"
+import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors"
 import type { CreateOperationInput, CreateTeamInput, OperationImageInput, PersonInvolvedInput, UpdateOperationInput, UpdateTeamInput } from "@/types/operation.types"
+import { pinService } from "./pin.service"
 
 export const operationService = {
 
@@ -116,13 +118,82 @@ export const operationService = {
         })
     },
 
-    async setStatus(operationId: string, status: "VALIDATED" | "REJECTED", validatedBy: string ) {
-        await this.findById(operationId)
-        return prisma.operationLog.update({
-            where: { operation_id: operationId },
-            data: { status, validated_by: validatedBy}
+    async authorize(operationId: string, actor: { userId: string; role: Role }, pin: string) {
+        const op = await this.findById(operationId)
+        await pinService.verifyPin(actor.userId, {pin})
+
+        const isAuto = actor.role === "DEPARTMENT_HEAD" || actor.role === "DEPUTY" || actor.role === "SUPER_ADMIN";
+        if(actor.role === "TEAM_LEADER") {
+            if(op.status !== "PENDING") throw new ConflictError(`Cannot authorize from ${op.status}`);
+
+            return prisma.$transaction(async (tx) => {
+                return tx.operationLog.update({where: { operation_id: operationId }, data: { status: "TO_REVIEW" }})
+            })
+        }
+
+        if(isAuto) {
+            if(op.status !== "PENDING" && op.status !== "TO_REVIEW") throw new ConflictError(
+                `Cannot auto-validate from ${op.status}`
+            )
+
+            return prisma.$transaction(async (tx) => {
+                const updated = await tx.operationLog.update({
+                    where: { operation_id: operationId },
+                    data: { status: "VALIDATED", validated_by: actor.userId}
+                });
+
+                await tx.operationLogEdit.create({
+                    data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Auto-validated from ${op.status}`}
+                });
+
+                return updated;
+            });
+        }
+
+        throw new ForbiddenError("Insufficient permissions.")
+    },
+
+    // async setStatus(operationId: string, status: "VALIDATED" | "REJECTED", validatedBy: string ) {
+    //     await this.findById(operationId)
+    //     return prisma.operationLog.update({
+    //         where: { operation_id: operationId },
+    //         data: { status, validated_by: validatedBy}
+    //     })
+    // },
+
+    async validate(operationId: string, actor: { userId: string; role: Role}, pin : string) {
+        const op = await this.findById(operationId)
+        if(op.status !== "TO_REVIEW" && op.status !== "PENDING") throw new ConflictError(`Cannot validate from ${op.status}`);
+
+        await pinService.verifyPin(actor.userId, { pin });
+        return prisma.$transaction(async (tx) => {
+            const updated = await tx.operationLog.update({
+                where: { operation_id: operationId },
+                data: { status: "VALIDATED", validated_by: actor.userId}
+            });
+            await tx.operationLogEdit.create({
+                data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Validated from ${op.status}`}
+            });
+            return updated;
         })
     },
+
+    async reject(operationId: string, actor: { userId: string; role: Role }, pin: string) {
+        const op = await this.findById(operationId);
+        if (op.status !== "TO_REVIEW" && op.status !== "PENDING") throw new ConflictError(`Cannot reject from ${op.status}`);
+        
+        await pinService.verifyPin(actor.userId, { pin });
+        return prisma.$transaction(async (tx) => {
+            const updated = await tx.operationLog.update({
+                where: { operation_id: operationId },
+                data: { status: "REJECTED", validated_by: actor.userId },
+            });
+            await tx.operationLogEdit.create({
+                data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Rejected from ${op.status}` },
+            });
+            return updated;
+        });
+},
 
     async delete(operationId: string) {
         await this.findById(operationId)
