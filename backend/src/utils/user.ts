@@ -8,6 +8,7 @@ export function toSafeUser(user: User) {
     email: user.email,
     role: user.role,
     phone: user.phone,
+    profileImageUrl: user.profileImageUrl,
     isActive: user.isActive,
     team_id: user.team_id,
     createdAt: user.createdAt,

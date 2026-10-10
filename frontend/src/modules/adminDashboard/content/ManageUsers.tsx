@@ -13,6 +13,7 @@ import {
 } from "@/api/manageUsers";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import EditUserModal, { type UserFormValues } from "@/components/common/modals/EditUserModal";
 import StatCard from "../component/StatCard";
 import TwoLineCell from "../component/TwoLineCell";
@@ -25,6 +26,18 @@ const roleLabels: Record<Role, string> = {
   TEAM_LEADER: "Team Leader",
   MEMBER: "Member",
 };
+
+function getDeactivationBlockReason(
+  user: ManagedUser,
+  currentUserId: string | undefined,
+  activeSuperAdminCount: number,
+) {
+  if (user.id === currentUserId) return "You cannot deactivate your own account.";
+  if (user.role === "SUPER_ADMIN" && activeSuperAdminCount <= 1) {
+    return "At least one active Super Admin account must remain.";
+  }
+  return null;
+}
 
 export default function ManageUsers() {
   const { session } = useAuth();
@@ -41,6 +54,7 @@ export default function ManageUsers() {
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [deactivateTarget, setDeactivateTarget] = useState<ManagedUser | null>(null);
 
   const loadUsers = useCallback(async () => {
     if (!accessToken) return;
@@ -92,6 +106,19 @@ export default function ManageUsers() {
 
   async function saveUser(values: UserFormValues) {
     if (!accessToken) return;
+    if (selectedUser?.id === session?.user.id && !values.isActive) {
+      setModalError("You cannot deactivate your own account.");
+      return;
+    }
+    if (
+      selectedUser?.role === "SUPER_ADMIN" &&
+      selectedUser.isActive &&
+      administratorCount <= 1 &&
+      (values.role !== "SUPER_ADMIN" || !values.isActive)
+    ) {
+      setModalError("At least one active Super Admin account must remain.");
+      return;
+    }
     setSubmitting(true);
     setModalError("");
     setSuccessMessage("");
@@ -124,7 +151,7 @@ export default function ManageUsers() {
   }
 
   async function deactivateUser(user: ManagedUser) {
-    if (!accessToken || !window.confirm(`Deactivate ${user.name}'s account? They will no longer be able to sign in.`)) return;
+    if (!accessToken) return;
     setPageError("");
     setSuccessMessage("");
     try {
@@ -141,6 +168,15 @@ export default function ManageUsers() {
 
   return (
     <>
+      <AreYouSureModal
+        open={deactivateTarget !== null}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={() => deactivateTarget ? deactivateUser(deactivateTarget) : undefined}
+        title={`Deactivate ${deactivateTarget?.name ?? "this account"}?`}
+        description="This account will no longer be able to sign in. Its records will be kept, and you can reactivate it later by editing the account."
+        confirmLabel="Deactivate account"
+        variant="danger"
+      />
       {modalOpen && <EditUserModal
         open={modalOpen}
         user={selectedUser}
@@ -199,12 +235,24 @@ export default function ManageUsers() {
                 { label: "Team", render: (user) => user.team_name ?? <span className="text-gray-400">Unassigned</span> },
                 { label: "Mobile", render: (user) => user.phone ?? <span className="text-gray-400">—</span> },
                 { label: "Status", render: (user) => <TableStatus variant={user.isActive ? "active" : "inactive"} /> },
-                { label: "Actions", align: "center", render: (user) => (
-                  <div className="flex items-center justify-center gap-3">
-                    <button type="button" aria-label={`Edit ${user.name}`} title="Edit user" onClick={() => openEditModal(user)} className="text-purple-700 hover:text-purple-900"><Pencil size={16} /></button>
-                    {user.isActive && <button type="button" aria-label={`Deactivate ${user.name}`} title="Deactivate account" onClick={() => void deactivateUser(user)} className="text-gray-500 hover:text-red-700"><UserRoundX size={16} /></button>}
-                  </div>
-                ) },
+                { label: "Actions", align: "center", render: (user) => {
+                  const blockReason = getDeactivationBlockReason(user, session?.user.id, administratorCount);
+                  return (
+                    <div className="flex items-center justify-center gap-3">
+                      <button type="button" aria-label={`Edit ${user.name}`} title="Edit user" onClick={() => openEditModal(user)} className="text-purple-700 hover:text-purple-900"><Pencil size={16} /></button>
+                      {user.isActive && <button
+                        type="button"
+                        aria-label={`Deactivate ${user.name}`}
+                        title={blockReason ?? "Deactivate account"}
+                        disabled={blockReason !== null}
+                        onClick={() => setDeactivateTarget(user)}
+                        className="text-gray-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <UserRoundX size={16} />
+                      </button>}
+                    </div>
+                  );
+                } },
               ]}
             />
           </div>

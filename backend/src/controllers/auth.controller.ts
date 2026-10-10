@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import { RefreshTokenSchema, SignInSchema, SignUpSchema } from "@/schemas/auth.schema";
+import { ChangePasswordSchema, RefreshTokenSchema, SignInSchema, SignUpSchema } from "@/schemas/auth.schema";
 import { ValidationError, UnauthorizedError } from "@/shared/errors/app-error";
 import { authService } from "@/services/auth.service";
 
@@ -116,6 +116,25 @@ export const authController = {
       res.status(204).send();
     } catch (err) {
       next(err);
+    }
+  },
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = ChangePasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        const firstIssue = getFirstZodIssue(parsed.error);
+        throw new ValidationError(firstIssue.message, {
+          [firstIssue.path.join(".")]: [firstIssue.message],
+        });
+      }
+      if (!req.user) throw new UnauthorizedError("Authentication required");
+
+      const result = await authService.changePassword(req.user.userId, parsed.data);
+      setRefreshCookie(res, result.refreshToken);
+      res.status(200).json({ accessToken: result.accessToken });
+    } catch (error) {
+      next(error);
     }
   },
 };

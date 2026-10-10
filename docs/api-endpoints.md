@@ -27,6 +27,15 @@
 | `DELETE` | `/api/users/:id` | SUPER_ADMIN | Delete user account |
 | `POST` | `/api/users/:id/reset-password` | SUPER_ADMIN | Reset password to default |
 
+Authenticated users can also manage their own profile and password:
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/users/me` | Any authenticated | Read own profile and assigned team |
+| `PATCH` | `/api/users/me` | Any authenticated | Update own name, username, email, and phone |
+| `POST` | `/api/users/me/avatar` | Any authenticated | Upload own JPG/PNG profile photo (5 MB limit) |
+| `POST` | `/api/auth/change-password` | Any authenticated | Change password after verifying the current password |
+
 **Request/Response shapes:**
 
 ```typescript
@@ -41,6 +50,18 @@
 // POST /api/users/:id/reset-password
 // Body: { newPassword: string }
 // Returns: { success: true }
+
+// PATCH /api/users/me
+// Body: { name: string, username: string, email: string, phone: string | null }
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/users/me/avatar
+// Multipart form field: image (JPG or PNG, maximum 5 MB)
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/auth/change-password
+// Body: { currentPassword: string, newPassword: string }
+// Returns: { accessToken: string } and rotates the refresh-token cookie
 ```
 
 ---

@@ -41,6 +41,13 @@ export const UpdateUserSchema = z.object({
     team_id: TeamIdSchema,
 }).refine((data) => Object.keys(data).length > 0, { message: "Provide at least one field to update" });
 
+export const UpdateOwnProfileSchema = z.object({
+    name: z.string().trim().min(1).max(50),
+    username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens"),
+    email: EmailSchema,
+    phone: PhoneSchema,
+});
+
 export const ResetPasswordSchema = z.object({
     newPassword: z.string().min(8).max(64)
 })

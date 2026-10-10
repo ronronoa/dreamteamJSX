@@ -62,6 +62,8 @@ export default function AreYouSureModal({
 
         <CommonButton
           onClick={handleConfirm}
+          variant={variant === "danger" ? "none" : "purple"}
+          className={variant === "danger" ? "bg-red-600 text-white hover:bg-red-700" : ""}
         >
           {confirmLabel}
         </CommonButton>

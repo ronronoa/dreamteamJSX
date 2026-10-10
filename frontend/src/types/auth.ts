@@ -38,6 +38,7 @@ export interface UserSession {
     name: string;
     username: string;
     email?: string | null;
+    profileImageUrl?: string | null;
     role: Role;
     createdAt: string;
     updatedAt: string;

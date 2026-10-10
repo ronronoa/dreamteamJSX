@@ -2,6 +2,8 @@ import argon2 from "argon2";
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
 import { ConflictError, UnauthorizedError } from "@/shared/errors/app-error";
 import type { SignInInput, SignUpInput } from "@/types/auth.types";
+import type { ChangePasswordSchema } from "@/schemas/auth.schema";
+import type { z } from "zod";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { prisma } from "@/lib/prisma";
 import { toSafeUser } from "@/utils/user";
@@ -109,6 +111,34 @@ export const authService = {
       accessToken,
       refreshToken,
     };
+  },
+
+  async changePassword(userId: string, data: z.infer<typeof ChangePasswordSchema>) {
+    const user = await prisma.user.findUnique({ where: { user_id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError("This account is inactive or no longer exists");
+    }
+
+    const currentPasswordMatches = await verifyPassword(data.currentPassword, user.passwordHash);
+    if (!currentPasswordMatches) {
+      throw new UnauthorizedError("Current password is incorrect");
+    }
+
+    const passwordHash = String(await hashPassword(data.newPassword));
+    const refreshToken = generateRefreshToken({ userId });
+    const tokenHash = await hashRefreshToken(refreshToken);
+    const accessToken = generateAccessToken({ userId, role: user.role });
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.user.update({ where: { user_id: userId }, data: { passwordHash } });
+      await transaction.refreshToken.deleteMany({ where: { userId } });
+      await transaction.refreshToken.create({
+        data: { userId, tokenHash, expiresAt },
+      });
+    });
+
+    return { accessToken, refreshToken };
   },
 
   async refresh(refreshToken: string) {

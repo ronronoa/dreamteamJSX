@@ -3,7 +3,8 @@ import { ConflictError, NotFoundError } from "@/shared/errors";
 import type { CreateUserInput, ResetPasswordInput, UpdateUserInput } from "@/types/user.types";
 import { hashPassword, toSafeUser } from "@/utils";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import { listManagedUsers } from "@/sql/manageUsers";
+import { listManagedUsers, lockSuperAdminChanges } from "@/sql/manageUsers";
+import type { Prisma } from "@/generated/prisma/client";
 
 export const userService = {
     async findAll() {
@@ -17,6 +18,47 @@ export const userService = {
 
         if(!user) throw new NotFoundError("User", userId)
         return toSafeUser(user)
+    },
+
+    async findProfile(userId: string) {
+        const user = await prisma.user.findUnique({
+            where: { user_id: userId },
+            include: { team: { select: { team_name: true } } },
+        });
+        if (!user) throw new NotFoundError("User", userId);
+        return {
+            ...toSafeUser(user),
+            team_name: user.team?.team_name ?? null,
+        };
+    },
+
+    async updateProfileImage(userId: string, profileImageUrl: string) {
+        const user = await prisma.user.update({
+            where: { user_id: userId },
+            data: { profileImageUrl },
+            select: { profileImageUrl: true },
+        });
+        return user.profileImageUrl;
+    },
+
+    async updateOwnProfile(userId: string, data: import("@/types/user.types").UpdateOwnProfileInput) {
+        try {
+            await prisma.user.update({
+                where: { user_id: userId },
+                data: {
+                    name: data.name,
+                    username: data.username,
+                    email: data.email,
+                    ...(data.phone !== undefined && { phone: data.phone }),
+                },
+            });
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+                throw new ConflictError("That username or email is already in use.");
+            }
+            throw error;
+        }
+        return this.findProfile(userId);
     },
 
     async create(data: CreateUserInput) {
@@ -49,17 +91,9 @@ export const userService = {
     },
 
     async update(userId: string, data: UpdateUserInput, actorId: string) {
-        const existing = await prisma.user.findUnique({ where: { user_id: userId } });
-        if (!existing) throw new NotFoundError("User", userId);
-        if (userId === actorId && data.isActive === false) {
-            throw new ConflictError("You cannot deactivate your own account.");
-        }
         if (data.team_id) {
             const team = await prisma.responseTeam.findUnique({ where: { team_id: data.team_id } });
             if (!team) throw new NotFoundError("Response team", data.team_id);
-        }
-        if (existing.role === "SUPER_ADMIN" && (data.role !== undefined && data.role !== "SUPER_ADMIN" || data.isActive === false)) {
-            await this.ensureAnotherActiveSuperAdmin(userId);
         }
 
         try {
@@ -67,10 +101,29 @@ export const userService = {
                 Object.entries(data).filter(([, value]) => value !== undefined)
             );
 
-            const user = await prisma.user.update({
-                where: { user_id: userId },
-                data: filteredData
-            })
+            const user = await prisma.$transaction(async (transaction) => {
+                if (data.role !== undefined || data.isActive !== undefined) {
+                    await lockSuperAdminChanges(transaction);
+                }
+
+                const existing = await transaction.user.findUnique({ where: { user_id: userId } });
+                if (!existing) throw new NotFoundError("User", userId);
+                if (userId === actorId && data.isActive === false) {
+                    throw new ConflictError("You cannot deactivate your own account.");
+                }
+
+                const removingActiveSuperAdmin = existing.role === "SUPER_ADMIN" && existing.isActive && (
+                    data.role !== undefined && data.role !== "SUPER_ADMIN" || data.isActive === false
+                );
+                if (removingActiveSuperAdmin) {
+                    await this.ensureAnotherActiveSuperAdmin(userId, transaction);
+                }
+
+                return transaction.user.update({
+                    where: { user_id: userId },
+                    data: filteredData,
+                });
+            });
             return toSafeUser(user)
         } catch (err) {
             if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
@@ -93,16 +146,24 @@ export const userService = {
     },
 
     async deactivate(userId: string, actorId: string) {
-        const user = await prisma.user.findUnique({ where: { user_id: userId } });
-        if (!user) throw new NotFoundError("User", userId);
-        if (userId === actorId) throw new ConflictError("You cannot deactivate your own account.");
-        if (user.role === "SUPER_ADMIN" && user.isActive) await this.ensureAnotherActiveSuperAdmin(userId);
-        await prisma.user.update({ where: { user_id: userId }, data: { isActive: false } });
+        await prisma.$transaction(async (transaction) => {
+            await lockSuperAdminChanges(transaction);
+            const user = await transaction.user.findUnique({ where: { user_id: userId } });
+            if (!user) throw new NotFoundError("User", userId);
+            if (userId === actorId) throw new ConflictError("You cannot deactivate your own account.");
+            if (user.role === "SUPER_ADMIN" && user.isActive) {
+                await this.ensureAnotherActiveSuperAdmin(userId, transaction);
+            }
+            await transaction.user.update({ where: { user_id: userId }, data: { isActive: false } });
+        });
         return { success: true };
     },
 
-    async ensureAnotherActiveSuperAdmin(excludedUserId: string) {
-        const count = await prisma.user.count({
+    async ensureAnotherActiveSuperAdmin(
+        excludedUserId: string,
+        database: Pick<Prisma.TransactionClient, "user"> = prisma,
+    ) {
+        const count = await database.user.count({
             where: { role: "SUPER_ADMIN", isActive: true, user_id: { not: excludedUserId } },
         });
         if (count === 0) throw new ConflictError("At least one active Super Admin account must remain.");

@@ -33,3 +33,15 @@ export async function listManagedUsers() {
     ORDER BY u."createdAt" DESC, u."name" ASC
   `);
 }
+
+/** Lock active Super Admin rows while role or account-status changes are checked. */
+export async function lockSuperAdminChanges(transaction: Prisma.TransactionClient) {
+  await transaction.$queryRaw<Array<{ user_id: string }>>(Prisma.sql`
+    SELECT "user_id"::text AS user_id
+    FROM "User"
+    WHERE "role" = 'SUPER_ADMIN'::"Role"
+      AND "isActive" = true
+    ORDER BY "user_id"
+    FOR UPDATE
+  `);
+}

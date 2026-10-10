@@ -23,4 +23,12 @@ export const SignInSchema = z.object({
 
 export const RefreshTokenSchema = z.object({
     refreshToken: z.string().min(1)
-})
+});
+
+export const ChangePasswordSchema = z.object({
+    currentPassword: z.string().min(1).max(64),
+    newPassword: z.string().min(8).max(64),
+}).refine((data) => data.currentPassword !== data.newPassword, {
+    path: ["newPassword"],
+    message: "New password must be different from the current password",
+});

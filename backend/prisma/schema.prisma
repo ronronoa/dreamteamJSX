@@ -66,6 +66,7 @@ model User {
   pinLockedUntil    DateTime?
   role              Role      @default(MEMBER)
   phone             String?
+  profileImageUrl   String?
   isActive          Boolean   @default(true)
   team_id           String?
   createdAt         DateTime  @default(now())

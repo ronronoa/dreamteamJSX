@@ -3,6 +3,7 @@ import { Bell, CalendarDays, Menu } from "lucide-react";
 import UserAvatar from "@/components/common/widgets/UserAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
+import { getProfilePhotoSource } from "@/api/profile";
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
@@ -15,7 +16,7 @@ export default function DashboardHeader({ onMenuClick, contentName }: DashboardH
 
   const initials = getInitials(user?.name);
   const displayName = user?.name ?? "Guest";
-  const displayRole = formatRole(user?.role);
+  // const displayRole = formatRole(user?.role);
 
   const [now] = useState(() => new Date());
 
@@ -57,12 +58,17 @@ export default function DashboardHeader({ onMenuClick, contentName }: DashboardH
         </button>
 
         <div className="flex items-center gap-2">
-          <UserAvatar initials={initials} variant="onDark" />
+          <UserAvatar
+            initials={initials}
+            name={displayName}
+            imageUrl={getProfilePhotoSource(user?.profileImageUrl ?? null)}
+            variant="onDark"
+          />
 
-          <div className="hidden lg:block">
-            <p className="text-xs font-semibold">{displayName}</p>
-            <p className="text-[9px] text-white/50">{displayRole}</p>
-          </div>
+          {/* <div className="hidden lg:block"> */}
+          {/*   <p className="text-xs font-semibold">{displayName}</p> */}
+          {/*   <p className="text-[9px] text-white/50">{displayRole}</p> */}
+          {/* </div> */}
         </div>
       </div>
     </header>
@@ -78,14 +84,14 @@ function getInitials(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const roleLabels: Record<string, string> = {
-  SUPER_ADMIN:     "Super Admin",
-  DEPARTMENT_HEAD: "Department Head",
-  DEPUTY:          "Deputy",
-  TEAM_LEADER:     "Team Leader",
-  MEMBER:          "Member",
-};
-
-function formatRole(role?: string): string {
-  return role ? (roleLabels[role] ?? role) : "—";
-}
+// const roleLabels: Record<string, string> = {
+//   SUPER_ADMIN:     "Super Admin",
+//   DEPARTMENT_HEAD: "Department Head",
+//   DEPUTY:          "Deputy",
+//   TEAM_LEADER:     "Team Leader",
+//   MEMBER:          "Member",
+// };
+//
+// function formatRole(role?: string): string {
+//   return role ? (roleLabels[role] ?? role) : "—";
+// }

@@ -1,4 +1,4 @@
-import { API_URL } from "./config";
+import { apiFetch } from "./apiFetch";
 import type { ManagedUser, Role } from "@/types/auth";
 
 export interface ManagedUserInput {
@@ -17,7 +17,7 @@ export interface TeamOption {
 }
 
 async function request<T>(path: string, accessToken: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await apiFetch(path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
