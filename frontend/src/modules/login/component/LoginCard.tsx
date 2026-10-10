@@ -22,7 +22,7 @@ export default function LoginCard({
 }: LoginCardProps) {
 
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
@@ -37,10 +37,10 @@ export default function LoginCard({
     setSubmitting(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(identifier, password);
 
       if (!success) {
-        setError("Invalid username or password.");
+        setError("Invalid email/username or password.");
         return;
 
       }
@@ -67,12 +67,14 @@ export default function LoginCard({
       <form onSubmit={handleSubmit} className="space-y-4">
 
         <CommonInput
-          id="name"
-          label="Username"
-          value={username}
+          id="login-identifier"
+          label="Email or username"
+          value={identifier}
           type="text"
-          placeholder="username"
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="name@example.com or username"
+          onChange={(e) => setIdentifier(e.target.value)}
+          autoComplete="username"
+          required
           icon={<Mail size={18} />}
           className="border-none"
         />
@@ -102,6 +104,8 @@ export default function LoginCard({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••"
+              autoComplete="current-password"
+              required
               className="
                 w-full rounded-xl bg-white
                 pl-10 pr-11 py-3

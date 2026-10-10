@@ -7,7 +7,7 @@
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
 | `POST` | `/api/auth/signup` | Public (rate limited) | Register new user |
-| `POST` | `/api/auth/signin` | Public (rate limited) | Login, returns JWT tokens |
+| `POST` | `/api/auth/signin` | Public (rate limited) | Login with email or username, returns JWT tokens |
 | `POST` | `/api/auth/refresh` | Public (rate limited) | Refresh access token |
 | `POST` | `/api/auth/logout` | Any authenticated | Revoke refresh token |
 | `POST` | `/api/auth/set-pin` | Any authenticated | Set or change PIN (4-6 digits) |
@@ -31,15 +31,16 @@
 
 ```typescript
 // POST /api/users
-// Body: { name: string, username: string, password: string, role: Role }
+// Body: { name: string, username: string, email: string, password: string, role?: Role, phone?: string, team_id?: string, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // PATCH /api/users/:id
-// Body: { name?: string, role?: Role }
+// Body: { name?: string, username?: string, email?: string, role?: Role, phone?: string | null, team_id?: string | null, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // POST /api/users/:id/reset-password
-// Returns: { message: string, defaultPassword: string }
+// Body: { newPassword: string }
+// Returns: { success: true }
 ```
 
 ---

@@ -2,16 +2,12 @@ import { API_URL } from "./config";
 import type { UserSession } from "../types/auth";
 
 
-/*
- * TODO:
- * Change later for backend endpoint
- */
-export async function login(username: string, password: string): Promise<UserSession | null>{
+export async function login(identifier: string, password: string): Promise<UserSession | null>{
   const res = await fetch(`${API_URL}/auth/signin`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     credentials: "include",
-    body: JSON.stringify({username, password}),
+    body: JSON.stringify({identifier, password}),
   });
   if (!res.ok) return null;
   return await res.json();

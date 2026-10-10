@@ -26,6 +26,7 @@ export const authService = {
         data: {
           name: data.name,
           username: data.username,
+          ...(data.email && { email: data.email }),
           passwordHash: String(hashedPassword),
         },
       });
@@ -39,7 +40,7 @@ export const authService = {
         userId: user.user_id,
       });
 
-      const tokenHash = hashRefreshToken(refreshToken);
+      const tokenHash = await hashRefreshToken(refreshToken);
 
       await prisma.refreshToken.create({
         data: {
@@ -56,16 +57,19 @@ export const authService = {
       };
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
-        throw new ConflictError(`username ${data.username} is already registered.`);
+        throw new ConflictError("Username or email is already in use.");
       }
       throw err;
     }
   },
 
   async signIn(data: SignInInput) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: {
-        username: data.username,
+        OR: [
+          { username: data.identifier },
+          { email: data.identifier.toLowerCase() },
+        ],
       },
     });
 
@@ -77,7 +81,7 @@ export const authService = {
 
     const passwordValid = await verifyPassword(data.password, user.passwordHash);
 
-    if (!passwordValid) {
+    if (!passwordValid || !user.isActive) {
       throw new UnauthorizedError("Invalid username or password");
     }
 
@@ -131,6 +135,11 @@ export const authService = {
       throw new UnauthorizedError("Refresh token is invalid or has been revoked");
     }
 
+    if (!storedToken.user.isActive) {
+      await prisma.refreshToken.deleteMany({ where: { userId: storedToken.userId } });
+      throw new UnauthorizedError("This account is inactive");
+    }
+
     if (storedToken.expiresAt < new Date()) {
       await prisma.refreshToken.delete({
         where: {
@@ -172,8 +181,8 @@ export const authService = {
       }),
     ]);
 
-    return {
-      user: toSafeUser(storedToken.user), // added because whenever webiste gets refreshed theres no other way to get user: {...} other than signIn() or signUp()      
+      return {
+        user: toSafeUser(storedToken.user),
       accessToken,
       refreshToken: newRefreshToken,
     };

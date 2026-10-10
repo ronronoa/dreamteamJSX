@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedError, ForbiddenError } from "@/shared/errors/app-error";
 import { parseAccessToken } from "@/utils/token";
+import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/client";
 
 declare global {
@@ -11,7 +12,7 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return next(new UnauthorizedError("Missing or malformed authorization header"));
@@ -24,8 +25,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
     return next(new UnauthorizedError(result.error.message));
   }
 
-  req.user = result.data;
-  next();
+  try {
+    const user = await prisma.user.findUnique({
+      where: { user_id: result.data.userId },
+      select: { user_id: true, role: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      return next(new UnauthorizedError("This account is inactive or no longer exists"));
+    }
+    req.user = { userId: user.user_id, role: user.role };
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 export function requireRole(...allowedRoles: Role[]) {

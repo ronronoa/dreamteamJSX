@@ -55,7 +55,7 @@ export const userController = {
         try {
             const { id } = validateOrThrow(UserIdParamSchema.safeParse(req.params))
             const data = validateOrThrow(UpdateUserSchema.safeParse(req.body))
-            const user = await userService.update(id, data)
+            const user = await userService.update(id, data, req.user!.userId)
 
             res.status(200).json({ user })
         } catch (err) {
@@ -78,7 +78,7 @@ export const userController = {
     async delete(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = validateOrThrow(UserIdParamSchema.safeParse(req.params))
-            const result = await userService.delete(id)
+            const result = await userService.deactivate(id, req.user!.userId)
 
             res.status(200).json(result)
         } catch (err) {

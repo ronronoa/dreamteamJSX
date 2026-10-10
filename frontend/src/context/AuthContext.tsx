@@ -8,7 +8,7 @@ import type { UserSession } from "../types/auth";
 interface AuthContextType {
   session: UserSession | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -27,8 +27,8 @@ export function AuthProvider({children}: {children: ReactNode}){
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function login(username: string, password: string) {
-    const data = await apiLogin(username, password);
+  async function login(identifier: string, password: string) {
+    const data = await apiLogin(identifier, password);
     if (!data) return false;
     setSession(data);
     return true;
