@@ -1,9 +1,10 @@
-import { CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, OperatioStatusSchema, PersonInvolvedIdSchema, PersonInvolvedSchema, SetOperationStatusSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema } from "@/schemas/operation.schema";
+import { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, OperatioStatusSchema, PersonInvolvedIdSchema, PersonInvolvedSchema, RejectOperationSchema, SetOperationStatusSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema";
 import { operationService } from "@/services/operation.service";
-import { validateOrThrow } from "@/shared/utils";
+import { validate, validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
 
 export const operationController = {
+
     // Response Team
     async listTeams(_req: Request, res: Response, next: NextFunction) {
         try {
@@ -111,16 +112,47 @@ export const operationController = {
         }
     },
 
-    async setStatus(req: Request, res: Response, next: NextFunction) {
+    async authorize(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
-            const { status } = validateOrThrow(SetOperationStatusSchema.safeParse(req.body))
-            const operation = await operationService.setStatus(id, status, req.user!.userId)
-            res.status(200).json({operation})
+            const { pin } = validateOrThrow(AuthorizeOperationSchema.safeParse(req.body))
+            const operation = await operationService.authorize(id, req.user!, pin)
+            res.status(200).json({ operation })
         } catch (err) {
             next(err)
         }
     },
+
+    async validate(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
+            const { pin } = validateOrThrow(ValidateOperationSchema.safeParse(req.body))
+            const operation = await operationService.validate(id, req.user!, pin)
+            res.status(200).json({operation})
+        } catch (err) {
+            next(err)            
+        }
+    },
+
+    async reject(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params));
+            const { pin } = validateOrThrow(RejectOperationSchema.safeParse(req.body));
+            const operation = await operationService.reject(id, req.user!, pin);
+            res.status(200).json({ operation });
+        } catch (err) { next(err); }
+},
+
+    // async setStatus(req: Request, res: Response, next: NextFunction) {
+    //     try {
+    //         const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
+    //         const { status } = validateOrThrow(SetOperationStatusSchema.safeParse(req.body))
+    //         const operation = await operationService.setStatus(id, status, req.user!.userId)
+    //         res.status(200).json({operation})
+    //     } catch (err) {
+    //         next(err)
+    //     }
+    // },
 
     async delete(req: Request, res: Response, next: NextFunction) {
         try {

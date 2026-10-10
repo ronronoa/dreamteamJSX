@@ -19,6 +19,7 @@ enum Role {
 
 enum OperationStatus {
   PENDING
+  TO_REVIEW
   VALIDATED
   REJECTED
   ARCHIVED

@@ -89,8 +89,9 @@ operationRoutes.delete("/operations/:id", requireAuth, requireRole("SUPER_ADMIN"
 // Status Transition
 
 operationRoutes.post("/operations/:id/submit", requireAuth, operationController.submit)
-operationRoutes.post("/operations/:id/validate", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.setStatus)
-operationRoutes.post("/operations/:id/reject", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.setStatus)
+operationRoutes.post("/operations/:id/authorize", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), operationController.authorize)
+operationRoutes.post("/operations/:id/validate", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.validate)
+operationRoutes.post("/operations/:id/reject", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject)
 
 // Persons Involved
 operationRoutes.post("/operations/:id/persons", requireAuth, operationController.addPerson)

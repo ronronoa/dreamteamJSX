@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-const OperationStatusEnum = z.enum(["PENDING", "VALIDATED", "REJECTED", "ARCHIVED"])
+const OperationStatusEnum = z.enum(["PENDING", "TO_REVIEW" ,"VALIDATED", "REJECTED", "ARCHIVED"])
 const GenderEnum = z.enum(["MALE", "FEMALE"])
 
 export const CreateTeamSchema = z.object({
@@ -137,6 +137,18 @@ export const operationLogsFormSchema = z.object({
   operationDescription: z.string(),
   inventory: z.array(inventoryItemSchema),
   files: z.any().optional(),
+})
+
+export const AuthorizeOperationSchema = z.object({
+    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
+})
+
+export const ValidateOperationSchema = z.object({
+    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
+})
+
+export const RejectOperationSchema = z.object({
+    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
 })
 
 export type OperationLogsFormType = z.infer<typeof operationLogsFormSchema>;
