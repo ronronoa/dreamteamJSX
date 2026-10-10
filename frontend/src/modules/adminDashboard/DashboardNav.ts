@@ -18,20 +18,20 @@ import { ROUTES } from "../../routes";
 
 const D = ROUTES.DASHBOARD;
 
-const dashboardItem = { label: "Dashboard", href: D.ROOT, icon: LayoutDashboard };
+const dashboardItem = { label: "TODO:Dashboard", href: D.ROOT, icon: LayoutDashboard };
 
 const operationItems = [
-  { label: "Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
-  { label: "Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
-  { label: "Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
-  { label: "Inventory",             href: D.INVENTORY,  icon: Package },
+  { label: "TODO:Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
+  { label: "TODO:Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
+  { label: "TODO:Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
+  { label: "TODO:Inventory",             href: D.INVENTORY,  icon: Package },
 ];
 
-const archiveItem  = { label: "Archived Logs", href: D.ARCHIVES, icon: Archive };
+const archiveItem  = { label: "TODO:Archived Logs", href: D.ARCHIVES, icon: Archive };
 const profileItem  = { label: "User Profile",  href: D.PROFILE,  icon: User };
-const activityItem  = { label: "Activity Logs",  href: D.ACTIVITYLOGS,  icon: RotateCwFadingClock };
-const reportsItem  = { label: "Reports",       href: D.REPORTS,  icon: FileText };
-const settingsItem = { label: "Settings",      href: D.SETTINGS, icon: Settings };
+const activityItem  = { label: "TODO:Activity Logs",  href: D.ACTIVITYLOGS,  icon: RotateCwFadingClock };
+const reportsItem  = { label: "TODO:Reports",       href: D.REPORTS,  icon: FileText };
+const settingsItem = { label: "TODO:Settings",      href: D.SETTINGS, icon: Settings };
 const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Users };
 
 const defaultSections: DashboardSidebarSection[] = [];
@@ -50,7 +50,7 @@ const departmentHeadSections: DashboardSidebarSection[] = [
   { label: "Archives", items: [archiveItem] },
   {
     label: "Administration",
-    items: [usersItem, activityItem, profileItem, reportsItem, settingsItem],
+    items: [activityItem, profileItem, reportsItem, settingsItem],
   },
 ];
 
@@ -59,7 +59,7 @@ const departmentDeputySections: DashboardSidebarSection[] = [
   { label: "Operations", items: operationItems },
   {
     label: "Administration",
-    items: [usersItem, profileItem, reportsItem, settingsItem],
+    items: [profileItem, reportsItem, settingsItem],
   },
 ];
 

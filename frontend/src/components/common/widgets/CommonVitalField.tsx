@@ -5,7 +5,7 @@ type CommonVitalFieldProps = {
   label: string
   /** Extra characters permitted in addition to digits (e.g. "/" for BP) */
   allow?: string
-} & InputHTMLAttributes<HTMLInputElement>
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "autoCapitalize">
 
 const MAX = 999
 

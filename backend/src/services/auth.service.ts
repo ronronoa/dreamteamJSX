@@ -2,6 +2,8 @@ import argon2 from "argon2";
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
 import { ConflictError, UnauthorizedError } from "@/shared/errors/app-error";
 import type { SignInInput, SignUpInput } from "@/types/auth.types";
+import type { ChangePasswordSchema } from "@/schemas/auth.schema";
+import type { z } from "zod";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { prisma } from "@/lib/prisma";
 import { toSafeUser } from "@/utils/user";
@@ -26,6 +28,7 @@ export const authService = {
         data: {
           name: data.name,
           username: data.username,
+          ...(data.email && { email: data.email }),
           passwordHash: String(hashedPassword),
         },
       });
@@ -39,7 +42,7 @@ export const authService = {
         userId: user.user_id,
       });
 
-      const tokenHash = hashRefreshToken(refreshToken);
+      const tokenHash = await hashRefreshToken(refreshToken);
 
       await prisma.refreshToken.create({
         data: {
@@ -56,16 +59,19 @@ export const authService = {
       };
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
-        throw new ConflictError(`username ${data.username} is already registered.`);
+        throw new ConflictError("Username or email is already in use.");
       }
       throw err;
     }
   },
 
   async signIn(data: SignInInput) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: {
-        username: data.username,
+        OR: [
+          { username: data.identifier },
+          { email: data.identifier.toLowerCase() },
+        ],
       },
     });
 
@@ -77,7 +83,7 @@ export const authService = {
 
     const passwordValid = await verifyPassword(data.password, user.passwordHash);
 
-    if (!passwordValid) {
+    if (!passwordValid || !user.isActive) {
       throw new UnauthorizedError("Invalid username or password");
     }
 
@@ -107,6 +113,34 @@ export const authService = {
     };
   },
 
+  async changePassword(userId: string, data: z.infer<typeof ChangePasswordSchema>) {
+    const user = await prisma.user.findUnique({ where: { user_id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError("This account is inactive or no longer exists");
+    }
+
+    const currentPasswordMatches = await verifyPassword(data.currentPassword, user.passwordHash);
+    if (!currentPasswordMatches) {
+      throw new UnauthorizedError("Current password is incorrect");
+    }
+
+    const passwordHash = String(await hashPassword(data.newPassword));
+    const refreshToken = generateRefreshToken({ userId });
+    const tokenHash = await hashRefreshToken(refreshToken);
+    const accessToken = generateAccessToken({ userId, role: user.role });
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.user.update({ where: { user_id: userId }, data: { passwordHash } });
+      await transaction.refreshToken.deleteMany({ where: { userId } });
+      await transaction.refreshToken.create({
+        data: { userId, tokenHash, expiresAt },
+      });
+    });
+
+    return { accessToken, refreshToken };
+  },
+
   async refresh(refreshToken: string) {
     const parsed = parseRefreshToken(refreshToken);
 
@@ -129,6 +163,11 @@ export const authService = {
 
     if (!storedToken) {
       throw new UnauthorizedError("Refresh token is invalid or has been revoked");
+    }
+
+    if (!storedToken.user.isActive) {
+      await prisma.refreshToken.deleteMany({ where: { userId: storedToken.userId } });
+      throw new UnauthorizedError("This account is inactive");
     }
 
     if (storedToken.expiresAt < new Date()) {
@@ -172,8 +211,8 @@ export const authService = {
       }),
     ]);
 
-    return {
-      user: toSafeUser(storedToken.user), // added because whenever webiste gets refreshed theres no other way to get user: {...} other than signIn() or signUp()      
+      return {
+        user: toSafeUser(storedToken.user),
       accessToken,
       refreshToken: newRefreshToken,
     };

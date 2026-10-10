@@ -7,7 +7,7 @@
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
 | `POST` | `/api/auth/signup` | Public (rate limited) | Register new user |
-| `POST` | `/api/auth/signin` | Public (rate limited) | Login, returns JWT tokens |
+| `POST` | `/api/auth/signin` | Public (rate limited) | Login with email or username, returns JWT tokens |
 | `POST` | `/api/auth/refresh` | Public (rate limited) | Refresh access token |
 | `POST` | `/api/auth/logout` | Any authenticated | Revoke refresh token |
 | `POST` | `/api/auth/set-pin` | Any authenticated | Set or change PIN (4-6 digits) |
@@ -27,19 +27,41 @@
 | `DELETE` | `/api/users/:id` | SUPER_ADMIN | Delete user account |
 | `POST` | `/api/users/:id/reset-password` | SUPER_ADMIN | Reset password to default |
 
+Authenticated users can also manage their own profile and password:
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/users/me` | Any authenticated | Read own profile and assigned team |
+| `PATCH` | `/api/users/me` | Any authenticated | Update own name, username, email, and phone |
+| `POST` | `/api/users/me/avatar` | Any authenticated | Upload own JPG/PNG profile photo (5 MB limit) |
+| `POST` | `/api/auth/change-password` | Any authenticated | Change password after verifying the current password |
+
 **Request/Response shapes:**
 
 ```typescript
 // POST /api/users
-// Body: { name: string, username: string, password: string, role: Role }
+// Body: { name: string, username: string, email: string, password: string, role?: Role, phone?: string, team_id?: string, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // PATCH /api/users/:id
-// Body: { name?: string, role?: Role }
+// Body: { name?: string, username?: string, email?: string, role?: Role, phone?: string | null, team_id?: string | null, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // POST /api/users/:id/reset-password
-// Returns: { message: string, defaultPassword: string }
+// Body: { newPassword: string }
+// Returns: { success: true }
+
+// PATCH /api/users/me
+// Body: { name: string, username: string, email: string, phone: string | null }
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/users/me/avatar
+// Multipart form field: image (JPG or PNG, maximum 5 MB)
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/auth/change-password
+// Body: { currentPassword: string, newPassword: string }
+// Returns: { accessToken: string } and rotates the refresh-token cookie
 ```
 
 ---
