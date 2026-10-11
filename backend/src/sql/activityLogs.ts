@@ -2,6 +2,8 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ActivityLogInput, ActivityLogsQuery } from "@/types/activityLogs.types";
 
+const ACTIVITY_TIME_ZONE = "Asia/Manila";
+
 export interface ActivityLogRow {
   id: string;
   date: Date;
@@ -18,7 +20,8 @@ export interface ActivityLogRow {
 export interface ActivityOverview {
   totalCount: number;
   todayCount: number;
-  activeUserCount: number;
+  currentActiveCount: number;
+  loggedInTodayCount: number;
   importantActionCount: number;
 }
 
@@ -44,7 +47,7 @@ export async function createActivityLog(data: ActivityLogInput) {
     data: {
       activity_code: activityCode,
       actor_id: actor?.user_id ?? null,
-      actor_name: actor?.name ?? "Unauthenticated user",
+      actor_name: actor?.name ?? data.actorName ?? "Unauthenticated user",
       actor_username: actor?.username ?? null,
       actor_role: actor?.role ?? null,
       module: data.module,
@@ -73,27 +76,50 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
         COALESCE(log."details", '') AS details
       FROM "ActivityLog" AS log
       WHERE log."archivedAt" IS NULL
+        AND log."actor_name" <> 'Unauthenticated user'
       ORDER BY log."createdAt" DESC, log."activity_id" DESC
       LIMIT ${query.pageSize}
       OFFSET ${offset}
     `,
     prisma.$queryRaw<ActivityOverview[]>`
+      WITH local_day AS (
+        SELECT (CURRENT_TIMESTAMP AT TIME ZONE ${ACTIVITY_TIME_ZONE})::date AS day
+      ), utc_day_bounds AS (
+        SELECT
+          (day::timestamp AT TIME ZONE ${ACTIVITY_TIME_ZONE}) AT TIME ZONE 'UTC' AS starts_at,
+          ((day + 1)::timestamp AT TIME ZONE ${ACTIVITY_TIME_ZONE}) AT TIME ZONE 'UTC' AS ends_at
+        FROM local_day
+      )
       SELECT
         COUNT(*)::int AS "totalCount",
         COUNT(*) FILTER (
-          WHERE log."createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)
+          WHERE log."createdAt" >= bounds.starts_at
+            AND log."createdAt" < bounds.ends_at
         )::int AS "todayCount",
         COUNT(DISTINCT log."actor_id") FILTER (
-          WHERE log."createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)
+          WHERE log."createdAt" >= bounds.starts_at
+            AND log."createdAt" < bounds.ends_at
+            AND log."module" = 'Authentication'
+            AND log."action" IN ('Signed in', 'Created account')
+        )::int AS "loggedInTodayCount",
+        COUNT(DISTINCT log."actor_id") FILTER (
+          WHERE log."createdAt" >= bounds.starts_at
+            AND log."createdAt" < bounds.ends_at
+            AND log."module" = 'Authentication'
+            AND log."action" IN ('Signed in', 'Created account')
             AND users."isActive" = true
-        )::int AS "activeUserCount",
+            AND users."last_active_at" >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - INTERVAL '30 minutes'
+        )::int AS "currentActiveCount",
         COUNT(*) FILTER (
-          WHERE log."createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)
+          WHERE log."createdAt" >= bounds.starts_at
+            AND log."createdAt" < bounds.ends_at
             AND log."module" IN ('Users', 'Authentication')
         )::int AS "importantActionCount"
       FROM "ActivityLog" AS log
       LEFT JOIN "User" AS users ON users."user_id" = log."actor_id"
+      CROSS JOIN utc_day_bounds AS bounds
       WHERE log."archivedAt" IS NULL
+        AND log."actor_name" <> 'Unauthenticated user'
     `,
   ]);
 
@@ -102,7 +128,8 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
     stats: statsRows[0] ?? {
       totalCount: 0,
       todayCount: 0,
-      activeUserCount: 0,
+      currentActiveCount: 0,
+      loggedInTodayCount: 0,
       importantActionCount: 0,
     },
     page: query.page,
@@ -162,6 +189,7 @@ export async function exportActivityLogs() {
       COALESCE(log."details", '') AS details
     FROM "ActivityLog" AS log
     WHERE log."archivedAt" IS NULL
+      AND log."actor_name" <> 'Unauthenticated user'
     ORDER BY log."createdAt" DESC, log."activity_id" DESC
   `;
 }

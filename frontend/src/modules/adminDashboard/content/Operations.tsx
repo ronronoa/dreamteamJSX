@@ -40,6 +40,7 @@ export default function Operations() {
     reviewTarget,
     pinError,
     pdfConfirmationOpen,
+    archiveConfirmationOpen,
     stats,
     pendingRows,
     reviewedRows,
@@ -48,6 +49,7 @@ export default function Operations() {
     visibleReviewedRows,
     canReview,
     canReject,
+    canArchive,
     setFilterOpen,
     setPendingPage,
     setReviewedPage,
@@ -56,12 +58,14 @@ export default function Operations() {
     setReviewTarget,
     setPinError,
     setPdfConfirmationOpen,
+    setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
     openReview,
     handleReview,
     toggleSelection,
     printSelectedRecords,
+    archiveSelectedRecords,
   } = useOperationsDashboard();
 
   const pendingCountLabel = pendingRows.length === 1 ? "1 request" : `${pendingRows.length} requests`;
@@ -84,6 +88,15 @@ export default function Operations() {
         title="Create PDF for selected records?"
         description={`${selectedRows.length} operation record${selectedRows.length === 1 ? "" : "s"} will be included in the PDF.`}
         confirmLabel="Confirm"
+      />
+      <AreYouSureModal
+        open={archiveConfirmationOpen}
+        onClose={() => setArchiveConfirmationOpen(false)}
+        onConfirm={archiveSelectedRecords}
+        title="Archive selected operation records?"
+        description={`${selectedRows.length} operation record${selectedRows.length === 1 ? "" : "s"} will be moved to Archives.`}
+        confirmLabel={busy ? "Archiving..." : "Archive"}
+        variant="danger"
       />
       <Modal large open={selectedRecord !== null} onClose={() => setSelectedRecord(null)} className="max-w-5xl">
         {selectedRecord && <OperationDetails record={selectedRecord} onClose={() => setSelectedRecord(null)} />}
@@ -215,10 +228,15 @@ export default function Operations() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
               <TablePagination currentPage={reviewedPage} pageCount={getPageCount(reviewedRows.length, OPERATION_PAGE_SIZE)} onPageChange={setReviewedPage} />
               <div className="flex items-center gap-2">
-                <CommonButton compact variant="gray" onClick={() => setSelectedIds([])}>
+                {canArchive && (
+                  <CommonButton compact variant="gray" disabled={busy || selectedRows.length === 0} onClick={() => setArchiveConfirmationOpen(true)}>
+                    Archive
+                  </CommonButton>
+                )}
+                <CommonButton compact variant="gray" disabled={busy || selectedIds.length === 0} onClick={() => setSelectedIds([])}>
                   Cancel
                 </CommonButton>
-                <CommonButton compact variant="orange" disabled={loading || selectedRows.length === 0} onClick={() => setPdfConfirmationOpen(true)}>
+                <CommonButton compact variant="orange" disabled={loading || busy || selectedRows.length === 0} onClick={() => setPdfConfirmationOpen(true)}>
                   <Printer size={13} /> Print PDF
                 </CommonButton>
               </div>

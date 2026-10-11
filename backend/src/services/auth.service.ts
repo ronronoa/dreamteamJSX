@@ -29,6 +29,11 @@ export const authService = {
     });
     if (!user || !user.isActive) return null;
 
+    await prisma.user.update({
+      where: { user_id: user.user_id },
+      data: { last_active_at: new Date() },
+    });
+
     return {
       user: toSafeUser(user),
       accessToken,
@@ -45,6 +50,7 @@ export const authService = {
           username: data.username,
           ...(data.email && { email: data.email }),
           passwordHash: String(hashedPassword),
+          last_active_at: new Date(),
         },
       });
 
@@ -119,6 +125,10 @@ export const authService = {
         userId: user.user_id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
+    });
+    await prisma.user.update({
+      where: { user_id: user.user_id },
+      data: { last_active_at: new Date() },
     });
 
     return {
@@ -223,6 +233,10 @@ export const authService = {
           userId: payload.userId,
           expiresAt: newExpiresAt,
         },
+      }),
+      prisma.user.update({
+        where: { user_id: payload.userId },
+        data: { last_active_at: new Date() },
       }),
     ]);
 

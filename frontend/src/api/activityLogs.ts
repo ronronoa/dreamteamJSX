@@ -16,7 +16,8 @@ export interface ActivityLogRecord {
 export interface ActivityLogStats {
   totalCount: number;
   todayCount: number;
-  activeUserCount: number;
+  currentActiveCount: number;
+  loggedInTodayCount: number;
   importantActionCount: number;
 }
 

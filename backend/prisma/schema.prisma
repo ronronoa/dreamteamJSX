@@ -68,6 +68,7 @@ model User {
   phone             String?
   profileImageUrl   String?
   isActive          Boolean   @default(true)
+  last_active_at    DateTime?
   team_id           String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -94,6 +95,7 @@ model User {
   team                  ResponseTeam?                @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
 
   @@index([team_id])
+  @@index([last_active_at])
 }
 
 model RefreshToken {

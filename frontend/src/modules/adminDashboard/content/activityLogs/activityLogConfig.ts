@@ -5,7 +5,8 @@ export const PAGE_SIZE = 10;
 export const EMPTY_STATS: ActivityLogStats = {
   totalCount: 0,
   todayCount: 0,
-  activeUserCount: 0,
+  currentActiveCount: 0,
+  loggedInTodayCount: 0,
   importantActionCount: 0,
 };
 

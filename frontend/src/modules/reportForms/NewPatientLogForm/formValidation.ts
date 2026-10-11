@@ -45,7 +45,7 @@ export const isStep1Complete = (formData: PatientLogData) => {
     responderDetails.typeOfRequest.trim() !== "" &&
     responderDetails.caller.surname.trim() !== "" &&
     responderDetails.caller.firstName.trim() !== "" &&
-    responderDetails.teamAssigned.length > 0 &&
+    responderDetails.teamAssigned.some((transfer) => transfer === "Drop-Off" || transfer === "Pick-Up") &&
     responderDetails.responders.length > 0 &&
     dispatch.from.trim() !== "" &&
     dispatch.to.trim() !== "" &&

@@ -1,11 +1,12 @@
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonFormSection from "../component/CommonFormSection"
-import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 import type { PatientFormOptions } from "@/api/patientForm"
 
 import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
+import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
+import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 
 const PatientRequestType = [
   { label: "INTER FACILITY TRANSFER", value: "INTER_FACILITY_TRANSFER" },
@@ -30,6 +31,17 @@ export default function PatientStep1({
   options,
   optionsLoading,
 }: PatientStep1Props) {
+  const toggleTransfer = (transfer: "Drop-Off" | "Pick-Up") => {
+    const selectedTransfers = responderDetails.teamAssigned.filter((value) =>
+      value === "Drop-Off" || value === "Pick-Up",
+    )
+    const isSelected = selectedTransfers.includes(transfer)
+    onResponderDetailsChange({
+      teamAssigned: isSelected
+        ? selectedTransfers.filter((value) => value !== transfer)
+        : [...selectedTransfers, transfer],
+    })
+  }
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
@@ -114,31 +126,31 @@ export default function PatientStep1({
             variant="compact"
             label="Responders"
             placeholder="Search responder..."
-            options={options.responders
-              .filter((responder) => responder.team_id && responderDetails.teamAssigned.includes(responder.team_id))
-              .map((responder) => ({ label: responder.name, value: responder.user_id }))}
+            options={options.responders.map((responder) => ({ label: responder.name, value: responder.user_id }))}
             value={responderDetails.responders}
             onChange={(vals) => onResponderDetailsChange({ responders: vals })}
             disabled={optionsLoading}
           />
 
-          <CommonSearchSelect
-            variant="compact"
-            label="Team Assigned"
-            placeholder="Search team..."
-            options={options.teams.map((team) => ({ label: team.team_name, value: team.team_id }))}
-            value={responderDetails.teamAssigned}
-            onChange={(vals) => {
-              const availableResponders = new Set(options.responders
-                .filter((responder) => responder.team_id && vals.includes(responder.team_id))
-                .map((responder) => responder.user_id))
-              onResponderDetailsChange({
-                teamAssigned: vals,
-                responders: responderDetails.responders.filter((id) => availableResponders.has(id)),
-              })
-            }}
-            disabled={optionsLoading}
-          />
+
+          <div>
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Transfer</span>
+            </label>
+
+            <div className="flex gap-8">
+              <CommonCheckbox
+                label="Drop-Off"
+                checked={responderDetails.teamAssigned.includes("Drop-Off")}
+                onChange={() => toggleTransfer("Drop-Off")}
+              />
+              <CommonCheckbox
+                label="Pick-Up"
+                checked={responderDetails.teamAssigned.includes("Pick-Up")}
+                onChange={() => toggleTransfer("Pick-Up")}
+              />
+            </div>
+          </div>
         </div>
       </CommonFormSection>
 

@@ -22,7 +22,7 @@ const dashboardItem = { label: "TODO:Dashboard", href: D.ROOT, icon: LayoutDashb
 
 const operationItems = [
   { label: "Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
-  { label: "TODO:Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
+  { label: "Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
   { label: "TODO:Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
   { label: "Inventory",             href: D.INVENTORY,  icon: Package },
 ];
@@ -41,7 +41,7 @@ const superAdminSections: DashboardSidebarSection[] = [
   { label: "Main", items: [dashboardItem] },
   {
     label: "Administration",
-    items: [usersItem, vehiclesItem, profileItem, settingsItem],
+    items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],
   },
 ];
 

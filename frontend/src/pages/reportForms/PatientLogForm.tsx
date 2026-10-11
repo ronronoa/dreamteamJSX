@@ -37,10 +37,20 @@ function normalizePatientReport(value: unknown): PatientLogData {
   if (typeof value !== "object" || value === null) return emptyReport
 
   const report = value as Partial<PatientLogData>
+  const savedTransfers = Array.isArray(report.responderDetails?.teamAssigned)
+    ? report.responderDetails.teamAssigned
+        .map((transfer) => transfer.toLowerCase())
+        .map((transfer) => transfer === "drop-off" ? "Drop-Off" : transfer === "pick-up" ? "Pick-Up" : "")
+        .filter((transfer): transfer is "Drop-Off" | "Pick-Up" => transfer !== "")
+    : []
   return {
     ...emptyReport,
     ...report,
-    responderDetails: { ...emptyReport.responderDetails, ...report.responderDetails },
+    responderDetails: {
+      ...emptyReport.responderDetails,
+      ...report.responderDetails,
+      teamAssigned: savedTransfers,
+    },
     dispatch: { ...emptyReport.dispatch, ...report.dispatch },
     patientDetails: {
       ...emptyReport.patientDetails,

@@ -6,6 +6,8 @@ import { formatDate } from "@/utils/dateTime";
 import { getPageCount } from "@/utils/pagination";
 import { EMPTY_STATS, PAGE_SIZE } from "./activityLogConfig";
 
+const ACTIVITY_STATS_POLL_INTERVAL_MS = 60_000;
+
 export function useActivityLogsDashboard() {
   const { session } = useAuth();
   const accessToken = session?.accessToken;
@@ -19,21 +21,25 @@ export function useActivityLogsDashboard() {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLogRecord | null>(null);
 
-  const loadLogs = useCallback(async () => {
+  const loadLogs = useCallback(async (showLoading = true) => {
     if (!accessToken) {
-      setLoading(false);
+      if (showLoading) setLoading(false);
       return;
     }
-    setLoading(true);
-    setPageError("");
+    if (showLoading) {
+      setLoading(true);
+      setPageError("");
+    }
     try {
       const result = await fetchActivityLogs(accessToken, page, PAGE_SIZE);
       setLogs(result.logs);
       setStats(result.stats);
     } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not load activity logs.");
+      if (showLoading) {
+        setPageError(error instanceof Error ? error.message : "Could not load activity logs.");
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [accessToken, page]);
 
@@ -44,11 +50,23 @@ export function useActivityLogsDashboard() {
     })();
   }, [loadLogs]);
 
+  useEffect(() => {
+    const pollingInterval = window.setInterval(() => {
+      void loadLogs(false);
+    }, ACTIVITY_STATS_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(pollingInterval);
+  }, [loadLogs]);
+
   const pageCount = useMemo(() => getPageCount(stats.totalCount, PAGE_SIZE), [stats.totalCount]);
   const statCards = [
     { label: "Total Activities", value: stats.totalCount.toLocaleString(), sub: "All recorded system actions" },
     { label: "Today's Activities", value: stats.todayCount.toLocaleString(), sub: formatDate(new Date(), "dddd, D MMM YYYY") },
-    { label: "Active Users", value: stats.activeUserCount.toLocaleString(), sub: "Accounts active today" },
+    {
+      label: "Active Users",
+      value: `${stats.currentActiveCount.toLocaleString()}/${stats.loggedInTodayCount.toLocaleString()}`,
+      sub: "Active now / logged in today · active within 30 minutes",
+    },
     { label: "Security / Important Actions", value: stats.importantActionCount.toLocaleString(), sub: "User and authentication actions today" },
   ];
 

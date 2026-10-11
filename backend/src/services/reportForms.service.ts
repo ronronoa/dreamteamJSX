@@ -266,7 +266,7 @@ export const reportFormsService = {
     const [teams, responders, vehicles] = await Promise.all([
       prisma.responseTeam.findMany({ orderBy: { team_name: "asc" }, select: { team_id: true, team_name: true } }),
       prisma.user.findMany({
-        where: { isActive: true, team_id: { not: null } },
+        where: { isActive: true },
         orderBy: { name: "asc" },
         select: { user_id: true, name: true, team_id: true },
       }),
@@ -436,16 +436,11 @@ export const reportFormsService = {
   },
 
   async createPatient(form: PatientReportInput, files: UploadedFile[]) {
-    const [teams, responders, vehicle] = await Promise.all([
-      prisma.responseTeam.findMany({
-        where: { team_id: { in: form.responderDetails.teamAssigned } },
-        select: { team_id: true },
-      }),
+    const [responders, vehicle] = await Promise.all([
       prisma.user.findMany({
         where: {
           user_id: { in: form.responderDetails.responders },
           isActive: true,
-          team_id: { in: form.responderDetails.teamAssigned },
         },
         select: { user_id: true },
       }),
@@ -454,9 +449,6 @@ export const reportFormsService = {
         select: { vehicle_id: true },
       }),
     ]);
-    if (teams.length !== new Set(form.responderDetails.teamAssigned).size) {
-      throw new ValidationError("One or more selected teams are unavailable.", { teamAssigned: ["Refresh and select active teams."] });
-    }
     if (responders.length !== new Set(form.responderDetails.responders).size) {
       throw new ValidationError("One or more selected responders are unavailable.", { responders: ["Refresh and select active responders."] });
     }

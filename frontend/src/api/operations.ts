@@ -75,6 +75,14 @@ export async function rejectOperation(accessToken: string, operationId: string, 
   return updateOperationStatus(accessToken, operationId, "reject", pin);
 }
 
+export async function archiveOperation(accessToken: string, operationId: string) {
+  const response = await apiFetch(`/archives/operation/${operationId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return parseResponse<{ archived: boolean }>(response);
+}
+
 async function updateOperationStatus(
   accessToken: string,
   operationId: string,

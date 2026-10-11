@@ -6,6 +6,7 @@ export type ActivityStatus = "Success" | "Failed" | "Warning";
 
 export interface ActivityLogInput {
   actorId?: string;
+  actorName?: string;
   module: string;
   action: string;
   recordId: string | null;

@@ -4,6 +4,8 @@ import { parseAccessToken } from "@/utils/token";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/client";
 
+const ACTIVE_USER_HEARTBEAT_INTERVAL_MS = 60_000;
+
 declare global {
   namespace Express {
     interface Request {
@@ -28,11 +30,21 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   try {
     const user = await prisma.user.findUnique({
       where: { user_id: result.data.userId },
-      select: { user_id: true, role: true, isActive: true },
+      select: { user_id: true, role: true, isActive: true, last_active_at: true },
     });
     if (!user || !user.isActive) {
       return next(new UnauthorizedError("This account is inactive or no longer exists"));
     }
+
+    const now = new Date();
+    const lastActiveAt = user.last_active_at?.getTime() ?? 0;
+    if (now.getTime() - lastActiveAt >= ACTIVE_USER_HEARTBEAT_INTERVAL_MS) {
+      await prisma.user.update({
+        where: { user_id: user.user_id },
+        data: { last_active_at: now },
+      });
+    }
+
     req.user = { userId: user.user_id, role: user.role };
     next();
   } catch (error) {

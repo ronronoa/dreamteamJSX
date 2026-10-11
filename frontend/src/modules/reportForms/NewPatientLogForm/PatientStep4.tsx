@@ -39,8 +39,8 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
     previewIndex !== null ? waiverForm.images[previewIndex] : null
 
   const { phase, package: pkg, block, lot } = patientDetails.address
-  const teamNames = responderDetails.teamAssigned.map((teamId) =>
-    options.teams.find((team) => team.team_id === teamId)?.team_name ?? teamId,
+  const selectedTransfers = responderDetails.teamAssigned.filter((transfer) =>
+    transfer === "Drop-Off" || transfer === "Pick-Up",
   )
   const responderNames = responderDetails.responders.map((responderId) =>
     options.responders.find((responder) => responder.user_id === responderId)?.name ?? responderId,
@@ -57,7 +57,7 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
             <SummaryField label="Date" value={responderDetails.date} />
             <SummaryField label="Type of Request" value={responderDetails.typeOfRequest} />
             <SummaryField label="Caller" value={formatPersonName(responderDetails.caller)} />
-            <SummaryField label="Team Assigned" value={teamNames.join(", ")} />
+            <SummaryField label="Transfer" value={selectedTransfers.join(", ")} />
             <SummaryField label="Responders" value={responderNames.join(", ")} />
           </div>
         </CommonFormSection>

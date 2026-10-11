@@ -38,6 +38,7 @@ function getAction(method: string, path: string, module: string) {
 export const activityLogsService = {
   async recordRequest(input: {
     actorId?: string;
+    actorName?: string;
     method: string;
     path: string;
     statusCode: number;
@@ -54,6 +55,7 @@ export const activityLogsService = {
 
     const activity: ActivityLogInput = {
       ...(input.actorId ? { actorId: input.actorId } : {}),
+      ...(input.actorName ? { actorName: input.actorName } : {}),
       module,
       action,
       recordId,

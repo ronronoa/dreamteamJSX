@@ -110,6 +110,7 @@ export const reportFormsController = {
         throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
       }
       const record = await reportFormsService.createOperation(parsedForm.data, files);
+      res.locals["activityActorName"] = parsedForm.data.operationDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ operation: record });
     } catch (error) {
       await removeUploadedFiles(req);
@@ -135,6 +136,7 @@ export const reportFormsController = {
         throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
       }
       const record = await reportFormsService.createPatient(parsedForm.data, files);
+      res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ patientLog: record });
     } catch (error) {
       await removeUploadedFiles(req);

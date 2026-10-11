@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  archiveOperation,
   authorizeOperation,
   fetchOperations,
   rejectOperation,
@@ -37,6 +38,7 @@ export function useOperationsDashboard() {
   const [reviewTarget, setReviewTarget] = useState<{ row: OperationRow; action: ReviewAction } | null>(null);
   const [pinError, setPinError] = useState("");
   const [pdfConfirmationOpen, setPdfConfirmationOpen] = useState(false);
+  const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
 
   const loadRecords = useCallback(async () => {
     if (!accessToken) {
@@ -96,6 +98,7 @@ export function useOperationsDashboard() {
 
   const canReview = role !== undefined && role !== "MEMBER";
   const canReject = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 
   function updateSearch(value: string) {
     setSearch(value);
@@ -166,6 +169,26 @@ export function useOperationsDashboard() {
     }
   }
 
+  async function archiveSelectedRecords() {
+    if (!accessToken || selectedRows.length === 0 || busy) return;
+
+    setBusy(true);
+    setPageError("");
+    setSuccessMessage("");
+    try {
+      await Promise.all(selectedRows.map((row) => archiveOperation(accessToken, row.operationId)));
+      const archivedCount = selectedRows.length;
+      setArchiveConfirmationOpen(false);
+      setSelectedIds([]);
+      setSuccessMessage(`${archivedCount} operation record${archivedCount === 1 ? "" : "s"} archived.`);
+      await loadRecords();
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Could not archive the selected operation records.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return {
     role,
     loading,
@@ -182,6 +205,7 @@ export function useOperationsDashboard() {
     reviewTarget,
     pinError,
     pdfConfirmationOpen,
+    archiveConfirmationOpen,
     stats,
     pendingRows,
     reviewedRows,
@@ -190,6 +214,7 @@ export function useOperationsDashboard() {
     visibleReviewedRows,
     canReview,
     canReject,
+    canArchive,
     setFilterOpen,
     setPendingPage,
     setReviewedPage,
@@ -198,11 +223,13 @@ export function useOperationsDashboard() {
     setReviewTarget,
     setPinError,
     setPdfConfirmationOpen,
+    setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
     openReview,
     handleReview,
     toggleSelection,
     printSelectedRecords,
+    archiveSelectedRecords,
   };
 }

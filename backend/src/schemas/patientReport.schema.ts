@@ -16,6 +16,20 @@ const addressSchema = z.object({
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);
 const odometerSchema = z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().nonnegative());
+const transferSelectionSchema = z
+  .array(z.string().trim().max(40))
+  .max(10)
+  .transform((values) => {
+    const transfers = values.map((value) => {
+      const normalizedValue = value.toLowerCase().replaceAll("_", "-").replaceAll(" ", "-");
+      if (normalizedValue === "drop-off") return "Drop-Off";
+      if (normalizedValue === "pick-up") return "Pick-Up";
+      return null;
+    });
+
+    return [...new Set(transfers.filter((value): value is "Drop-Off" | "Pick-Up" => value !== null))];
+  })
+  .pipe(z.array(z.enum(["Drop-Off", "Pick-Up"])).min(1, "Select at least one transfer."));
 
 export const PatientReportSchema = z.object({
   responderDetails: z.object({
@@ -23,7 +37,7 @@ export const PatientReportSchema = z.object({
     date: z.iso.date(),
     typeOfRequest: z.enum(["INTER_FACILITY_TRANSFER", "PICK_UP", "DROP_OFF"]),
     caller: personNameSchema,
-    teamAssigned: z.array(z.uuid()).min(1).max(10),
+    teamAssigned: transferSelectionSchema,
     responders: z.array(z.uuid()).min(1).max(50),
   }),
   dispatch: z.object({

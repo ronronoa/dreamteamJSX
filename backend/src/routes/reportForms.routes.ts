@@ -1,5 +1,6 @@
 import { reportFormsController } from "@/controllers/reportForms.controller";
 import { operationController } from "@/controllers/operation.controller";
+import { patientLogController } from "@/controllers/patientLog.controller";
 import { requireAuth, requireRole } from "@/middleware/auth.middleware";
 import { createReportFormUpload } from "@/middleware/upload";
 import { ValidationError } from "@/shared/errors";
@@ -37,6 +38,12 @@ reportFormsRoutes.post("/operations/:id/responders", requireAuth, operationContr
 reportFormsRoutes.delete("/operations/:id/responders/:userId", requireAuth, operationController.removeResponder);
 reportFormsRoutes.post("/operations/:id/images", requireAuth, operationController.addImage);
 reportFormsRoutes.delete("/operations/:id/images/:attachmentId", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.removeImage);
+
+reportFormsRoutes.get("/patient-logs", requireAuth, patientLogController.list);
+reportFormsRoutes.get("/patient-logs/:id", requireAuth, patientLogController.getById);
+reportFormsRoutes.post("/patient-logs/:id/authorize", requireAuth, requireRole("TEAM_LEADER"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
 
 function parseImages(req: Request, res: Response, next: NextFunction) {
   parseReportImages(req, res, (error: unknown) => {

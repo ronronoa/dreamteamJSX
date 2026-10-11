@@ -1,20 +1,3 @@
-export interface PendingPatientRecord {
-  id: string;
-  date: Date;
-  nameOfPatient: string;
-  age: string;
-  address: string;
-  assessment: string;
-  submittedBy: string;
-}
-
-export interface PatientLogRecord extends PendingPatientRecord {
-  time: string;
-}
-
-// --------------------------------------------------------------
-// step1 responderDetails
-
 export type Sex = "Male" | "Female" | ""
 
 export type PersonName = {

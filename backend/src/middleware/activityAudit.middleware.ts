@@ -1,7 +1,12 @@
 import { activityLogsService } from "@/services/activityLogs.service";
 import type { RequestHandler } from "express";
 
-const IGNORED_PATHS = ["/operations/debug-submit", "/activity-logs/archive", "/auth/logout"];
+const IGNORED_PATHS = [
+  "/operations/debug-submit",
+  "/activity-logs/archive",
+  "/auth/logout",
+  "/report-forms/operations/latest",
+];
 const INVENTORY_TRANSACTION_PATHS = ["/inventory/stock-in", "/inventory/adjust"];
 
 export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
@@ -24,8 +29,14 @@ export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
 
     const responseActorId = res.locals["activityActorId"];
     const actorId = req.user?.userId ?? (typeof responseActorId === "string" ? responseActorId : undefined);
+    const responseActorName = res.locals["activityActorName"];
+    const actorName = typeof responseActorName === "string" ? responseActorName : undefined;
+    if (!actorId && !actorName) return;
+    if (!actorId && res.statusCode >= 400) return;
+
     void activityLogsService.recordRequest({
       ...(actorId ? { actorId } : {}),
+      ...(actorName ? { actorName } : {}),
       method,
       path: apiPath,
       statusCode: res.statusCode,
