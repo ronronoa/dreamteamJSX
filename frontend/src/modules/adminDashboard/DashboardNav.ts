@@ -18,12 +18,12 @@ import { ROUTES } from "../../routes";
 
 const D = ROUTES.DASHBOARD;
 
-const dashboardItem = { label: "TODO:Dashboard", href: D.ROOT, icon: LayoutDashboard };
+const dashboardItem = { label: "Dashboard", href: D.ROOT, icon: LayoutDashboard };
 
 const operationItems = [
   { label: "Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
   { label: "Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
-  { label: "TODO:Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
+  { label: "Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
   { label: "Inventory",             href: D.INVENTORY,  icon: Package },
 ];
 

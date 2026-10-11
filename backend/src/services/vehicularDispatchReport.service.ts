@@ -17,6 +17,7 @@ function toDispatchRecord(dispatch: DispatchRecord) {
   return {
     dispatch_id: dispatch.dispatch_id,
     dispatch_date: dispatch.dispatch_date,
+    createdAt: dispatch.createdAt,
     submitter_name: dispatch.submitter_name,
     depart_time: dispatch.depart_time,
     arrival_time: dispatch.arrival_time,

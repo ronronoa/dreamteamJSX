@@ -53,29 +53,6 @@ export function LegendDot({ color, label, value }: { color: string; label: strin
   );
 }
 
-export function ReadinessRing({ value }: { value: number }) {
-  const r = 24;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative">
-      <svg width="64" height="64" viewBox="0 0 60 60" className="-rotate-90">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="#e9d5ff" strokeWidth="6" />
-        <circle
-          cx="30" cy="30" r={r}
-          fill="none"
-          stroke="#7c3aed"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${(value / 100) * c} ${c}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-purple-700">
-        {value}%
-      </div>
-    </div>
-  );
-}
-
 export function ProgressRow({
   label, value, percent, tone,
 }: {

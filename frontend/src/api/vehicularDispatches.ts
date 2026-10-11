@@ -21,6 +21,7 @@ export interface VehicleDispatchRecord {
 export interface VehicleDispatchDetailRecord {
   dispatch_id: string
   dispatch_date: string
+  createdAt?: string
   submitter_name: string | null
   depart_time: string | null
   arrival_time: string | null

@@ -1,9 +1,9 @@
-export interface MonthlyOperationCount {
+export interface MonthlyReportCount {
   month: string;
   value: number;
 }
 
-export interface PatientInterventionCount {
+export interface PatientStatusCount {
   name: string;
   value: number;
   color: string;
