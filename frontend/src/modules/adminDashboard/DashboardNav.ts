@@ -27,9 +27,9 @@ const operationItems = [
   { label: "Inventory",             href: D.INVENTORY,  icon: Package },
 ];
 
-const archiveItem  = { label: "TODO:Archived Logs", href: D.ARCHIVES, icon: Archive };
+const archiveItem  = { label: "Archived Logs", href: D.ARCHIVES, icon: Archive };
 const profileItem  = { label: "User Profile",  href: D.PROFILE,  icon: User };
-const activityItem  = { label: "TODO:Activity Logs",  href: D.ACTIVITYLOGS,  icon: RotateCwFadingClock };
+const activityItem  = { label: "Activity Logs",  href: D.ACTIVITYLOGS,  icon: RotateCwFadingClock };
 const reportsItem  = { label: "TODO:Reports",       href: D.REPORTS,  icon: FileText };
 const settingsItem = { label: "TODO:Settings",      href: D.SETTINGS, icon: Settings };
 const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Users };

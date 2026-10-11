@@ -45,7 +45,7 @@ export const operationService = {
         }
 
         return prisma.operationLog.findMany({
-            where,
+            where: { ...where, archive: null },
             include: {
                 team: true,
                 submitter: { select: { user_id: true, name: true, username: true}},

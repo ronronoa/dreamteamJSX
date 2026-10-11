@@ -89,6 +89,8 @@ model User {
   patientImages         PatientImageAttachment[]
   activityLogs          ActivityLog[]                @relation("ActivityActor")
   archivedActivityLogs  ActivityLog[]                @relation("ActivityArchiver")
+  patientLogArchives    PatientLogArchive[]          @relation("PatientLogArchiver")
+  dispatchArchives      VehicularDispatchArchive[]   @relation("DispatchArchiver")
   team                  ResponseTeam?                @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
 
   @@index([team_id])
@@ -329,6 +331,7 @@ model PatientLog {
   submitter  User                @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id])
   responders PatientResponder[]
   dispatches VehicularDispatch[]
+  archive    PatientLogArchive?
 
   @@index([patient_id])
   @@index([submitted_by])
@@ -371,9 +374,34 @@ model VehicularDispatch {
   submitter  User                         @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id])
   responders VehicularDispatchResponder[]
   passengers CivilianPassenger[]
+  archive    VehicularDispatchArchive?
 
   @@index([operation_id])
   @@index([patient_log_id])
+}
+
+model PatientLogArchive {
+  archive_id     String   @id @default(uuid())
+  patient_log_id String   @unique
+  archived_by    String
+  archivedAt     DateTime @default(now())
+
+  patientLog PatientLog @relation(fields: [patient_log_id], references: [patient_log_id])
+  archiver   User       @relation("PatientLogArchiver", fields: [archived_by], references: [user_id])
+
+  @@index([archivedAt])
+}
+
+model VehicularDispatchArchive {
+  archive_id  String   @id @default(uuid())
+  dispatch_id String   @unique
+  archived_by String
+  archivedAt  DateTime @default(now())
+
+  dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id])
+  archiver User              @relation("DispatchArchiver", fields: [archived_by], references: [user_id])
+
+  @@index([archivedAt])
 }
 
 model VehicularDispatchResponder {

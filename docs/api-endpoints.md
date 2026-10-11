@@ -48,6 +48,16 @@ Authenticated users can also manage their own profile and password:
 | `GET` | `/api/activity-logs/export` | SUPER_ADMIN, DEPARTMENT_HEAD | Download active audit entries as CSV |
 | `POST` | `/api/activity-logs/archive` | SUPER_ADMIN, DEPARTMENT_HEAD | Archive all active entries while retaining them in the database |
 
+## Archived Records
+
+> Super Admin and Department Head.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/archives?page=1&pageSize=10&search=&sourceType=all` | SUPER_ADMIN, DEPARTMENT_HEAD | List archived operation, patient, vehicle, inventory, and activity records |
+| `POST` | `/api/archives/:type/:id` | SUPER_ADMIN, DEPARTMENT_HEAD | Archive an existing record (`operation`, `patient`, `vehicle`, `inventory`, or `activity`) |
+| `POST` | `/api/archives/:type/:id/restore` | SUPER_ADMIN, DEPARTMENT_HEAD | Restore an archived record |
+
 **Request/Response shapes:**
 
 ```typescript
