@@ -51,6 +51,7 @@ export const authController = {
       if (accessToken) {
         const activeSession = await authService.checkAccessToken(accessToken);
         if (activeSession) {
+          res.locals["activityActorId"] = activeSession.user.id;
           res.status(200).json(activeSession);
           return;
         }
@@ -63,6 +64,7 @@ export const authController = {
       }
 
       const refreshedSession = await authService.refresh(parsed.data.refreshToken);
+      res.locals["activityActorId"] = refreshedSession.user.id;
       setRefreshCookie(res, refreshedSession.refreshToken);
       res.status(200).json({
         user: refreshedSession.user,
@@ -85,6 +87,7 @@ export const authController = {
       }
 
       const result = await authService.signUp(parsed.data);
+      res.locals["activityActorId"] = result.user.id;
 
       setRefreshCookie(res, result.refreshToken);
 
@@ -109,6 +112,7 @@ export const authController = {
       }
 
       const result = await authService.signIn(parsed.data);
+      res.locals["activityActorId"] = result.user.id;
 
       setRefreshCookie(res, result.refreshToken);
 
@@ -133,6 +137,7 @@ export const authController = {
       }
 
       const result = await authService.refresh(parsed.data.refreshToken);
+      res.locals["activityActorId"] = result.user.id;
 
       setRefreshCookie(res, result.refreshToken);
 

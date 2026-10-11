@@ -129,6 +129,7 @@ export default function Inventory() {
         await updateInventoryItem(accessToken, editingItem.itemId, {
           itemName: values.name,
           category: values.category,
+          unit: values.unit,
           minimumQuantity: values.minThreshold,
           expiryDate: values.expiryDate || null,
           ...(values.quantity !== editingItem.quantity && {
@@ -140,7 +141,7 @@ export default function Inventory() {
         await createInventoryItem(accessToken, {
           itemName: values.name,
           category: values.category,
-          unit: values.unit ?? "units",
+          unit: values.unit,
           stockQuantity: values.quantity,
           minimumQuantity: values.minThreshold,
           expiryDate: values.expiryDate || null,
@@ -188,6 +189,7 @@ export default function Inventory() {
           quantity: editingItem.quantity,
           minThreshold: editingItem.minimum,
           expiryDate: editingItem.expiry ? editingItem.expiry.toISOString().slice(0, 10) : "",
+          adjustmentReason: "",
         } : undefined}
         onClose={closeInventoryModal}
         onSubmit={handleCreateItem}

@@ -84,6 +84,7 @@ export function createInventoryItem(accessToken: string, input: CreateInventoryI
 export interface UpdateInventoryItemInput {
   itemName: string;
   category: string;
+  unit: string;
   minimumQuantity: number;
   expiryDate: string | null;
   stockQuantity?: number;

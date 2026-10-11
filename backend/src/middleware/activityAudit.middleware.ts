@@ -1,0 +1,38 @@
+import { activityLogsService } from "@/services/activityLogs.service";
+import type { RequestHandler } from "express";
+
+const IGNORED_PATHS = ["/operations/debug-submit", "/activity-logs/archive"];
+const INVENTORY_TRANSACTION_PATHS = ["/inventory/stock-in", "/inventory/adjust"];
+
+export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
+  const method = req.method.toUpperCase();
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    next();
+    return;
+  }
+
+  const requestPath = req.originalUrl.split("?")[0] ?? req.path;
+  const apiPath = requestPath.replace(/^\/api/, "") || "/";
+  if (IGNORED_PATHS.some((ignoredPath) => apiPath.startsWith(ignoredPath))) {
+    next();
+    return;
+  }
+
+  res.on("finish", () => {
+    const hasInventoryTransaction = INVENTORY_TRANSACTION_PATHS.includes(apiPath);
+    if (hasInventoryTransaction && res.statusCode < 400) return;
+
+    const responseActorId = res.locals["activityActorId"];
+    const actorId = req.user?.userId ?? (typeof responseActorId === "string" ? responseActorId : undefined);
+    void activityLogsService.recordRequest({
+      ...(actorId ? { actorId } : {}),
+      method,
+      path: apiPath,
+      statusCode: res.statusCode,
+    }).catch((error: unknown) => {
+      console.error("Could not write activity log:", error);
+    });
+  });
+
+  next();
+};

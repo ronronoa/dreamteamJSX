@@ -87,7 +87,9 @@ model User {
   submittedPatients     PatientLog[]                 @relation("PatientSubmittedBy")
   operationImages       OperationImageAttachment[]
   patientImages         PatientImageAttachment[]
-  team                  ResponseTeam?              @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
+  activityLogs          ActivityLog[]                @relation("ActivityActor")
+  archivedActivityLogs  ActivityLog[]                @relation("ActivityArchiver")
+  team                  ResponseTeam?                @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
 
   @@index([team_id])
 }
@@ -180,17 +182,17 @@ model Vehicle {
 }
 
 model InventoryItem {
-  item_id        String   @id @default(uuid())
-  item_code      String   @unique
-  item_name      String
-  category       String
-  unit           String
-  stock_quantity Int      @default(0)
-  minimum_quantity Int    @default(0)
-  expiry_date    DateTime?
-  stock_type     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  item_id          String    @id @default(uuid())
+  item_code        String    @unique
+  item_name        String
+  category         String
+  unit             String
+  stock_quantity   Int       @default(0)
+  minimum_quantity Int       @default(0)
+  expiry_date      DateTime?
+  stock_type       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   transactions   InventoryTransaction[]
   operationItems OperationInventory[]
@@ -213,6 +215,31 @@ model InventoryTransaction {
 
   @@index([item_id])
   @@index([user_id])
+}
+
+model ActivityLog {
+  activity_id    String    @id @default(uuid())
+  activity_code  String    @unique
+  actor_id       String?
+  actor_name     String
+  actor_username String?
+  actor_role     Role?
+  module         String
+  action         String
+  record_id      String?
+  status         String
+  details        String?
+  createdAt      DateTime  @default(now())
+  archivedAt     DateTime?
+  archived_by    String?
+
+  actor    User? @relation("ActivityActor", fields: [actor_id], references: [user_id], onDelete: SetNull)
+  archiver User? @relation("ActivityArchiver", fields: [archived_by], references: [user_id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([module, status])
+  @@index([actor_id])
+  @@index([archivedAt])
 }
 
 model OperationInventory {

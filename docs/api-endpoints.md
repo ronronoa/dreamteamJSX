@@ -38,6 +38,16 @@ Authenticated users can also manage their own profile and password:
 | `POST` | `/api/users/me/avatar` | Any authenticated | Upload own JPG/PNG profile photo (5 MB limit) |
 | `POST` | `/api/auth/change-password` | Any authenticated | Change password after verifying the current password |
 
+## Activity Logs
+
+> Super Admin and Department Head. Mutating API requests are recorded automatically; request bodies are never stored. Inventory stock transactions are also added with the item, quantity, unit, and reason, including existing transactions when the backfill migration runs.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/activity-logs?page=1&pageSize=10` | SUPER_ADMIN, DEPARTMENT_HEAD | Read the paginated audit ledger and activity statistics |
+| `GET` | `/api/activity-logs/export` | SUPER_ADMIN, DEPARTMENT_HEAD | Download active audit entries as CSV |
+| `POST` | `/api/activity-logs/archive` | SUPER_ADMIN, DEPARTMENT_HEAD | Archive all active entries while retaining them in the database |
+
 **Request/Response shapes:**
 
 ```typescript

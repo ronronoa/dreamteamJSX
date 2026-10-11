@@ -25,6 +25,56 @@ type InventoryRow = {
   updatedAt: Date;
 };
 
+type InventoryActivityInput = {
+  actorId: string;
+  itemCode: string;
+  itemName: string;
+  unit: string;
+  transactionType: InventoryTransactionType;
+  quantity: number;
+  reason: string | null;
+};
+
+async function createInventoryActivityLog(
+  transaction: Prisma.TransactionClient,
+  data: InventoryActivityInput,
+) {
+  const codeRows = await transaction.$queryRaw<Array<{ sequence_value: string }>>(Prisma.sql`
+    SELECT nextval('"ActivityLogCode_seq"')::text AS sequence_value
+  `);
+  const sequenceValue = codeRows[0]?.sequence_value;
+  if (!sequenceValue) throw new Error("Could not generate an activity log code.");
+
+  const actor = await transaction.user.findUnique({
+    where: { user_id: data.actorId },
+    select: { user_id: true, name: true, username: true, role: true },
+  });
+  if (!actor) throw new NotFoundError("User", data.actorId);
+
+  const action = data.transactionType === InventoryTransactionType.STOCK_IN
+    ? "Stock received"
+    : data.transactionType === InventoryTransactionType.STOCK_OUT
+      ? "Stock issued"
+      : "Inventory adjusted";
+  const signedQuantity = data.quantity > 0 ? `+${data.quantity}` : String(data.quantity);
+  const reasonText = data.reason ? ` Reason: ${data.reason}` : "";
+
+  await transaction.activityLog.create({
+    data: {
+      activity_code: `ACT-${sequenceValue.padStart(6, "0")}`,
+      actor_id: actor.user_id,
+      actor_name: actor.name,
+      actor_username: actor.username,
+      actor_role: actor.role,
+      module: "Inventory",
+      action,
+      record_id: data.itemCode,
+      status: "Success",
+      details: `${data.itemName}: ${signedQuantity} ${data.unit}.${reasonText}`,
+    },
+  });
+}
+
 async function getNextItemCode(transaction: Prisma.TransactionClient) {
   const rows = await transaction.$queryRaw<Array<{ sequence_value: string }>>(Prisma.sql`
     SELECT nextval('"InventoryItemCode_seq"')::text AS sequence_value
@@ -36,8 +86,19 @@ async function getNextItemCode(transaction: Prisma.TransactionClient) {
 }
 
 async function findActiveItemForUpdate(transaction: Prisma.TransactionClient, itemId: string) {
-  const rows = await transaction.$queryRaw<Array<{ item_id: string; stock_quantity: number }>>(Prisma.sql`
-    SELECT item."item_id", item."stock_quantity"
+  const rows = await transaction.$queryRaw<Array<{
+    item_id: string;
+    item_code: string;
+    item_name: string;
+    unit: string;
+    stock_quantity: number;
+  }>>(Prisma.sql`
+    SELECT
+      item."item_id",
+      item."stock_quantity",
+      item."item_code",
+      item."item_name",
+      item."unit"
     FROM "InventoryItem" AS item
     LEFT JOIN "InventoryArchive" AS archive ON archive."item_id" = item."item_id"
     WHERE item."item_id" = ${itemId}
@@ -105,6 +166,15 @@ export async function createInventoryItem(data: CreateInventoryItemInput, actorI
           reason: "Initial stock",
         },
       });
+      await createInventoryActivityLog(transaction, {
+        actorId,
+        itemCode: item.item_code,
+        itemName: item.item_name,
+        unit: item.unit,
+        transactionType: InventoryTransactionType.STOCK_IN,
+        quantity: data.stockQuantity,
+        reason: "Initial stock",
+      });
     }
 
     return item;
@@ -148,6 +218,15 @@ export async function updateInventoryItem(itemId: string, data: UpdateInventoryI
           reason: data.adjustmentReason,
         },
       });
+      await createInventoryActivityLog(transaction, {
+        actorId,
+        itemCode: existingItem.item_code,
+        itemName: data.itemName ?? existingItem.item_name,
+        unit: data.unit ?? existingItem.unit,
+        transactionType: InventoryTransactionType.ADJUSTMENT,
+        quantity: stockDifference,
+        reason: data.adjustmentReason,
+      });
     }
 
     return updatedItem;
@@ -174,6 +253,15 @@ export async function stockInInventoryItem(data: InventoryStockInInput, actorId:
         quantity: data.quantity,
         reason: data.reason ?? null,
       },
+    });
+    await createInventoryActivityLog(transaction, {
+      actorId,
+      itemCode: item.item_code,
+      itemName: item.item_name,
+      unit: item.unit,
+      transactionType: InventoryTransactionType.STOCK_IN,
+      quantity: data.quantity,
+      reason: data.reason ?? null,
     });
 
     return { transaction: transactionRecord, item: updatedItem };
@@ -203,6 +291,15 @@ export async function adjustInventoryItem(data: InventoryAdjustmentInput, actorI
         quantity: data.quantity,
         reason: data.reason,
       },
+    });
+    await createInventoryActivityLog(transaction, {
+      actorId,
+      itemCode: item.item_code,
+      itemName: item.item_name,
+      unit: item.unit,
+      transactionType: InventoryTransactionType.ADJUSTMENT,
+      quantity: data.quantity,
+      reason: data.reason,
     });
 
     return { transaction: transactionRecord, item: updatedItem };
