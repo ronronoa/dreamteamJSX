@@ -1,5 +1,3 @@
-// what the fuck
-
 import { useRef, useState } from "react"
 import { ImagePlus, Trash, Upload } from "lucide-react"
 
@@ -12,27 +10,23 @@ interface ImageUploadProps {
   onImagesChange: (images: File[]) => void
   onDropFiles?: (files: FileList) => void
   isDragging?: boolean
+  error?: string
 }
 
 const ACCEPTED_IMAGE_EXTENSIONS = [
   ".jpg",
   ".jpeg",
-  ".gif",
   ".png",
-  ".bmp",
-  ".tif",
-  ".tiff",
   ".webp",
 ]
 
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
-  "image/gif",
   "image/png",
-  "image/bmp",
-  "image/tiff",
   "image/webp",
 ]
+const MAX_IMAGE_COUNT = 10
+const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024
 
 function isValidImage(file: File): boolean {
   const extension = file.name
@@ -41,7 +35,8 @@ function isValidImage(file: File): boolean {
 
   return (
     ACCEPTED_IMAGE_EXTENSIONS.includes(extension) &&
-    ACCEPTED_IMAGE_TYPES.includes(file.type)
+    ACCEPTED_IMAGE_TYPES.includes(file.type) &&
+    file.size <= MAX_IMAGE_SIZE_BYTES
   )
 }
 
@@ -95,11 +90,12 @@ export default function ImageUpload({
   images,
   onImagesChange,
   isDragging = false,
+  error,
 }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [uploadError, setUploadError] = useState(false)
+  const [uploadError, setUploadError] = useState("")
 
   const {
     isDragging: localIsDragging,
@@ -115,16 +111,21 @@ export default function ImageUpload({
       return
     }
 
-    const files = Array.from(fileList)
-    const hasInvalidFiles = files.some(
-      (file) => !isValidImage(file)
-    )
+    const selectedFiles = Array.from(fileList)
+    if (selectedFiles.some((file) => !isValidImage(file))) {
+      setUploadError("Use JPG, PNG, or WebP images that are no larger than 8 MB each.")
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
 
-    setUploadError(hasInvalidFiles)
+    if (images.length + selectedFiles.length > MAX_IMAGE_COUNT) {
+      setUploadError(`Attach no more than ${MAX_IMAGE_COUNT} images.`)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
 
-    onImagesChange(
-      getUniqueImageFiles(images, fileList)
-    )
+    setUploadError("")
+    onImagesChange(getUniqueImageFiles(images, selectedFiles))
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -169,11 +170,9 @@ export default function ImageUpload({
         />
       </div>
 
-      {uploadError && (
-        <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          Can't upload. Use an image in one of these formats:
-          {" "}
-          .jpg, .gif, .png, .bmp, .tif, or .webp
+      {(uploadError || error) && (
+        <div role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {uploadError || error}
         </div>
       )}
 
@@ -208,7 +207,7 @@ export default function ImageUpload({
             </p>
 
             <p className="text-xs">
-              JPG, GIF, PNG, BMP, TIFF, or WEBP
+              JPG, PNG, or WebP (8 MB maximum each; 10 images maximum)
             </p>
           </div>
         ) : (

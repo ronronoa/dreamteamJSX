@@ -8,7 +8,7 @@ import OperationStep1 from "../../modules/reportForms/OperationLogForm/Operation
 import OperationStep2 from "../../modules/reportForms/OperationLogForm/OperationStep2"
 import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
 import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
-import { isFormComplete, isFormEmpty } from "../../modules/reportForms/OperationLogForm/formValidation"
+import { isFormComplete, isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
 
 import {
   createEmptyOperationLogData,
@@ -18,7 +18,7 @@ import {
   type InventoryItem,
   type OperationDescription,
 } from "../../types/operationLog"
-import { submitOperationLog } from "../../api/operationForm"
+import { fetchOperationFormOptions, submitOperationLog, type OperationFormOptions } from "../../api/operationForm"
 import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
@@ -30,10 +30,45 @@ export default function OperationLogForm() {
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
+  const [submitMessage, setSubmitMessage] = useState("")
   const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
+  const [formOptions, setFormOptions] = useState<OperationFormOptions>({
+    operationNatures: [],
+    teams: [],
+    responders: [],
+    vehicles: [],
+  })
+  const [optionsLoading, setOptionsLoading] = useState(true)
+  const [optionsError, setOptionsError] = useState("")
+  const [optionsRequestId, setOptionsRequestId] = useState(0)
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let isCurrentRequest = true
+
+    async function loadFormOptions() {
+      setOptionsLoading(true)
+      setOptionsError("")
+      try {
+        const options = await fetchOperationFormOptions()
+        if (isCurrentRequest) setFormOptions(options)
+      } catch (error) {
+        if (isCurrentRequest) {
+          setOptionsError(error instanceof Error ? error.message : "Could not load operation form options.")
+        }
+      } finally {
+        if (isCurrentRequest) setOptionsLoading(false)
+      }
+    }
+
+    void loadFormOptions()
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [optionsRequestId])
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
@@ -44,46 +79,58 @@ export default function OperationLogForm() {
     exit: (direction: number) => ({ x: direction > 0 ? "-100%" : "100%", opacity: 0 }),
   }
 
-  const nextStep = () => {
-    if (step >= totalSteps) return
-    setDirection(1)
-    setStep((current) => current + 1)
-  }
+const nextStep = () => {
+  if (step >= totalSteps) return
+
+  // Surface errors for the current step, but never block navigation.
+  const errors = validateStep(step, formData, formOptions)
+  setValidationErrors((current) => ({ ...current, ...errors }))
+
+  setDirection(1)
+  setStep((current) => current + 1)
+}
 
   const previousStep = () => {
     if (step <= 1) return
     setDirection(-1)
+    setValidationErrors({})
     setStep((current) => current - 1)
   }
 
   const updateOperationDetails = (patch: Partial<OperationDetails>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, operationDetails: { ...current.operationDetails, ...patch },
     }))
   }
 
   const updateDispatch = (patch: Partial<VehicularDispatch>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, dispatch: { ...current.dispatch, ...patch },
     }))
   }
 
   const updatePeople = (people: OperationLogData["people"]) => {
+    setValidationErrors({})
     setFormData((current) => ({ ...current, people }))
   }
 
   const updateOperationDescription = (patch: Partial<OperationDescription>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, operationDescription: { ...current.operationDescription, ...patch },
     }))
   }
 
   const updateInventory = (inventory: InventoryItem[]) => {
+    setValidationErrors({})
     setFormData((current) => ({ ...current, inventory })) 
   }
 
   const openPinModal = () => {
     setPinError(undefined)
+    setSubmitMessage("")
     setPinModalShow(true)
   }
 
@@ -96,9 +143,13 @@ export default function OperationLogForm() {
       await submitOperationLog(pin, formData);
 
       setPinModalShow(false);
+      setFormData(createEmptyOperationLogData());
+      setStep(1);
+      setSubmitMessage("Operation report submitted and is pending verification.");
+      setValidationErrors({});
     } catch (error) {
       console.error("Failed to submit operation:", error);
-      setPinError("Something went wrong. Please try again.");
+      setPinError(error instanceof Error ? error.message : "Could not submit the operation report.");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,6 +201,12 @@ export default function OperationLogForm() {
               <h1 className="text-4xl font-bold text-white">OPERATION LOG FORM</h1>
             </div>
 
+            {submitMessage && (
+              <p role="status" className="mb-3 rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                {submitMessage}
+              </p>
+            )}
+
             <div className="relative w-full ">
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div
@@ -167,6 +224,9 @@ export default function OperationLogForm() {
                       onOperationDetailsChange={updateOperationDetails}
                       dispatch={formData.dispatch}
                       onDispatchChange={updateDispatch}
+                      options={formOptions}
+                      optionsLoading={optionsLoading}
+                      errors={validationErrors}
                     />
                   )}
 
@@ -174,6 +234,7 @@ export default function OperationLogForm() {
                     <OperationStep2 
                       people={formData.people}
                       onPeopleChange={updatePeople}
+                      errors={validationErrors}
                     />
                   )}
 
@@ -183,6 +244,7 @@ export default function OperationLogForm() {
                       onOperationDescriptionChange={updateOperationDescription}
                       inventory={formData.inventory}
                       onInventoryChange={updateInventory}
+                      errors={validationErrors}
                     />
                   )}
 
@@ -192,6 +254,20 @@ export default function OperationLogForm() {
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {optionsError && (
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p role="alert">{optionsError}</p>
+                <button
+                  type="button"
+                  className="shrink-0 font-semibold underline"
+                  onClick={() => setOptionsRequestId((current) => current + 1)}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {optionsLoading && <p role="status" className="mt-2 text-sm text-slate-600">Loading form options…</p>}
 
             <div className="mt-4 flex h-14 w-full items-center justify-between rounded-md bg-white p-2">
               {step === 1 && ( //cancle
@@ -219,8 +295,8 @@ export default function OperationLogForm() {
 
               {step === totalSteps ? (
                 <CommonButton
-                  variant={isFormComplete(formData) ? "purple" : "gray"}
-                  disabled={!isFormComplete(formData)}
+                  variant={isFormComplete(formData, formOptions) ? "purple" : "gray"}
+                  disabled={!isFormComplete(formData, formOptions) || optionsLoading || Boolean(optionsError)}
                   className="min-w-[130px]"
                   onClick={openPinModal}
                 >
@@ -230,6 +306,7 @@ export default function OperationLogForm() {
                   <CommonButton
                     className="min-w-[130px]"
                     onClick={nextStep}
+                    disabled={optionsLoading || Boolean(optionsError)}
                   >
                     Next
                   </CommonButton>

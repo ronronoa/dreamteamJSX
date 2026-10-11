@@ -55,3 +55,35 @@ export function createProfileImageUpload() {
     },
   });
 }
+
+export function createReportFormUpload() {
+  const directory = path.resolve("uploads/report-forms");
+  const extensionsByMimeType: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+  };
+  const storage = multer.diskStorage({
+    destination: (_req, _file, callback) => {
+      fs.mkdirSync(directory, { recursive: true });
+      callback(null, directory);
+    },
+    filename: (_req, file, callback) => {
+      callback(null, `${randomUUID()}${extensionsByMimeType[file.mimetype] ?? ".upload"}`);
+    },
+  });
+
+  return multer({
+    storage,
+    limits: { fileSize: 8 * 1024 * 1024, files: 10 },
+    fileFilter: (_req, file, callback) => {
+      if (!extensionsByMimeType[file.mimetype]) {
+        callback(new ValidationError("Report attachments must be JPG, PNG, or WebP images.", {
+          images: ["Report attachments must be JPG, PNG, or WebP images."],
+        }));
+        return;
+      }
+      callback(null, true);
+    },
+  });
+}

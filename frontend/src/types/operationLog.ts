@@ -45,6 +45,7 @@ export type VehicularDispatch = {
 
   to: string
   vehicle: string
+  vehicleOther?: string;   // ← add this
   driver: string
   departTime: string
   departPeriod: "AM" | "PM"

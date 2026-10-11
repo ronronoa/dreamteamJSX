@@ -1,32 +1,24 @@
 import type { PatientLogData } from "../types/patientLog";
-import { API_URL } from "./config";
+import { apiFetch } from "./apiFetch";
 
 export async function submitPatientLog(
   pin: string,
   formData: PatientLogData,
 ) {
   const formdata = new FormData();
-
   formdata.append("pinNumber", pin);
-
-  formdata.append("responderDetails", JSON.stringify(formData.responderDetails));
-  formdata.append("vehicularDispatch", JSON.stringify(formData.dispatch));
-  formdata.append("patientDetails", JSON.stringify(formData.patientDetails));
-  formdata.append("firstAidHospital", JSON.stringify(formData.firstAidHospital));
-  formdata.append("inventory", JSON.stringify(formData.inventory));
-
+  formdata.append("formData", JSON.stringify(formData));
   formData.waiverForm.images.forEach((file) => {
     formdata.append("images", file);
   });
 
-  const response = await fetch(`${API_URL}/patients/debug-submit`, {
+  const response = await apiFetch("/report-forms/patients", {
     method: "POST",
     body: formdata,
   });
-
+  const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new Error(result.message ?? `Request failed (${response.status})`);
   }
-
-  return response.json();
+  return result;
 }

@@ -83,4 +83,30 @@ export const pinService = {
 
     return { valid: true };
   },
+
+  async verifyReportFormPin(data: VerifyPinInput) {
+    const pinOwners = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { not: "MEMBER" },
+        pinHash: { not: null },
+        OR: [{ pinLockedUntil: null }, { pinLockedUntil: { lte: new Date() } }],
+      },
+      select: { user_id: true, pinHash: true },
+    });
+    if (pinOwners.length === 0) {
+      throw new UnauthorizedError("A report PIN has not been set by an administrator yet.");
+    }
+
+    for (const pinOwner of pinOwners) {
+      if (pinOwner.pinHash && await argon2.verify(pinOwner.pinHash, data.pin)) {
+        await prisma.user.update({
+          where: { user_id: pinOwner.user_id },
+          data: { pinFailedAttempts: 0, pinLockedUntil: null },
+        });
+        return { valid: true };
+      }
+    }
+    throw new UnauthorizedError("Invalid report PIN.");
+  },
 };

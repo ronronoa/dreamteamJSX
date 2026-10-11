@@ -12,8 +12,11 @@
 | `GET` | `/api/auth/checksession` | Alias for `/api/checksession` | Compatibility route for clients upgrading from the previous refresh-cookie path |
 | `POST` | `/api/auth/refresh` | Public (rate limited) | Refresh access token |
 | `POST` | `/api/auth/logout` | Any authenticated | Revoke refresh token |
-| `POST` | `/api/auth/set-pin` | Any authenticated | Set or change PIN (4-6 digits) |
+| `POST` | `/api/auth/set-pin` | Non-MEMBER authenticated | Set or change report PIN (4-6 digits) |
 | `POST` | `/api/auth/verify-pin` | Any authenticated | Verify PIN for report authorization |
+| `POST` | `/api/report-forms/operations` | Public (PIN required, rate limited) | Submit operation report form (multipart); created as pending verification |
+| `GET` | `/api/report-forms/operations/options` | Public | Load operation types, active teams and responders, and available vehicles for the operation form |
+| `POST` | `/api/report-forms/patients` | Public (PIN required, rate limited) | Submit patient report form (multipart); created as pending verification |
 
 ---
 
@@ -88,7 +91,11 @@ Authenticated users can also manage their own profile and password:
 
 ---
 
-## 3. Operation Log — Phase 3-4 (not built)
+## 3. Operation Log — **BUILT** ✅
+
+Operation reports are submitted without signing in as `multipart/form-data`. Send the report sections in the `formData` JSON field, the 4–6 digit `pinNumber` field at submission, and one or more JPG, PNG, or WebP files under `images`. The PIN is checked against an active non-MEMBER account. The report is saved with `PENDING` status and the submitter name entered in the form, then follows the team leader and administrator verification workflow.
+
+PINs are set by authenticated non-MEMBER users in Settings. Members submit the PIN assigned by their team leadership.
 
 ### 3.1 CRUD Operations
 

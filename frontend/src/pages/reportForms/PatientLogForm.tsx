@@ -32,6 +32,7 @@ export default function PatientLogForm() {
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
+  const [submitMessage, setSubmitMessage] = useState("")
   const [formData, setFormData] = useState<PatientLogData>(createEmptyPatientLogData())
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
@@ -109,9 +110,12 @@ export default function PatientLogForm() {
     try {
       await submitPatientLog(pin, formData)
       setPinModalShow(false)
+      setFormData(createEmptyPatientLogData())
+      setStep(1)
+      setSubmitMessage("Patient report submitted and is pending verification.")
     } catch (error) {
       console.error("Failed to submit patient log:", error)
-      setPinError("Something went wrong. Please try again.")
+      setPinError(error instanceof Error ? error.message : "Could not submit the patient report.")
     } finally {
       setIsSubmitting(false)
     }
@@ -161,6 +165,12 @@ export default function PatientLogForm() {
             <div className="mb-5 mt-8 text-center">
               <h1 className="text-4xl font-bold text-white">PATIENT LOG FORM</h1>
             </div>
+
+            {submitMessage && (
+              <p role="status" className="mb-3 rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                {submitMessage}
+              </p>
+            )}
 
             <div className="relative w-full ">
               <AnimatePresence mode="wait" initial={false} custom={direction}>

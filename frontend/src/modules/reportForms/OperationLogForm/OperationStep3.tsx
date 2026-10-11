@@ -4,13 +4,16 @@ import InventorySection from "../component/InventorySection"
 
 import type { InventoryItem, OperationDescription } from "../../../types/operationLog"
 import { createEmptyInventoryItem } from "../../../types/operationLog"
-import ImageUpload, { addImageFiles, useImageDrag } from "../component/ImageUpload"
+import ImageUpload from "../component/ImageUpload"
+import FieldError from "../component/FieldError"
+import type { FormErrors } from "./formValidation"
 
 type OperationStep3Props = {
   operationDescription: OperationDescription
   onOperationDescriptionChange: (patch: Partial<OperationDescription>) => void
   inventory: InventoryItem[]
   onInventoryChange: (inventory: InventoryItem[]) => void
+  errors: FormErrors
 }
 
 export default function OperationStep3({
@@ -18,44 +21,10 @@ export default function OperationStep3({
   onOperationDescriptionChange,
   inventory,
   onInventoryChange,
+  errors,
 }: OperationStep3Props) {
-
-  const {
-    isDragging,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-  } = useImageDrag()
-
-  function handleFormDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault()
-
-    const imageFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/")
-    )
-
-    if (imageFiles.length === 0) return
-
-    const newImages = addImageFiles(
-      operationDescription.images,
-      imageFiles,
-    )
-
-    onOperationDescriptionChange({
-      images: newImages,
-    })
-  }
-
   return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={(e) => {
-        handleDrop()
-        handleFormDrop(e)
-      }}
-      className="flex w-full flex-col justify-between gap-4 lg:flex-row"
-    >
+    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       <CommonFormSection title="OPERATION DESCRIPTION">
         <div className="flex h-full flex-col">
           <div className="mb-5">
@@ -68,6 +37,7 @@ export default function OperationStep3({
               value={operationDescription.description}
               onChange={(e) => onOperationDescriptionChange({ description: e.target.value })}
             />
+            <FieldError message={errors["operationDescription.description"]} />
           </div>
 
           <ImageUpload
@@ -75,7 +45,7 @@ export default function OperationStep3({
             onImagesChange={(images) =>
               onOperationDescriptionChange({ images })
             }
-            isDragging={isDragging}
+            error={errors["operationDescription.images"]}
           />
         </div>
       </CommonFormSection>
@@ -84,6 +54,7 @@ export default function OperationStep3({
         inventory={inventory}
         onInventoryChange={onInventoryChange}
         createEmptyItem={createEmptyInventoryItem}
+        errors={errors}
       />
     </div>
   )

@@ -33,6 +33,17 @@ export async function changePassword(accessToken: string, currentPassword: strin
   return result.accessToken as string;
 }
 
+export async function setPin(accessToken: string, pin: string) {
+  const response = await apiFetch("/auth/set-pin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ pin }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.message ?? `Request failed (${response.status})`);
+  return result as { success: boolean };
+}
+
 
 export async function logout(): Promise<void>{
   await apiFetch("/auth/logout", {

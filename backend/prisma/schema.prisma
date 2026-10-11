@@ -114,8 +114,16 @@ model ResponseTeam {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  operations OperationLog[]
-  members    User[]
+  operations           OperationLog[]
+  members              User[]
+  operationAssignments OperationTeamAssignment[]
+}
+
+model OperationNature {
+  nature_id String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 model OperationLog {
@@ -125,22 +133,25 @@ model OperationLog {
   name_of_caller      String
   nature_of_operation String
   event_description   String
-  submitted_by        String
+  submitted_by        String?
+  submitter_name      String?
   validated_by        String?
   status              OperationStatus @default(PENDING)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  team            ResponseTeam               @relation(fields: [team_id], references: [team_id])
-  submitter       User                       @relation("SubmittedBy", fields: [submitted_by], references: [user_id])
-  validator       User?                      @relation("ValidatedBy", fields: [validated_by], references: [user_id])
-  responders      OperationResponder[]
-  personsInvolved PersonsInvolved[]
-  inventoryItems  OperationInventory[]
-  edits           OperationLogEdit[]
-  archive         OperationLogArchive?
-  dispatches      VehicularDispatch[]
-  images          OperationImageAttachment[]
+  team             ResponseTeam               @relation(fields: [team_id], references: [team_id])
+  submitter        User?                      @relation("SubmittedBy", fields: [submitted_by], references: [user_id], onDelete: SetNull)
+  validator        User?                      @relation("ValidatedBy", fields: [validated_by], references: [user_id])
+  responders       OperationResponder[]
+  teamAssignments  OperationTeamAssignment[]
+  personsInvolved  PersonsInvolved[]
+  inventoryItems   OperationInventory[]
+  inventoryEntries OperationInventoryEntry[]
+  edits            OperationLogEdit[]
+  archive          OperationLogArchive?
+  dispatches       VehicularDispatch[]
+  images           OperationImageAttachment[]
 
   @@index([team_id])
   @@index([submitted_by])
@@ -158,14 +169,30 @@ model OperationResponder {
   @@id([operation_id, user_id])
 }
 
-model PersonsInvolved {
-  person_id    String  @id @default(uuid())
+model OperationTeamAssignment {
   operation_id String
-  full_name    String
-  age          Int
-  sex          Gender
-  contact_no   String?
-  address      String?
+  team_id      String
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  team      ResponseTeam @relation(fields: [team_id], references: [team_id])
+
+  @@id([operation_id, team_id])
+  @@index([team_id])
+}
+
+model PersonsInvolved {
+  person_id       String    @id @default(uuid())
+  operation_id    String
+  full_name       String
+  age             Int
+  sex             Gender
+  birthdate       DateTime?
+  contact_no      String?
+  address         String?
+  address_phase   String?
+  address_package String?
+  address_block   String?
+  address_lot     String?
 
   operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
 
@@ -255,6 +282,18 @@ model OperationInventory {
   @@id([operation_id, item_id])
 }
 
+model OperationInventoryEntry {
+  entry_id     String  @id @default(uuid())
+  operation_id String
+  item_name    String
+  quantity     Int
+  unit         String?
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+
+  @@index([operation_id])
+}
+
 model OperationLogEdit {
   edit_id      String   @id @default(uuid())
   operation_id String
@@ -313,13 +352,16 @@ model PatientLog {
   patient_id              String
   log_date                DateTime
   type_of_request         PatientRequestType
-  submitted_by            String
+  submitted_by            String?
+  submitter_name          String?
+  status                  OperationStatus      @default(PENDING)
   name_of_caller          String?
   bp                      String?
   pr                      String?
   spo2                    String?
   temp                    String?
   medical_assessment      String?
+  report_data             Json?
   hospital_name           String?
   hospital_representative String?
   hospital_in_time        DateTime?
@@ -328,7 +370,7 @@ model PatientLog {
   updatedAt               DateTime           @updatedAt
 
   patient    Patient             @relation(fields: [patient_id], references: [patient_id])
-  submitter  User                @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id])
+  submitter  User?               @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id], onDelete: SetNull)
   responders PatientResponder[]
   dispatches VehicularDispatch[]
   archive    PatientLogArchive?
@@ -352,9 +394,10 @@ model VehicularDispatch {
   operation_id   String?
   patient_log_id String?
   dispatch_date  DateTime
-  submitted_by   String
+  submitted_by   String?
   vehicle_id     String?
   driver_id      String?
+  driver_name    String?
   depart_time    DateTime?
   arrival_time   DateTime?
   brgy_in_time   DateTime?
@@ -371,7 +414,7 @@ model VehicularDispatch {
   patientLog PatientLog?                  @relation(fields: [patient_log_id], references: [patient_log_id])
   vehicle    Vehicle?                     @relation(fields: [vehicle_id], references: [vehicle_id])
   driver     User?                        @relation("DispatchDriver", fields: [driver_id], references: [user_id])
-  submitter  User                         @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id])
+  submitter  User?                        @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id], onDelete: SetNull)
   responders VehicularDispatchResponder[]
   passengers CivilianPassenger[]
   archive    VehicularDispatchArchive?
@@ -434,11 +477,11 @@ model OperationImageAttachment {
   operation_id  String
   image_url     String
   file_type     String?
-  uploaded_by   String
+  uploaded_by   String?
   uploadedAt    DateTime @default(now())
 
   operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
-  uploader  User         @relation(fields: [uploaded_by], references: [user_id])
+  uploader  User?        @relation(fields: [uploaded_by], references: [user_id], onDelete: SetNull)
 
   @@index([operation_id])
 }
@@ -448,11 +491,11 @@ model PatientImageAttachment {
   patient_id    String
   image_url     String
   file_type     String?
-  uploaded_by   String
+  uploaded_by   String?
   uploadedAt    DateTime @default(now())
 
   patient  Patient @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade)
-  uploader User    @relation(fields: [uploaded_by], references: [user_id])
+  uploader User?   @relation(fields: [uploaded_by], references: [user_id], onDelete: SetNull)
 
   @@index([patient_id])
 }

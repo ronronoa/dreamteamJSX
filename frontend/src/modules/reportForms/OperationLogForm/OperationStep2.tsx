@@ -8,17 +8,24 @@ import CommonFormSection from "../component/CommonFormSection"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
+import { validatePerson, type FormErrors } from "./formValidation"
+import FieldError from "../component/FieldError"
 
 type OperationStep2Props = {
   people: Person[]
   onPeopleChange: (people: Person[]) => void
+  errors: FormErrors
 }
 
-export default function OperationStep2({ people, onPeopleChange }: OperationStep2Props) {
+export default function OperationStep2({ people, onPeopleChange, errors }: OperationStep2Props) {
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
+  const [draftErrors, setDraftErrors] = useState<FormErrors>({})
+  const [attemptedAdd, setAttemptedAdd] = useState(false)
 
   const updateDraft = (patch: Partial<Person>) => {
-    setDraft((current) => ({ ...current, ...patch }))
+    const updatedDraft = { ...draft, ...patch }
+    setDraft(updatedDraft)
+    if (attemptedAdd) setDraftErrors(validatePerson(updatedDraft))
   }
 
   const handleBirthdateChange = (birthdate: string) => {
@@ -26,10 +33,15 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
   }
 
   const addPerson = () => {
-    if (!draft.name.surname || !draft.name.firstName) return
+    setAttemptedAdd(true)
+    const validationErrors = validatePerson(draft)
+    setDraftErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) return
 
     onPeopleChange([...people, { ...draft, id: crypto.randomUUID() }])
     setDraft(createEmptyPerson())
+    setDraftErrors({})
+    setAttemptedAdd(false)
   }
 
   const removePerson = (id: string) => {
@@ -84,6 +96,12 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
             />
           </div>
+          <div className="grid grid-cols-4 gap-2">
+            <FieldError message={draftErrors["name.surname"]} />
+            <FieldError message={draftErrors["name.firstName"]} />
+            <FieldError message={draftErrors["name.middleInitial"]} />
+            <FieldError message={draftErrors["name.suffix"]} />
+          </div>
         </div>
 
         <div className="mb-5 grid grid-cols-[1fr_80px] gap-2">
@@ -103,6 +121,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
             readOnly
           />
         </div>
+        <FieldError message={draftErrors.birthdate} />
 
         <div className="mb-5">
           <label className="mb-1 block text-lg font-medium text-slate-900">Sex</label>
@@ -120,6 +139,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               onChange={() => updateDraft({ gender: "Female" })}
             />
           </div>
+          <FieldError message={draftErrors.gender} />
         </div>
 
         <div className="mb-5">
@@ -131,6 +151,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
             value={draft.contactNumber}
             onChange={(e) => updateDraft({ contactNumber: e.target.value })}
           />
+          <FieldError message={draftErrors.contactNumber} />
         </div>
 
         <div className="mb-5">
@@ -173,6 +194,12 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               onChange={(e) => updateDraft({ address: { ...draft.address, lot: e.target.value } })}
             />
           </div>
+          <div className="grid grid-cols-4 gap-2">
+            <FieldError message={draftErrors["address.phase"]} />
+            <FieldError message={draftErrors["address.package"]} />
+            <FieldError message={draftErrors["address.block"]} />
+            <FieldError message={draftErrors["address.lot"]} />
+          </div>
         </div>
 
         <div className="mt-auto pt-5">
@@ -189,6 +216,11 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
       </CommonFormSection>
 
       <CommonFormSection padded={false}>
+        {errors.people && (
+          <p role="alert" className="px-3 pt-3 text-sm font-medium text-red-700">
+            {errors.people}
+          </p>
+        )}
         <div className="h-full overflow-x-auto min-h-21.25">
           <table className="w-full border-collapse text-sm">
             <thead>

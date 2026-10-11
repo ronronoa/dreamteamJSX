@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import StatCard, { type StatCardProps } from "../component/StatCard";
 import DateCell from "../component/DateCell";
 
@@ -14,6 +15,8 @@ import TablePagination from "../component/TablePagination";
 import type { PendingVehicleDispatch, VehicleDispatchRecord } from "@/types/vehicleDispatch";
 import TableStatus from "../component/TableStatus";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import { useAuth } from "@/context/AuthContext";
+import { createFleetVehicle, fetchFleetVehicles, type FleetVehicle } from "@/api/vehicles";
 
 // ── Data (placeholder) ────────────────────────────────────
 
@@ -67,6 +70,57 @@ const approvedLogs: VehicleDispatchRecord[] = [
 // ── Page ──────────────────────────────────────────────────
 
 export default function Vehicles() {
+  const { session } = useAuth();
+  const accessToken = session?.accessToken;
+  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
+  const [vehicleName, setVehicleName] = useState("");
+  const [plateNumber, setPlateNumber] = useState("");
+  const [fleetLoading, setFleetLoading] = useState(true);
+  const [savingVehicle, setSavingVehicle] = useState(false);
+  const [fleetError, setFleetError] = useState("");
+  const [fleetMessage, setFleetMessage] = useState("");
+  const canManageFleet = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(session?.user.role ?? "");
+
+  const loadFleet = useCallback(async () => {
+    if (!accessToken) {
+      setFleetLoading(false);
+      return;
+    }
+    try {
+      setFleetVehicles(await fetchFleetVehicles(accessToken));
+    } catch (error) {
+      setFleetError(error instanceof Error ? error.message : "Could not load the vehicle fleet.");
+    } finally {
+      setFleetLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    void (async () => {
+      await Promise.resolve();
+      await loadFleet();
+    })();
+  }, [loadFleet]);
+
+  async function handleAddVehicle(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken) return;
+    setSavingVehicle(true);
+    setFleetError("");
+    setFleetMessage("");
+    try {
+      await createFleetVehicle(accessToken, { vehicleName, plateNumber });
+      setVehicleName("");
+      setPlateNumber("");
+      setFleetMessage("Vehicle added to the fleet.");
+      await loadFleet();
+    } catch (error) {
+      setFleetError(error instanceof Error ? error.message : "Could not add this vehicle.");
+    } finally {
+      setSavingVehicle(false);
+    }
+  }
+
   return (
     <div className="space-y-7">
       {/* Stat cards */}
@@ -183,6 +237,36 @@ export default function Vehicles() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-gray-900">Vehicle Fleet</h2>
+          <p className="mt-1 text-xs text-gray-500">Register vehicles available for dispatch.</p>
+        </div>
+        {canManageFleet && <form onSubmit={handleAddVehicle} className="mb-5 flex flex-wrap items-end gap-3">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs font-medium text-gray-700">
+            Vehicle name
+            <input required maxLength={100} value={vehicleName} onChange={(event) => setVehicleName(event.target.value)} className="h-9 rounded-lg border border-gray-200 px-3 text-sm" placeholder="e.g. Barangay Mobile" />
+          </label>
+          <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs font-medium text-gray-700">
+            Plate number
+            <input required maxLength={20} value={plateNumber} onChange={(event) => setPlateNumber(event.target.value)} className="h-9 rounded-lg border border-gray-200 px-3 text-sm uppercase" placeholder="ABC 1234" />
+          </label>
+          <CommonButton compact type="submit" disabled={savingVehicle}>{savingVehicle ? "Adding…" : "Add vehicle"}</CommonButton>
+        </form>}
+        {fleetError && <p role="alert" className="mb-3 text-sm text-red-700">{fleetError}</p>}
+        {fleetMessage && <p role="status" className="mb-3 text-sm text-emerald-700">{fleetMessage}</p>}
+        {fleetLoading ? <p className="text-sm text-gray-500">Loading vehicles…</p> : fleetVehicles.length === 0 ? (
+          <p className="text-sm text-gray-500">No vehicles have been registered yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-gray-100 text-xs text-gray-500"><tr><th className="py-2">Vehicle</th><th className="py-2">Plate number</th><th className="py-2">Status</th></tr></thead>
+              <tbody>{fleetVehicles.map((vehicle) => <tr key={vehicle.vehicle_id} className="border-b border-gray-50 last:border-0"><td className="py-3 font-medium text-gray-800">{vehicle.vehicle_name}</td><td className="py-3 text-gray-600">{vehicle.plate_number}</td><td className="py-3 text-gray-600">{vehicle.status.replace("_", " ")}</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

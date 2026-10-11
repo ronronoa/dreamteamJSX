@@ -48,9 +48,12 @@ export const operationService = {
             where: { ...where, archive: null },
             include: {
                 team: true,
+                teamAssignments: { include: { team: true } },
                 submitter: { select: { user_id: true, name: true, username: true}},
                 responders: { include: { user: { select: { user_id: true, name: true }}}},
                 personsInvolved: true,
+                inventoryEntries: true,
+                dispatches: { include: { vehicle: true, driver: { select: { user_id: true, name: true } } } },
                 images: true
             },
             orderBy: { createdAt: "desc"}
@@ -66,6 +69,9 @@ export const operationService = {
                 validator: { select: { user_id: true, name: true, username: true}},
                 responders: { include: { user: { select: { user_id: true, name: true}}}},
                 personsInvolved: true,
+                teamAssignments: { include: { team: true } },
+                inventoryEntries: true,
+                dispatches: { include: { vehicle: true, driver: { select: { user_id: true, name: true } } } },
                 images: true,
                 edits: { include: { admin: { select: { user_id: true, name: true}}}}
             },

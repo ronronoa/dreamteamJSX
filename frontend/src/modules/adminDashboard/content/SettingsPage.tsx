@@ -12,8 +12,18 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import CommonButton from "@/components/common/widgets/CommonButton";
+import CommonInput from "@/components/common/widgets/CommonInput";
+import { useAuth } from "@/context/AuthContext";
+import { setPin as apiSetPin } from "@/api/auth";
 
 export default function SettingsPage() {
+  const { session } = useAuth();
+  const [pin, setPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinMessage, setPinMessage] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+  const canManagePin = session?.user.role !== "MEMBER";
   const [lowStockAlerts, setLowStockAlerts] = useState(false);
   const [approvalNotifications, setApprovalNotifications] = useState(false);
   const [archiveRetention, setArchiveRetention] = useState("1-year");
@@ -106,6 +116,47 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* Security & accessibility */}
+      {canManagePin && <SettingsSection
+        icon={Shield}
+        title="Report form PIN"
+        description="Set or update the PIN members use to submit report forms."
+      >
+        <form onSubmit={async (event) => {
+          event.preventDefault();
+          setPinError("");
+          setPinMessage("");
+          if (!/^\d{4,6}$/.test(pin)) {
+            setPinError("PIN must contain 4 to 6 digits.");
+            return;
+          }
+          if (pin !== pinConfirm) {
+            setPinError("PIN entries do not match.");
+            return;
+          }
+          if (!session?.accessToken) {
+            setPinError("Sign in again to update your PIN.");
+            return;
+          }
+          setSavingPin(true);
+          try {
+            await apiSetPin(session.accessToken, pin);
+            setPin("");
+            setPinConfirm("");
+            setPinMessage("Your report PIN was saved.");
+          } catch (error) {
+            setPinError(error instanceof Error ? error.message : "Could not save your PIN.");
+          } finally {
+            setSavingPin(false);
+          }
+        }} className="max-w-md space-y-3">
+          <CommonInput label="New PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} required />
+          <CommonInput label="Confirm PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value.replace(/\D/g, ""))} required />
+          {pinError && <p role="alert" className="text-sm text-red-700">{pinError}</p>}
+          {pinMessage && <p role="status" className="text-sm text-emerald-700">{pinMessage}</p>}
+          <CommonButton type="submit" compact disabled={savingPin}>{savingPin ? "Saving…" : "Save PIN"}</CommonButton>
+        </form>
+      </SettingsSection>}
+
       <SettingsSection
         icon={Shield}
         title="Security & accessibility"
