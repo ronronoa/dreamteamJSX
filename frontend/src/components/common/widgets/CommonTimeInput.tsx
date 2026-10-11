@@ -2,6 +2,7 @@
 // got no idea how this works
 
 import { Fragment, useEffect, useRef, useState } from "react"
+import { InputBase } from "@/components/base/input/input"
 
 interface CommonTimeInputProps {
   label: string
@@ -169,7 +170,7 @@ export default function CommonTimeInput({
                 </span>
               )}
 
-              <input
+              <InputBase
                 ref={(el) => {
                   inputRefs.current[index] = el
                 }}
@@ -183,16 +184,8 @@ export default function CommonTimeInput({
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onFocus={(e) => e.target.select()}
                 onClick={(e) => e.currentTarget.select()}
-                className="
-                border border-gray-300
-                h-8 w-12 md:w-8
-                rounded-full md:rounded
-                mx-1 md:mx-0.5
-                bg-transparent
-                text-center text-lg text-slate-900
-                outline-none
-                focus:bg-white focus:ring-1 focus:ring-orange-500
-                "
+                wrapperClassName="mx-1 h-8 w-12 rounded-full border border-gray-300 bg-transparent shadow-none ring-0 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-500 md:mx-0.5 md:w-8 md:rounded"
+                inputClassName="h-full w-full rounded-[inherit] p-0 text-center text-lg text-slate-900 outline-none"
               />
             </Fragment>
           ))}

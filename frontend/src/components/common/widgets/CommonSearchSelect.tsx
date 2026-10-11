@@ -1,27 +1,21 @@
 import { useEffect, useRef, useState } from "react"
 import type { InputHTMLAttributes } from "react"
+import { InputBase, type InputBaseProps } from "@/components/base/input/input"
 
 type CommonSearchSelectVariant = "default" | "compact"
 
-const styles: Record<CommonSearchSelectVariant, { label: string; input: string; dropdown: string; option: string }> = {
+const styles: Record<CommonSearchSelectVariant, { label: string; wrapper: string; input: string; dropdown: string; option: string }> = {
   default: {
     label: "mb-1.5 block text-sm font-semibold text-gray-800",
-    input: `
-      w-full rounded-xl bg-white border-2 border-gray-200
-      px-3 py-3 text-sm text-gray-800
-      focus:ring-2 focus:ring-purple-400 focus:border-purple-400
-      shadow-sm outline-none
-    `,
+    wrapper: "w-full rounded-xl border-2 border-gray-200 bg-white shadow-sm ring-0 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-400",
+    input: "px-3 py-3 text-sm text-gray-800",
     dropdown: "mt-1 rounded-xl border-2 border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto",
     option: "px-3 py-2.5 text-sm",
   },
   compact: {
     label: "mb-1 block text-lg font-medium text-slate-900",
-    input: `
-      w-full h-9 rounded-md bg-gray-100 border border-gray-300
-      px-2 text-sm text-gray-800
-      focus:border-purple-500 outline-none
-    `,
+    wrapper: "h-9 w-full rounded-md border border-gray-300 bg-gray-100 shadow-none ring-0 focus-within:border-purple-500",
+    input: "h-full px-2 py-0 text-sm text-gray-800",
     dropdown: "mt-1 rounded-md border border-gray-300 bg-white shadow-md max-h-60 overflow-y-auto",
     option: "px-2 py-1.5 text-sm",
   },
@@ -53,7 +47,7 @@ export default function CommonSearchSelect({
   className = "",
   ...props
 }: CommonSearchSelectProps) {
-  const { label: labelClass, input: inputClass, dropdown, option: optionClass } = styles[variant]
+  const { label: labelClass, wrapper: wrapperClass, input: inputClass, dropdown, option: optionClass } = styles[variant]
 
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
@@ -111,10 +105,10 @@ export default function CommonSearchSelect({
 
   return (
     <div ref={containerRef} className="relative">
-      {label && <label className={labelClass}>{label}</label>}
+      {label && <label htmlFor={props.id} className={labelClass}>{label}</label>}
 
-      <input
-        {...props}
+      <InputBase
+        {...(props as InputBaseProps)}
         type="text"
         autoComplete="off"
         value={displayValue}
@@ -129,7 +123,8 @@ export default function CommonSearchSelect({
           setQuery("")
         }}
         onKeyDown={handleKeyDown}
-        className={`${inputClass} ${className}`}
+        wrapperClassName={`${wrapperClass} ${className}`}
+        inputClassName={`w-full bg-transparent outline-none placeholder:text-gray-400 ${inputClass}`}
       />
 
       {isOpen && (

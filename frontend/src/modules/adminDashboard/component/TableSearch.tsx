@@ -1,18 +1,20 @@
 import { Search } from "lucide-react";
+import { InputBase, type InputBaseProps } from "@/components/base/input/input";
+
+const SearchInputIcon: NonNullable<InputBaseProps["icon"]> = ({ className }) => (
+  <Search size={14} className={className} />
+);
 
 export default function TableSearch() {
   return (
-    <div className="relative">
-      <Search
-        size={14}
-        aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-      />
-      <input
+    <div>
+      <InputBase
         type="search"
         aria-label="Search records"
         placeholder="Search"
-        className="h-9 w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
+        icon={SearchInputIcon}
+        wrapperClassName="h-9 w-64 rounded-lg border border-gray-200 bg-white shadow-none ring-0 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-100"
+        inputClassName="h-full rounded-lg py-0 pr-3 text-xs text-gray-700 placeholder:text-gray-400"
       />
     </div>
   );

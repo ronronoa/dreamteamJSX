@@ -18,6 +18,11 @@ import EditUserModal, { type UserFormValues } from "@/components/common/modals/E
 import StatCard from "../component/StatCard";
 import TwoLineCell from "../component/TwoLineCell";
 import TableStatus from "../component/TableStatus";
+import { InputBase, type InputBaseProps } from "@/components/base/input/input";
+
+const SearchInputIcon: NonNullable<InputBaseProps["icon"]> = ({ className }) => (
+  <Search size={14} className={className} />
+);
 
 const roleLabels: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -205,9 +210,8 @@ export default function ManageUsers() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CommonButton compact onClick={openCreateModal}><span className="inline-flex items-center gap-1"><Plus size={14} /> Add New User</span></CommonButton>
-              <label className="relative">
-                <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="search" aria-label="Search users" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users" className="h-9 w-56 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100" />
+              <label>
+                <InputBase type="search" aria-label="Search users" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users" icon={SearchInputIcon} wrapperClassName="h-9 w-56 rounded-lg border border-gray-200 bg-white shadow-none ring-0 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-100" inputClassName="h-full rounded-lg py-0 pr-3 text-xs text-gray-700" />
               </label>
               <label className="flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600">
                 <Filter size={14} />

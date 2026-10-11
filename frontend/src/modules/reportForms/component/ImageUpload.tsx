@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { ImagePlus, Trash, Upload } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
+import { InputBase } from "@/components/base/input/input"
 import ImagePreviewModal from "../modal/ImagePreviewModal"
 
 interface ImageUploadProps {
@@ -158,12 +159,12 @@ export default function ImageUpload({
           <Upload size={18} />
         </CommonButton>
 
-        <input
+        <InputBase
           ref={fileInputRef}
           type="file"
           multiple
           accept={ACCEPTED_IMAGE_EXTENSIONS.join(",")}
-          className="hidden"
+          wrapperClassName="hidden"
           onChange={(e) => handleFilesSelected(e.target.files)}
         />
       </div>

@@ -8,8 +8,7 @@ import CommonButton from "../../../components/common/widgets/CommonButton";
 import {
   Mail,
   Lock,
-  Eye,
-  EyeOff,
+  KeyRound,
 } from "lucide-react";
 
 interface LoginCardProps {
@@ -21,7 +20,6 @@ export default function LoginCard({
   onForgotPassword,
 }: LoginCardProps) {
 
-  const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
@@ -79,66 +77,19 @@ export default function LoginCard({
           className="border-none"
         />
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-semibold text-gray-800 mb-1.5"
-          >
-            Security Key / Password
-          </label>
-
-          <div className="relative">
-
-            <Lock
-              size={18}
-              className="
-                absolute left-3.5 top-1/2
-                -translate-y-1/2
-                text-gray-400
-              "
-            />
-
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••"
-              autoComplete="current-password"
-              required
-              className="
-                w-full rounded-xl bg-white
-                pl-10 pr-11 py-3
-                text-sm text-gray-800
-                outline-none
-                focus:ring-2 focus:ring-orange-400
-                shadow-sm
-              "
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="
-                absolute right-3.5 top-1/2
-                -translate-y-1/2
-                text-gray-400
-                hover:text-gray-600
-              "
-              aria-label={
-                showPassword
-                  ? "Hide password"
-                  : "Show password"
-              }
-            >
-              {showPassword
-                ? <EyeOff size={18} />
-                : <Eye size={18} />
-              }
-            </button>
-
-          </div>
-        </div>
+        <CommonInput
+          id="password"
+          label="Security Key / Password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="••••••••••"
+          autoComplete="current-password"
+          required
+          icon={<KeyRound size={18} />}
+          showPasswordToggle
+          className="border-none"
+        />
 
         <div className="flex justify-between">
 

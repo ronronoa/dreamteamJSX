@@ -3,6 +3,7 @@ import { Camera, KeyRound, Pencil } from "lucide-react";
 
 import CommonButton from "@/components/common/widgets/CommonButton";
 import CommonInput from "@/components/common/widgets/CommonInput";
+import { InputBase, type InputBaseProps } from "@/components/base/input/input";
 import UserAvatar from "@/components/common/widgets/UserAvatar";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -195,7 +196,6 @@ export default function UserProfile() {
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <UserAvatar
             initials={initials}
-            name={displayName}
             imageUrl={photoSource}
             size="xl"
             orientation="vertical"
@@ -216,11 +216,11 @@ export default function UserProfile() {
             </span>
           )}
 
-          <input
+          <InputBase
             ref={photoInput}
             type="file"
             accept="image/jpeg,image/png"
-            className="hidden"
+            wrapperClassName="hidden"
             onChange={(event) => void handlePhotoSelection(event)}
           />
           <button
@@ -320,9 +320,44 @@ export default function UserProfile() {
 
         <form onSubmit={handlePasswordChange} className="p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <CompactPasswordField id="profile-current-password" label="Current password" value={currentPassword} onChange={setCurrentPassword} required minLength={1} autoComplete="current-password" />
-            <CompactPasswordField id="profile-new-password" label="New password" value={newPassword} onChange={setNewPassword} required minLength={8} maxLength={64} autoComplete="new-password" />
-            <CompactPasswordField id="profile-confirm-password" label="Confirm new password" value={confirmPassword} onChange={setConfirmPassword} required minLength={8} maxLength={64} autoComplete="new-password" />
+            <CommonInput
+              id="profile-current-password"
+              label="Current password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+              minLength={1}
+              autoComplete="current-password"
+              showPasswordToggle
+              variant="compact"
+            />
+            <CommonInput
+              id="profile-new-password"
+              label="New password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+              minLength={8}
+              maxLength={64}
+              autoComplete="new-password"
+              showPasswordToggle
+              variant="compact"
+            />
+            <CommonInput
+              id="profile-confirm-password"
+              label="Confirm new password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              minLength={8}
+              maxLength={64}
+              autoComplete="new-password"
+              showPasswordToggle
+              variant="compact"
+            />
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -356,40 +391,14 @@ function ProfileField({
   return (
     <label className="block min-w-0 border-b border-gray-100 pb-3">
       <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</span>
-      <input
-        {...inputProps}
+      <InputBase
+        {...(inputProps as InputBaseProps)}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-md border border-gray-300 px-2.5 py-2 text-xs text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+        wrapperClassName="mt-1 rounded-md border border-gray-300 bg-white shadow-none ring-0 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100"
+        inputClassName="w-full rounded-md px-2.5 py-2 text-xs text-gray-900 outline-none"
       />
     </label>
-  );
-}
-
-function CompactPasswordField({
-  id,
-  label,
-  value,
-  onChange,
-  ...inputProps
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "autoCapitalize">) {
-  return (
-    <CommonInput
-      id={id}
-      label={label}
-      type="password"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      showPasswordToggle
-      variant="compact"
-      className="!h-9 !rounded-lg !bg-white !text-xs"
-      {...inputProps}
-    />
   );
 }
 
