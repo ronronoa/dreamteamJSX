@@ -32,7 +32,7 @@ userRoutes.post("/users/me/avatar", requireAuth, uploadProfileImage, userControl
 userRoutes.use(
   "/users",
   requireAuth,
-  requireRole("SUPER_ADMIN")
+  requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD")
 );
 
 userRoutes.get("/users", userController.list)

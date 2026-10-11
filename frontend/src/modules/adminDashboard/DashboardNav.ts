@@ -50,7 +50,7 @@ const departmentHeadSections: DashboardSidebarSection[] = [
   { label: "Archives", items: [archiveItem] },
   {
     label: "Administration",
-    items: [activityItem, profileItem, reportsItem, settingsItem],
+    items: [usersItem, activityItem, profileItem, reportsItem, settingsItem],
   },
 ];
 
