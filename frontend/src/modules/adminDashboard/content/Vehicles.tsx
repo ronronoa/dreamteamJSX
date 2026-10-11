@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import StatCard, { type StatCardProps } from "../component/StatCard";
+import StatCard from "../component/StatCard";
 import DateCell from "../component/DateCell";
 
 import {
@@ -12,114 +11,19 @@ import {
 import DataTable from "@/components/common/DataTable";
 import TableSearch from "../component/TableSearch";
 import TablePagination from "../component/TablePagination";
-import type { PendingVehicleDispatch, VehicleDispatchRecord } from "@/types/vehicleDispatch";
 import TableStatus from "../component/TableStatus";
 import CommonButton from "@/components/common/widgets/CommonButton";
-import { useAuth } from "@/context/AuthContext";
-import { createFleetVehicle, fetchFleetVehicles, type FleetVehicle } from "@/api/vehicles";
-
-// ── Data (placeholder) ────────────────────────────────────
-
-const stats: StatCardProps[] = [
-  {
-    label: "Total dispatch",
-    value: "52",
-    sub: "All recorded dispatches",
-    variant: "primary" as const,
-  },
-  {
-    label: "Most vehicle type dispatched",
-    value: "Barangay Mobile",
-    sub: "↑ 5%  from last month",
-    subTone: "up" as const,
-  },
-  {
-    label: "Emergency response average time",
-    value: "5:54",
-    unit: "min",
-    sub: "↓ 4 sec  vs last month",
-    subTone: "down" as const,
-  },
-];
-
-const pendingRequests: PendingVehicleDispatch[] = [];
-
-const approvedLogs: VehicleDispatchRecord[] = [
-  {
-    id: "DSP-051",
-    date: new Date("2026-08-29T02:15:00"),
-    time: "03:42 PM",
-    vehicle: "Brgy Mobile",
-    driver: "R. Garcia",
-    destination: "Phase 9-B Package 8 Block 12 Lot 3",
-    totalTime: "53m",
-    type: "Non-Emergency",
-  },
-  {
-    id: "DSP-052",
-    date: new Date("2026-08-29T02:15:00"),
-    time: "03:42 PM",
-    vehicle: "Brgy Mobile",
-    driver: "R. Garcia",
-    destination: "Phase 9-B Package 8 Block 12 Lot 3",
-    totalTime: "53m",
-    type: "Emergency",
-  },
-];
+import { stats, pendingRequests, approvedLogs } from "./vehicles/sampleData";
+import { useVehiclesDashboard } from "./vehicles/useVehiclesDashboard";
 
 // ── Page ──────────────────────────────────────────────────
 
 export default function Vehicles() {
-  const { session } = useAuth();
-  const accessToken = session?.accessToken;
-  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
-  const [vehicleName, setVehicleName] = useState("");
-  const [plateNumber, setPlateNumber] = useState("");
-  const [fleetLoading, setFleetLoading] = useState(true);
-  const [savingVehicle, setSavingVehicle] = useState(false);
-  const [fleetError, setFleetError] = useState("");
-  const [fleetMessage, setFleetMessage] = useState("");
-  const canManageFleet = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(session?.user.role ?? "");
-
-  const loadFleet = useCallback(async () => {
-    if (!accessToken) {
-      setFleetLoading(false);
-      return;
-    }
-    try {
-      setFleetVehicles(await fetchFleetVehicles(accessToken));
-    } catch (error) {
-      setFleetError(error instanceof Error ? error.message : "Could not load the vehicle fleet.");
-    } finally {
-      setFleetLoading(false);
-    }
-  }, [accessToken]);
-
-  useEffect(() => {
-    void (async () => {
-      await Promise.resolve();
-      await loadFleet();
-    })();
-  }, [loadFleet]);
-
-  async function handleAddVehicle(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken) return;
-    setSavingVehicle(true);
-    setFleetError("");
-    setFleetMessage("");
-    try {
-      await createFleetVehicle(accessToken, { vehicleName, plateNumber });
-      setVehicleName("");
-      setPlateNumber("");
-      setFleetMessage("Vehicle added to the fleet.");
-      await loadFleet();
-    } catch (error) {
-      setFleetError(error instanceof Error ? error.message : "Could not add this vehicle.");
-    } finally {
-      setSavingVehicle(false);
-    }
-  }
+  const {
+    fleetVehicles, vehicleName, setVehicleName, plateNumber, setPlateNumber,
+    fleetLoading, savingVehicle, fleetError, fleetMessage, canManageFleet,
+    handleAddVehicle,
+  } = useVehiclesDashboard();
 
   return (
     <div className="space-y-7">

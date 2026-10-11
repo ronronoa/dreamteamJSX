@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { Dialog } from "@base-ui/react/dialog";
 
 interface ModalProps {
   open: boolean;
@@ -34,42 +34,25 @@ export default function Modal({
   dismissable = true,
   large = false
 }: ModalProps) {
-  useEffect(() => {
-    if (!open || !dismissable) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, dismissable, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="
-      fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4
-      "
-      onClick={dismissable ? onClose : undefined}
+    <Dialog.Root
+      open={open}
+      disablePointerDismissal={!dismissable}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && dismissable) onClose();
+      }}
     >
-      <div
-        className={`
-        w-full ${large ? "max-w-7xl" : "max-w-lg"} rounded-3xl bg-white p-6 shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto
-        modal-open
-        ${className}
-        `}
-        
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
+        <Dialog.Viewport className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-4">
+          <Dialog.Popup
+            aria-label="Dialog"
+            className={`w-full ${large ? "max-w-7xl" : "max-w-lg"} max-h-[calc(100vh-2rem)] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl modal-open ${className}`}
+          >
+            {children}
+          </Dialog.Popup>
+        </Dialog.Viewport>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

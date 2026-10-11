@@ -1,6 +1,7 @@
 import type { OperationFormOptions } from "../../../api/operationForm";
 import type { OperationLogData, Person } from "../../../types/operationLog";
 import { calculateAge } from "../../../types/operationLog";
+import { formatDate } from "../../../utils/dateTime";
 
 export type FormErrors = Record<string, string>;
 
@@ -38,7 +39,7 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
 
   const submitterName = operationDetails.submitterName.trim();
   if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
-  if (!operationDetails.date || operationDetails.date > new Date().toISOString().slice(0, 10)) {
+  if (!operationDetails.date || operationDetails.date > formatDate(new Date(), "YYYY-MM-DD")) {
     errors["operationDetails.date"] = "Choose a valid date that is not in the future.";
   }
   if (!options.operationNatures.some((nature) => nature.name === operationDetails.natureOfOperation)) {
@@ -85,7 +86,7 @@ export function validatePerson(person: Person): FormErrors {
   if (person.name.middleInitial.trim().length > 10) errors["name.middleInitial"] = "Middle initial must be 10 characters or fewer.";
   if (person.name.suffix.trim().length > 20) errors["name.suffix"] = "Suffix must be 20 characters or fewer.";
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDate(new Date(), "YYYY-MM-DD");
   if (!person.birthdate || person.birthdate > today || person.age === "") {
     errors.birthdate = "Choose a valid birthdate that is not in the future.";
   } else if (person.age !== calculateAge(person.birthdate)) {

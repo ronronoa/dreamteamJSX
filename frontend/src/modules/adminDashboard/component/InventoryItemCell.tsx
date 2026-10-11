@@ -1,8 +1,4 @@
-const DATE_FMT = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
+import { formatDate, getDaysUntil } from "@/utils/dateTime";
 
 export default function InventoryItemCell({ expiry, now }: { expiry: Date | null; now: number }) {
   if (!expiry) {
@@ -14,7 +10,8 @@ export default function InventoryItemCell({ expiry, now }: { expiry: Date | null
     );
   }
 
-  const days = Math.ceil((expiry.getTime() - now) / 86_400_000);
+  const daysUntilExpiry = getDaysUntil(expiry, now);
+  const days = daysUntilExpiry === null ? 0 : Math.ceil(daysUntilExpiry);
 
   const label =
     days < 0     ? "expired"       :
@@ -24,7 +21,7 @@ export default function InventoryItemCell({ expiry, now }: { expiry: Date | null
 
   return (
     <div className="leading-tight">
-      <p className="text-xs font-semibold text-gray-900">{DATE_FMT.format(expiry)}</p>
+      <p className="text-xs font-semibold text-gray-900">{formatDate(expiry)}</p>
       <p className="text-[10px] text-gray-400">{label}</p>
     </div>
   );

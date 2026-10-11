@@ -143,18 +143,7 @@ export const createEmptyFirstAidHospital = (): FirstAidHospitalDetails => ({
   hospitalOutPeriod: "AM",
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-  const birth = new Date(birthdate)
-  if (Number.isNaN(birth.getTime())) return ""
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const hadBirthday =
-    today.getMonth() > birth.getMonth() ||
-    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate())
-  if (!hadBirthday) age -= 1
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 waiver form & inventory

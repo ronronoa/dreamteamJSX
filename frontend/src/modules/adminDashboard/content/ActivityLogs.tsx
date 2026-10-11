@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Detail from "../component/Detail";
 import { Download, Eye } from "lucide-react";
-import { archiveActivityLogs, exportActivityLogs, fetchActivityLogs } from "@/api/activityLogs";
-import type { ActivityLogRecord, ActivityLogStats } from "@/api/activityLogs";
-import { useAuth } from "@/context/AuthContext";
 import DataTable from "@/components/common/DataTable";
 import Modal from "@/components/common/modals/Modal";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
@@ -12,128 +9,17 @@ import TwoLineCell from "../component/TwoLineCell";
 import TableStatus from "../component/TableStatus";
 import TablePagination from "../component/TablePagination";
 import DateCell from "../component/DateCell";
+import { formatDateTime } from "@/utils/dateTime";
 
-const PAGE_SIZE = 10;
-const EMPTY_STATS: ActivityLogStats = {
-  totalCount: 0,
-  todayCount: 0,
-  activeUserCount: 0,
-  importantActionCount: 0,
-};
-const TODAY_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-const ROLE_LABELS: Record<string, string> = {
-  SUPER_ADMIN: "Super Admin",
-  DEPARTMENT_HEAD: "Department Head",
-  DEPUTY: "Deputy",
-  TEAM_LEADER: "Team Leader",
-  MEMBER: "Member",
-};
-const STATUS_VARIANTS = {
-  Success: "success",
-  Failed: "failed",
-  Warning: "warning",
-} as const;
-
-function getPageCount(totalCount: number) {
-  return Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-}
+import { ROLE_LABELS, STATUS_VARIANTS } from "./activityLogs/activityLogConfig";
+import { useActivityLogsDashboard } from "./activityLogs/useActivityLogsDashboard";
 
 export default function ActivityLogs() {
-  const { session } = useAuth();
-  const accessToken = session?.accessToken;
-  const [logs, setLogs] = useState<ActivityLogRecord[]>([]);
-  const [stats, setStats] = useState(EMPTY_STATS);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [pageError, setPageError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<ActivityLogRecord | null>(null);
-
-  const loadLogs = useCallback(async () => {
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setPageError("");
-    try {
-      const result = await fetchActivityLogs(accessToken, page, PAGE_SIZE);
-      setLogs(result.logs);
-      setStats(result.stats);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not load activity logs.");
-    } finally {
-      setLoading(false);
-    }
-  }, [accessToken, page]);
-
-  useEffect(() => {
-    void loadLogs();
-  }, [loadLogs]);
-
-  const pageCount = useMemo(() => getPageCount(stats.totalCount), [stats.totalCount]);
-
-  async function handleArchive() {
-    if (busy) return;
-    if (!accessToken) {
-      setPageError("Your session expired. Please sign in again.");
-      return;
-    }
-
-    setBusy(true);
-    setPageError("");
-    setSuccessMessage("");
-    try {
-      const result = await archiveActivityLogs(accessToken);
-      setSuccessMessage(`${result.archivedCount} activity log${result.archivedCount === 1 ? "" : "s"} archived.`);
-      setPage(1);
-      setArchiveModalOpen(false);
-      if (page === 1) await loadLogs();
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not archive activity logs.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleExport() {
-    if (busy) return;
-    if (!accessToken) {
-      setPageError("Your session expired. Please sign in again.");
-      return;
-    }
-
-    setBusy(true);
-    setPageError("");
-    try {
-      const file = await exportActivityLogs(accessToken);
-      const fileUrl = URL.createObjectURL(file);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = fileUrl;
-      downloadLink.download = `activity-ledger-${new Date().toISOString().slice(0, 10)}.csv`;
-      downloadLink.click();
-      URL.revokeObjectURL(fileUrl);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not export the activity log.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const statCards = [
-    { label: "Total Activities", value: stats.totalCount.toLocaleString(), sub: "All recorded system actions" },
-    { label: "Today's Activities", value: stats.todayCount.toLocaleString(), sub: TODAY_DATE_FORMAT.format(new Date()) },
-    { label: "Active Users", value: stats.activeUserCount.toLocaleString(), sub: "Accounts active today" },
-    { label: "Security / Important Actions", value: stats.importantActionCount.toLocaleString(), sub: "User and authentication actions today" },
-  ];
+  const {
+    logs, stats, page, setPage, loading, busy, pageError, successMessage,
+    archiveModalOpen, setArchiveModalOpen, selectedLog, setSelectedLog,
+    pageCount, statCards, handleArchive, handleExport,
+  } = useActivityLogsDashboard();
 
   return (
     <>
@@ -164,7 +50,7 @@ export default function ActivityLogs() {
               <Detail label="Role" value={ROLE_LABELS[selectedLog.role] ?? selectedLog.role} />
               <Detail label="Record ID" value={selectedLog.recordId ?? "—"} />
               <Detail label="Status" value={selectedLog.status} />
-              <Detail label="Date" value={selectedLog.date.toLocaleString()} />
+              <Detail label="Date" value={formatDateTime(selectedLog.date)} />
               <Detail label="Request" value={selectedLog.details || "No additional details."} />
             </dl>
             <div className="flex justify-end border-t border-gray-100 pt-3">
@@ -238,14 +124,5 @@ export default function ActivityLogs() {
         </section>
       </div>
     </>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="break-words text-sm font-medium text-gray-900">{value}</dd>
-    </div>
   );
 }

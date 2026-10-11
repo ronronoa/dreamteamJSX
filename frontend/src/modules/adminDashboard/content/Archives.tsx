@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Detail from "../component/Detail";
 import { ChevronRight, Filter, RotateCcw } from "lucide-react";
-import { fetchArchives, restoreArchiveRecord, type ArchiveRecord } from "@/api/archives";
-import { useAuth } from "@/context/AuthContext";
 import DataTable from "@/components/common/DataTable";
 import Modal from "@/components/common/modals/Modal";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
@@ -10,110 +8,17 @@ import TableSearch from "../component/TableSearch";
 import TablePagination from "../component/TablePagination";
 import DateCell from "../component/DateCell";
 import StatCard from "../component/StatCard";
-
-const PAGE_SIZE = 10;
-const EMPTY_STATS = {
-  totalCount: 0,
-  operationCount: 0,
-  patientCount: 0,
-  vehicleCount: 0,
-  inventoryCount: 0,
-  activityCount: 0,
-};
-const ARCHIVE_FILTERS = [
-  { value: "all", label: "All record types" },
-  { value: "operation", label: "Operation logs" },
-  { value: "patient", label: "Patient logs" },
-  { value: "vehicle", label: "Vehicle logs" },
-  { value: "inventory", label: "Inventory items" },
-  { value: "activity", label: "Activity logs" },
-];
+import { formatDateTime } from "@/utils/dateTime";
+import { ARCHIVE_FILTERS } from "./archives/archiveConfig";
+import { useArchivesDashboard } from "./archives/useArchivesDashboard";
 
 export default function Archives() {
-  const { session } = useAuth();
-  const accessToken = session?.accessToken;
-  const [records, setRecords] = useState<ArchiveRecord[]>([]);
-  const [totalMatching, setTotalMatching] = useState(0);
-  const [stats, setStats] = useState(EMPTY_STATS);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [sourceType, setSourceType] = useState("all");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState("");
-  const [restoreTarget, setRestoreTarget] = useState<ArchiveRecord | null>(null);
-  const [selectedRecord, setSelectedRecord] = useState<ArchiveRecord | null>(null);
-  const [restoring, setRestoring] = useState(false);
-
-  const loadArchives = useCallback(async () => {
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setPageError("");
-    try {
-      const result = await fetchArchives(accessToken, {
-        page,
-        pageSize: PAGE_SIZE,
-        search,
-        sourceType,
-      });
-      setRecords(result.records);
-      setTotalMatching(result.totalMatching);
-      setStats(result.stats);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not load archived records.");
-    } finally {
-      setLoading(false);
-    }
-  }, [accessToken, page, search, sourceType]);
-
-  useEffect(() => {
-    void loadArchives();
-  }, [loadArchives]);
-
-  const pageCount = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE));
-  const statCards = useMemo(() => [
-    { label: "Archived records", value: stats.totalCount.toLocaleString(), sub: "Total archived entries", variant: "primary" as const },
-    { label: "Operation Log", value: stats.operationCount.toLocaleString(), sub: "Archived operations" },
-    { label: "Patient Log", value: stats.patientCount.toLocaleString(), sub: "Archived patient records" },
-    { label: "Vehicle Log", value: stats.vehicleCount.toLocaleString(), sub: "Archived dispatches" },
-    { label: "Inventory", value: stats.inventoryCount.toLocaleString(), sub: "Archived items" },
-    { label: "Activity Logs", value: stats.activityCount.toLocaleString(), sub: "Archived audit entries" },
-  ], [stats]);
-
-  async function handleRestore() {
-    if (!accessToken || !restoreTarget || restoring) return;
-
-    setRestoring(true);
-    setPageError("");
-    try {
-      await restoreArchiveRecord(accessToken, restoreTarget.sourceType, restoreTarget.sourceId);
-      setRestoreTarget(null);
-      if (page > 1 && records.length === 1) {
-        setPage(page - 1);
-      } else {
-        await loadArchives();
-      }
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not restore this record.");
-    } finally {
-      setRestoring(false);
-    }
-  }
-
-  function updateSearch(value: string) {
-    setSearch(value);
-    setPage(1);
-  }
-
-  function updateSourceType(value: string) {
-    setSourceType(value);
-    setPage(1);
-    setFilterOpen(false);
-  }
+  const {
+    records, totalMatching, page, setPage, search, sourceType, filterOpen,
+    setFilterOpen, loading, pageError, restoreTarget, setRestoreTarget,
+    selectedRecord, setSelectedRecord, restoring, pageCount, statCards,
+    handleRestore, updateSearch, updateSourceType,
+  } = useArchivesDashboard();
 
   return (
     <>
@@ -138,7 +43,7 @@ export default function Archives() {
             <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <Detail label="Record ID" value={selectedRecord.id} />
               <Detail label="Archived by" value={selectedRecord.archivedBy} />
-              <Detail label="Archived date" value={selectedRecord.archivedDate.toLocaleString()} />
+              <Detail label="Archived date" value={formatDateTime(selectedRecord.archivedDate)} />
               <Detail label="Details" value={selectedRecord.details || "No additional details."} />
             </dl>
             <div className="flex justify-end border-t border-gray-100 pt-3">
@@ -250,14 +155,5 @@ export default function Archives() {
         </section>
       </div>
     </>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="break-words text-sm font-medium text-gray-900">{value}</dd>
-    </div>
   );
 }

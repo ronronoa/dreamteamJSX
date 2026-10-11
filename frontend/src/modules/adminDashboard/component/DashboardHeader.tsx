@@ -4,6 +4,8 @@ import UserAvatar from "@/components/common/widgets/UserAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { getProfilePhotoSource } from "@/api/profile";
+import { formatDate } from "@/utils/dateTime";
+import { getInitials } from "@/utils/name";
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
@@ -16,16 +18,7 @@ export default function DashboardHeader({ onMenuClick, contentName }: DashboardH
 
   const initials = getInitials(user?.name);
   const displayName = user?.name ?? "Guest";
-  // const displayRole = formatRole(user?.role);
-
   const [now] = useState(() => new Date());
-
-  const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 
   return (
     <header className="h-20 bg-[#21052f] text-white flex items-center justify-between px-4 md:px-6">
@@ -47,7 +40,7 @@ export default function DashboardHeader({ onMenuClick, contentName }: DashboardH
       <div className="flex items-center gap-3 md:gap-5">
         <div className="hidden lg:flex items-center gap-2 px-4 py-2 text-xs font-semibold">
           <CalendarDays size={14} className="text-orange-500" />
-          {DATE_FMT.format(now)}
+          {formatDate(now, "dddd, D MMM YYYY")}
         </div>
 
         <button
@@ -75,23 +68,3 @@ export default function DashboardHeader({ onMenuClick, contentName }: DashboardH
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────
-
-function getInitials(name?: string): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-// const roleLabels: Record<string, string> = {
-//   SUPER_ADMIN:     "Super Admin",
-//   DEPARTMENT_HEAD: "Department Head",
-//   DEPUTY:          "Deputy",
-//   TEAM_LEADER:     "Team Leader",
-//   MEMBER:          "Member",
-// };
-//
-// function formatRole(role?: string): string {
-//   return role ? (roleLabels[role] ?? role) : "—";
-// }

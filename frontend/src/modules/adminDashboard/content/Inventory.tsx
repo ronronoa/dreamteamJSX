@@ -1,179 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { Filter, Pencil } from "lucide-react";
-import { fetchInventory, createInventoryItem, updateInventoryItem, type InventoryOverview } from "@/api/inventory";
-import { useAuth } from "@/context/AuthContext";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
-import AddInventoryModal, { type AddInventoryFormValues } from "@/components/common/modals/AddInventoryModal";
-import type { InventoryItem } from "@/types/inventory";
+import AddInventoryModal from "@/components/common/modals/AddInventoryModal";
 import InventoryItemCell from "../component/InventoryItemCell";
-import StatCard, { type StatCardProps } from "../component/StatCard";
+import StatCard from "../component/StatCard";
 import TablePagination from "../component/TablePagination";
 import TableSearch from "../component/TableSearch";
 import TableStatus from "../component/TableStatus";
-
-const ITEMS_PER_PAGE = 10;
-const EMPTY_OVERVIEW: InventoryOverview = {
-  totalCount: 0,
-  categoryCount: 0,
-  lowStockCount: 0,
-  stockHealthPercent: 0,
-  aboveMinimumCount: 0,
-  nextExpiry: null,
-  nextExpiryItemName: null,
-};
-
-const EXPIRY_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
-
-function getExpirySummary(overview: InventoryOverview) {
-  if (!overview.nextExpiry) {
-    return { value: "—", sub: "No expiry dates recorded" };
-  }
-
-  const daysUntilExpiry = Math.ceil((overview.nextExpiry.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-  return {
-    value: String(daysUntilExpiry),
-    sub: `${overview.nextExpiryItemName ?? "Inventory item"} due ${EXPIRY_DATE_FORMAT.format(overview.nextExpiry)}`,
-  };
-}
+import { useInventoryDashboard } from "./inventory/useInventoryDashboard";
 
 export default function Inventory() {
-  const { session } = useAuth();
-  const accessToken = session?.accessToken;
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [overview, setOverview] = useState<InventoryOverview>(EMPTY_OVERVIEW);
-  const [nextItemCode, setNextItemCode] = useState("INV-001");
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState("");
-  const [modalError, setModalError] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [addInventoryModalOpen, setAddInventoryModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-
-  const loadInventory = useCallback(async () => {
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setPageError("");
-    try {
-      const result = await fetchInventory(accessToken);
-      setItems(result.items);
-      setOverview(result.stats);
-      setNextItemCode(result.nextItemCode);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not load inventory.");
-    } finally {
-      setLoading(false);
-    }
-  }, [accessToken]);
-
-  useEffect(() => {
-    void (async () => {
-      await Promise.resolve();
-      await loadInventory();
-    })();
-  }, [loadInventory]);
-
-  const filteredItems = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return items;
-
-    return items.filter((item) => [item.id, item.item, item.category, item.unit]
-      .some((value) => value.toLowerCase().includes(normalizedSearch)));
-  }, [items, search]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
-  const currentPage = Math.min(page, pageCount);
-  const pageItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const stats: StatCardProps[] = [
-    {
-      label: "Total registered items",
-      value: String(overview.totalCount),
-      sub: `Across ${overview.categoryCount} supply categories`,
-      variant: "primary",
-    },
-    {
-      label: "Low stock alerts",
-      value: String(overview.lowStockCount),
-      sub: overview.lowStockCount === 0 ? "All items meet minimum stock" : "Action needed today",
-    },
-    {
-      label: "Stock health",
-      value: `${overview.stockHealthPercent}%`,
-      sub: `${overview.aboveMinimumCount} of ${overview.totalCount} items above minimum`,
-    },
-    {
-      label: "Next expiry review",
-      ...getExpirySummary(overview),
-      ...(overview.nextExpiry && { unit: "days" }),
-    },
-  ];
-
-  async function handleCreateItem(values: AddInventoryFormValues) {
-    if (!accessToken) {
-      setModalError("Your session expired. Please sign in again.");
-      return false;
-    }
-
-    setModalError("");
-    try {
-      if (editingItem) {
-        await updateInventoryItem(accessToken, editingItem.itemId, {
-          itemName: values.name,
-          category: values.category,
-          unit: values.unit,
-          minimumQuantity: values.minThreshold,
-          expiryDate: values.expiryDate || null,
-          ...(values.quantity !== editingItem.quantity && {
-            stockQuantity: values.quantity,
-            adjustmentReason: values.adjustmentReason,
-          }),
-        });
-      } else {
-        await createInventoryItem(accessToken, {
-          itemName: values.name,
-          category: values.category,
-          unit: values.unit,
-          stockQuantity: values.quantity,
-          minimumQuantity: values.minThreshold,
-          expiryDate: values.expiryDate || null,
-        });
-      }
-      await loadInventory();
-      setAddInventoryModalOpen(false);
-      setEditingItem(null);
-      return true;
-    } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Could not save this inventory item.");
-      return false;
-    }
-  }
-
-  function openAddInventoryModal() {
-    setModalError("");
-    setEditingItem(null);
-    setAddInventoryModalOpen(true);
-  }
-
-  function openEditInventoryModal(item: InventoryItem) {
-    setModalError("");
-    setEditingItem(item);
-    setAddInventoryModalOpen(true);
-  }
-
-  function closeInventoryModal() {
-    setAddInventoryModalOpen(false);
-    setEditingItem(null);
-    setModalError("");
-  }
+  const {
+    loading, pageError, modalError, search, setSearch, setPage,
+    addInventoryModalOpen, editingItem, nextItemCode, filteredItems, pageCount,
+    currentPage, pageItems, stats, handleCreateItem, openAddInventoryModal,
+    openEditInventoryModal, closeInventoryModal, getInitialValues,
+  } = useInventoryDashboard();
 
   return (
     <>
@@ -181,16 +23,7 @@ export default function Inventory() {
         open={addInventoryModalOpen}
         itemId={editingItem?.id ?? nextItemCode}
         mode={editingItem ? "edit" : "add"}
-        initialValues={editingItem ? {
-          itemId: editingItem.id,
-          name: editingItem.item,
-          category: editingItem.category,
-          unit: editingItem.unit,
-          quantity: editingItem.quantity,
-          minThreshold: editingItem.minimum,
-          expiryDate: editingItem.expiry ? editingItem.expiry.toISOString().slice(0, 10) : "",
-          adjustmentReason: "",
-        } : undefined}
+        initialValues={getInitialValues()}
         onClose={closeInventoryModal}
         onSubmit={handleCreateItem}
         error={modalError}

@@ -1,8 +1,22 @@
 import multer from "multer";
 import fs from "fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import { ValidationError } from "@/shared/errors";
+
+function getAvailableFilename(directory: string, originalName: string) {
+  const safeName = path.basename(originalName);
+  const extension = path.extname(safeName);
+  const name = path.basename(safeName, extension);
+  let filename = `${name}${extension}`;
+  let duplicateNumber = 1;
+
+  while (fs.existsSync(path.join(directory, filename))) {
+    filename = `${name}_${duplicateNumber}${extension}`;
+    duplicateNumber += 1;
+  }
+
+  return filename;
+}
 
 export function createUpload(dirname: string) {
   const dir = `uploads/${dirname}/`;
@@ -17,7 +31,7 @@ export function createUpload(dirname: string) {
     },
 
     filename: (_req, file, callback) => {
-      callback(null, file.originalname);
+      callback(null, getAvailableFilename(dir, file.originalname));
     },
   });
 
@@ -37,7 +51,7 @@ export function createProfileImageUpload() {
       callback(null, directory);
     },
     filename: (_req, file, callback) => {
-      callback(null, `${randomUUID()}${extensionsByMimeType[file.mimetype] ?? ".img"}`);
+      callback(null, getAvailableFilename(directory, file.originalname));
     },
   });
 
@@ -69,7 +83,7 @@ export function createReportFormUpload() {
       callback(null, directory);
     },
     filename: (_req, file, callback) => {
-      callback(null, `${randomUUID()}${extensionsByMimeType[file.mimetype] ?? ".upload"}`);
+      callback(null, getAvailableFilename(directory, file.originalname));
     },
   });
 

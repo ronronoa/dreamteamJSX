@@ -107,23 +107,7 @@ export const createEmptyPerson = (): Person => ({
   address: { phase: "", package: "", block: "", lot: "" },
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-
-  const birthDate = new Date(birthdate)
-  if (Number.isNaN(birthDate.getTime())) return ""
-
-  const today = new Date()
-  let age = today.getFullYear() - birthDate.getFullYear()
-
-  const hasHadBirthdayThisYear =
-    today.getMonth() > birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
-
-  if (!hasHadBirthdayThisYear) age -= 1
-
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 operationDesc & inventory

@@ -1,229 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, Pencil, Plus, Search, Trash2, UserRoundX } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import type { ManagedUser, Role } from "@/types/auth";
-import {
-  createManagedUser,
-  createTeam,
-  deleteTeam,
-  deactivateManagedUser,
-  fetchManagedUsers,
-  fetchTeams,
-  resetManagedUserPassword,
-  updateManagedUser,
-  updateTeam,
-  type TeamOption,
-} from "@/api/manageUsers";
+import { Filter, Pencil, Plus, Trash2, UserRoundX } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
-import EditUserModal, { type UserFormValues } from "@/components/common/modals/EditUserModal";
+import EditUserModal from "@/components/common/modals/EditUserModal";
 import StatCard from "../component/StatCard";
 import TwoLineCell from "../component/TwoLineCell";
 import TableStatus from "../component/TableStatus";
 import TeamModal from "../component/TeamModal";
-import { InputBase, type InputBaseProps } from "@/components/base/input/input";
-
-const SearchInputIcon: NonNullable<InputBaseProps["icon"]> = ({ className }) => (
-  <Search size={14} className={className} />
-);
-
-const roleLabels: Record<Role, string> = {
-  SUPER_ADMIN: "Super Admin",
-  DEPARTMENT_HEAD: "Department Head",
-  DEPUTY: "Deputy",
-  TEAM_LEADER: "Team Leader",
-  MEMBER: "Member",
-};
-
-function getDeactivationBlockReason(
-  user: ManagedUser,
-  currentUserId: string | undefined,
-  activeSuperAdminCount: number,
-) {
-  if (user.id === currentUserId) return "You cannot deactivate your own account.";
-  if (user.role === "SUPER_ADMIN" && activeSuperAdminCount <= 1) {
-    return "At least one active Super Admin account must remain.";
-  }
-  return null;
-}
+import { InputBase } from "@/components/base/input/input";
+import type { Role } from "@/types/auth";
+import { getDeactivationBlockReason, roleLabels, SearchInputIcon } from "./manageUsers/manageUsersHelpers";
+import { useManageUsersDashboard } from "./manageUsers/useManageUsersDashboard";
 
 export default function ManageUsers() {
-  const { session } = useAuth();
-  const accessToken = session?.accessToken;
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [teams, setTeams] = useState<TeamOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
-  const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [modalError, setModalError] = useState("");
-  const [deactivateTarget, setDeactivateTarget] = useState<ManagedUser | null>(null);
-  const [teamModalOpen, setTeamModalOpen] = useState(false);
-  const [teamToEdit, setTeamToEdit] = useState<TeamOption | null>(null);
-  const [teamToDelete, setTeamToDelete] = useState<TeamOption | null>(null);
-  const [teamSubmitting, setTeamSubmitting] = useState(false);
-  const [teamError, setTeamError] = useState("");
-
-  const loadUsers = useCallback(async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    setPageError("");
-    try {
-      const [loadedUsers, loadedTeams] = await Promise.all([
-        fetchManagedUsers(accessToken),
-        fetchTeams(accessToken),
-      ]);
-      setUsers(loadedUsers);
-      setTeams(loadedTeams);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not load user accounts.");
-    } finally {
-      setLoading(false);
-    }
-  }, [accessToken]);
-
-  useEffect(() => {
-    void (async () => {
-      await Promise.resolve();
-      await loadUsers();
-    })();
-  }, [loadUsers]);
-
-  const filteredUsers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return users.filter((user) => {
-      const matchesSearch = !normalizedSearch || [user.name, user.username, user.email ?? "", user.phone ?? "", user.team_name ?? ""]
-        .some((value) => value.toLowerCase().includes(normalizedSearch));
-      const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
-      const matchesStatus = statusFilter === "ALL" || (statusFilter === "ACTIVE" ? user.isActive : !user.isActive);
-      return matchesSearch && matchesRole && matchesStatus;
-    });
-  }, [users, search, roleFilter, statusFilter]);
-
-  function openCreateModal() {
-    setSelectedUser(null);
-    setModalError("");
-    setModalOpen(true);
-  }
-
-  function openEditModal(user: ManagedUser) {
-    setSelectedUser(user);
-    setModalError("");
-    setModalOpen(true);
-  }
-
-  async function saveUser(values: UserFormValues) {
-    if (!accessToken) return;
-    if (selectedUser?.id === session?.user.id && !values.isActive) {
-      setModalError("You cannot deactivate your own account.");
-      return;
-    }
-    if (
-      selectedUser?.role === "SUPER_ADMIN" &&
-      selectedUser.isActive &&
-      administratorCount <= 1 &&
-      (values.role !== "SUPER_ADMIN" || !values.isActive)
-    ) {
-      setModalError("At least one active Super Admin account must remain.");
-      return;
-    }
-    setSubmitting(true);
-    setModalError("");
-    setSuccessMessage("");
-    try {
-      if (selectedUser) {
-        await updateManagedUser(accessToken, selectedUser.id, {
-          name: values.name,
-          username: values.username,
-          email: values.email,
-          role: values.role,
-          phone: values.phone,
-          isActive: values.isActive,
-          team_id: values.team_id,
-        });
-        if (values.password) {
-          await resetManagedUserPassword(accessToken, selectedUser.id, values.password);
-        }
-        setSuccessMessage("User account updated.");
-      } else {
-        await createManagedUser(accessToken, values);
-        setSuccessMessage("User account created.");
-      }
-      setModalOpen(false);
-      await loadUsers();
-    } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Could not save this user.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function deactivateUser(user: ManagedUser) {
-    if (!accessToken) return;
-    setPageError("");
-    setSuccessMessage("");
-    try {
-      await deactivateManagedUser(accessToken, user.id);
-      setSuccessMessage(`${user.name}'s account was deactivated.`);
-      await loadUsers();
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not deactivate this account.");
-    }
-  }
-
-  async function saveTeam(teamName: string) {
-    if (!accessToken || teamSubmitting) return;
-    setTeamSubmitting(true);
-    setTeamError("");
-    setPageError("");
-    setSuccessMessage("");
-    try {
-      const { team } = teamToEdit
-        ? await updateTeam(accessToken, teamToEdit.team_id, teamName)
-        : await createTeam(accessToken, teamName);
-      setTeams((currentTeams) => {
-        const updatedTeams = teamToEdit
-          ? currentTeams.map((currentTeam) => currentTeam.team_id === team.team_id ? team : currentTeam)
-          : [...currentTeams, team];
-        return updatedTeams.sort((first, second) => first.team_name.localeCompare(second.team_name));
-      });
-      setTeamModalOpen(false);
-      setTeamToEdit(null);
-      setSuccessMessage(teamToEdit ? `${team.team_name} team was updated.` : `${team.team_name} team was created.`);
-    } catch (error) {
-      setTeamError(error instanceof Error ? error.message : "Could not save this team.");
-    } finally {
-      setTeamSubmitting(false);
-    }
-  }
-
-  async function removeTeam() {
-    if (!accessToken || !teamToDelete || teamSubmitting) return;
-    setTeamSubmitting(true);
-    setPageError("");
-    setSuccessMessage("");
-    try {
-      await deleteTeam(accessToken, teamToDelete.team_id);
-      setTeams((currentTeams) => currentTeams.filter((team) => team.team_id !== teamToDelete.team_id));
-      setSuccessMessage(`${teamToDelete.team_name} team was deleted.`);
-      setTeamToDelete(null);
-    } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not delete this team.");
-      setTeamToDelete(null);
-    } finally {
-      setTeamSubmitting(false);
-    }
-  }
-
-  const activeCount = users.filter((user) => user.isActive).length;
-  const administratorCount = users.filter((user) => user.isActive && user.role === "SUPER_ADMIN").length;
-  const canManageTeams = session?.user.role === "SUPER_ADMIN" || session?.user.role === "DEPARTMENT_HEAD";
+  const {
+    session, users, teams, loading, pageError, successMessage, search, setSearch,
+    roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
+    modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
+    setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
+    teamToDelete, setTeamToDelete, teamSubmitting, teamError, setTeamError,
+    filteredUsers, activeCount, administratorCount, canManageTeams,
+    openCreateModal, openEditModal, saveUser, deactivateUser, saveTeam, removeTeam,
+  } = useManageUsersDashboard();
 
   return (
     <>
@@ -274,32 +72,6 @@ export default function ManageUsers() {
         {pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p>}
         {successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>}
 
-        <section className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">Response teams</h2>
-              <p className="mt-1 text-xs text-gray-500">Teams available for user assignment.</p>
-            </div>
-            {canManageTeams && <CommonButton compact onClick={() => { setTeamToEdit(null); setTeamError(""); setTeamModalOpen(true); }}>
-              <span className="inline-flex items-center gap-1"><Plus size={14} /> Add team</span>
-            </CommonButton>}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {teams.length > 0 ? teams.map((team) => (
-              <div key={team.team_id} className="inline-flex items-center gap-2 rounded-full bg-purple-50 py-1 pl-3 pr-2 text-xs font-medium text-purple-800">
-                <span>{team.team_name}</span>
-                {canManageTeams && <>
-                  <button type="button" aria-label={`Edit ${team.team_name}`} title="Edit team" onClick={() => { setTeamToEdit(team); setTeamError(""); setTeamModalOpen(true); }} className="text-purple-600 hover:text-purple-900">
-                    <Pencil size={13} />
-                  </button>
-                  <button type="button" aria-label={`Delete ${team.team_name}`} title="Delete team" onClick={() => setTeamToDelete(team)} className="text-gray-500 hover:text-red-700">
-                    <Trash2 size={13} />
-                  </button>
-                </>}
-              </div>
-            )) : <p className="text-xs text-gray-500">No teams have been created.</p>}
-          </div>
-        </section>
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -360,6 +132,33 @@ export default function ManageUsers() {
             />
           </div>
         </section>
+        <section className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Response teams</h2>
+              <p className="mt-1 text-xs text-gray-500">Teams available for user assignment.</p>
+            </div>
+            {canManageTeams && <CommonButton compact onClick={() => { setTeamToEdit(null); setTeamError(""); setTeamModalOpen(true); }}>
+              <span className="inline-flex items-center gap-1"><Plus size={14} /> Add team</span>
+            </CommonButton>}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {teams.length > 0 ? teams.map((team) => (
+              <div key={team.team_id} className="inline-flex items-center gap-2 rounded-full bg-purple-50 py-1 pl-3 pr-2 text-xs font-medium text-purple-800">
+                <span>{team.team_name}</span>
+                {canManageTeams && <>
+                  <button type="button" aria-label={`Edit ${team.team_name}`} title="Edit team" onClick={() => { setTeamToEdit(team); setTeamError(""); setTeamModalOpen(true); }} className="text-purple-600 hover:text-purple-900">
+                    <Pencil size={13} />
+                  </button>
+                  <button type="button" aria-label={`Delete ${team.team_name}`} title="Delete team" onClick={() => setTeamToDelete(team)} className="text-gray-500 hover:text-red-700">
+                    <Trash2 size={13} />
+                  </button>
+                </>}
+              </div>
+            )) : <p className="text-xs text-gray-500">No teams have been created.</p>}
+          </div>
+        </section>
+
       </div>
     </>
   );

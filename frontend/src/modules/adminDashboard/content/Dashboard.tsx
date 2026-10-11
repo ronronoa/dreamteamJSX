@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -25,60 +24,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import type {
-  HourlyActivity,
-  MonthlyOperationCount,
-  PatientInterventionCount,
-} from "@/types/dashboard";
-
-// --- Data & Config ---
-
-const barData: MonthlyOperationCount[] = [
-  { month: "Jan", value: 30 },
-  { month: "Feb", value: 48 },
-  { month: "Mar", value: 28 },
-  { month: "Apr", value: 68 },
-  { month: "May", value: 52 },
-  { month: "Jun", value: 72 },
-  { month: "Jul", value: 60 },
-];
-
-const pieData: PatientInterventionCount[] = [
-  { name: "Minor", value: 35, color: "#8b5cf6" },
-  { name: "Medical", value: 40, color: "#10b981" },
-  { name: "Referral", value: 25, color: "#f59e0b" },
-];
-
-const areaData: HourlyActivity[] = [
-  { time: "08:00", activity: 45 },
-  { time: "10:00", activity: 55 },
-  { time: "12:00", activity: 70 },
-  { time: "14:00", activity: 40 },
-  { time: "16:00", activity: 65 },
-  { time: "18:00", activity: 45 },
-  { time: "20:00", activity: 75 },
-];
-
-const barConfig = {
-  value: {
-    label: "Records",
-    color: "hsl(var(--chart-1))",
-  },
-};
-
-const pieConfig = {
-  value: { label: "Cases" },
-  Minor: { label: "Minor", color: "#8b5cf6" },
-  Medical: { label: "Medical", color: "#10b981" },
-  Referral: { label: "Referral", color: "#f59e0b" },
-};
-
-const areaConfig = {
-  activity: {
-    label: "Activity Level",
-    color: "#8b5cf6",
-  },
-};
+import { Card, LegendDot, ProgressRow, ReadinessRing, StatCard } from "./dashboard/DashboardPrimitives";
+import { areaConfig, areaData, barConfig, barData, pieConfig, pieData } from "./dashboard/dashboardData";
 
 // --- Component ---
 
@@ -358,105 +305,6 @@ export default function Dashboard() {
           </div>
         </div>
       </Card>
-    </div>
-  );
-}
-
-/* ── Primitives ───────────────────────────────────────────── */
-
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl border border-gray-200 bg-white p-5 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-const toneMap = {
-  purple: { bg: "bg-purple-50", fg: "text-purple-600" },
-  green:  { bg: "bg-emerald-50", fg: "text-emerald-600" },
-  blue:   { bg: "bg-blue-50",   fg: "text-blue-600" },
-  red:    { bg: "bg-red-50",    fg: "text-red-600" },
-} as const;
-
-function StatCard({
-  label, value, icon, tone, footer,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-  tone: keyof typeof toneMap;
-  footer: ReactNode;
-}) {
-  const t = toneMap[tone];
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <div className="flex items-start justify-between">
-        <p className="text-xs text-gray-500">{label}</p>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${t.bg} ${t.fg}`}>
-          {icon}
-        </span>
-      </div>
-      <div className="mt-2">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-      </div>
-      <div className="mt-3 text-[11px]">{footer}</div>
-    </div>
-  );
-}
-
-function LegendDot({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <span className="flex items-center gap-1.5 text-gray-600">
-      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-      <span className="text-gray-700">{label}</span>
-      <span className="font-semibold text-gray-900">{value}</span>
-    </span>
-  );
-}
-
-function ReadinessRing({ value }: { value: number }) {
-  const r = 24;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative">
-      <svg width="64" height="64" viewBox="0 0 60 60" className="-rotate-90">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="#e9d5ff" strokeWidth="6" />
-        <circle
-          cx="30" cy="30" r={r}
-          fill="none"
-          stroke="#7c3aed"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${(value / 100) * c} ${c}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-purple-700">
-        {value}%
-      </div>
-    </div>
-  );
-}
-
-function ProgressRow({
-  label, value, percent, tone,
-}: {
-  label: string;
-  value: string;
-  percent: number;
-  tone: "blue" | "red";
-}) {
-  const bar = tone === "blue" ? "bg-blue-500" : "bg-red-500";
-  const txt = tone === "blue" ? "text-blue-600" : "text-red-600";
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[11px]">
-        <span className="font-semibold text-gray-800">{label}</span>
-        <span className={`font-semibold ${txt}`}>{value}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-purple-200/60">
-        <div className={`h-full rounded-full ${bar}`} style={{ width: `${percent}%` }} />
-      </div>
     </div>
   );
 }
