@@ -52,7 +52,7 @@ export default function EditUserModal({
     await onSubmit({
       name: name.trim(),
       username: username.trim(),
-      email: email.trim(),
+      email: email.trim() || null,
       role,
       phone: phone.trim() || null,
       team_id: teamId || null,
@@ -83,7 +83,7 @@ export default function EditUserModal({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CommonInput id="user-name" label="Full name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={50} className={inputClassName} />
             <CommonInput id="user-username" label="Username" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={50} pattern="[a-zA-Z0-9._-]+" className={inputClassName} />
-            <CommonInput id="user-email" label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} autoComplete="email" className={inputClassName} />
+            <CommonInput id="user-email" label="Email (optional)" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" className={inputClassName} />
             <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)} options={roleOptions} />
             <CommonInput id="user-phone" label="Mobile" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={20} pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}" placeholder="09171234567 or +639171234567" className={inputClassName} />
             <CommonSelect id="user-team" label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} placeholder="No team assigned" options={teamOptions} />

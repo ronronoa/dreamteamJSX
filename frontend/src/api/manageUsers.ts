@@ -4,7 +4,7 @@ import type { ManagedUser, Role } from "@/types/auth";
 export interface ManagedUserInput {
   name: string;
   username: string;
-  email: string;
+  email: string | null;
   role: Role;
   phone: string | null;
   isActive: boolean;

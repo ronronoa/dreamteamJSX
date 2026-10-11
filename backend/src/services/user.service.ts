@@ -73,7 +73,7 @@ export const userService = {
                 data: {
                     name: data.name,
                     username: data.username,
-                    email: data.email,
+                    email: data.email ?? null,
                     passwordHash: String(hashedPassword),
                     role: data.role,
                     ...(data.phone !== undefined && { phone: data.phone }),

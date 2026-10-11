@@ -18,12 +18,16 @@ const PhoneSchema = z.string().trim().max(20)
     .nullable();
 const EmailSchema = z.string().trim().email("Enter a valid email address").max(254)
     .transform((email) => email.toLowerCase());
+const OptionalEmailSchema = z.preprocess(
+    (email) => typeof email === "string" && !email.trim() ? null : email,
+    EmailSchema.nullable().optional(),
+);
 const TeamIdSchema = z.string().uuid().optional().nullable();
 
 export const CreateUserSchema = z.object({
     name: z.string().trim().min(1).max(50),
     username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens"),
-    email: EmailSchema,
+    email: OptionalEmailSchema,
     password: z.string().min(8).max(64),
     role: RoleEnum.default("MEMBER"),
     phone: PhoneSchema,
@@ -34,7 +38,7 @@ export const CreateUserSchema = z.object({
 export const UpdateUserSchema = z.object({
     name: z.string().trim().min(1).max(50).optional(),
     username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens").optional(),
-    email: EmailSchema.optional(),
+    email: OptionalEmailSchema,
     role: RoleEnum.optional(),
     phone: PhoneSchema,
     isActive: z.boolean().optional(),
