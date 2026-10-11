@@ -2,7 +2,6 @@ import type { Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchReportData } from "../../../types/vehicularDispatchReport"
 import { calculateAge } from "../../../types/operationLog"
 import { formatDate } from "../../../utils/dateTime"
-import { VEHICULAR_OPERATION_TYPES } from "../../../types/vehicularDispatchReport"
 
 export type VehicularDispatchErrors = Record<string, string>
 
@@ -30,7 +29,8 @@ function validateDispatchDetails(data: VehicularDispatchReportData): VehicularDi
   else if (details.submitterName.trim().length > 120) errors["details.submitterName"] = "Name must be 120 characters or fewer."
 
   if (!isValidDate(details.date) || details.date > today) errors["details.date"] = "Choose a valid date that is not in the future."
-  if (!VEHICULAR_OPERATION_TYPES.includes(details.natureOfOperation)) errors["details.natureOfOperation"] = "Choose an operation type."
+  if (details.responders.length === 0) errors["details.responders"] = "Select at least one responder."
+  if (details.responders.length > 50) errors["details.responders"] = "Select no more than 50 responders."
   if (details.transfers.length === 0) errors["details.transfers"] = "Select at least one transfer type."
   if (!dispatch.from.trim()) errors["dispatch.from"] = "Enter the departure location."
   if (!dispatch.to.trim()) errors["dispatch.to"] = "Enter the destination."

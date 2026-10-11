@@ -5,6 +5,8 @@ import type { VehicularDispatchReportData } from "../../../types/vehicularDispat
 
 type VehicularStep3Props = {
   formData: VehicularDispatchReportData
+  vehicleLabel: string
+  responderLabels: string[]
 }
 
 function formatPersonName(person: Person): string {
@@ -20,7 +22,7 @@ function formatPersonAddress(person: Person): string {
     .join(", ") || "—"
 }
 
-export default function VehicularStep3({ formData }: VehicularStep3Props) {
+export default function VehicularStep3({ formData, vehicleLabel, responderLabels }: VehicularStep3Props) {
   const { details, dispatch, passengers } = formData
 
   return (
@@ -30,7 +32,7 @@ export default function VehicularStep3({ formData }: VehicularStep3Props) {
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={details.submitterName} />
             <SummaryField label="Date" value={details.date} />
-            <SummaryField label="Nature of Operation" value={details.natureOfOperation} />
+            <SummaryField label="Responders" value={responderLabels.join(", ")} />
             <SummaryField label="Transfer" value={details.transfers.join(", ")} />
           </div>
         </CommonFormSection>
@@ -39,7 +41,7 @@ export default function VehicularStep3({ formData }: VehicularStep3Props) {
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
-            <SummaryField label="Vehicle" value={dispatch.vehicle === "other" ? dispatch.vehicleOther : dispatch.vehicle} />
+            <SummaryField label="Vehicle" value={dispatch.vehicle === "other" ? dispatch.vehicleOther : vehicleLabel} />
             <SummaryField label="Driver" value={dispatch.driver} />
             <SummaryField label="Depart" value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`} />
             <SummaryField label="Arrival" value={dispatch.arrivalTime && `${dispatch.arrivalTime} ${dispatch.arrivalPeriod}`} />

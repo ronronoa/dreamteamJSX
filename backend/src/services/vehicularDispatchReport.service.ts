@@ -1,0 +1,275 @@
+import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@/generated/prisma/client"
+import type { Role } from "@/generated/prisma/enums"
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors"
+import type { VehicularDispatchReportInput } from "@/schemas/vehicularDispatchReport.schema"
+import { pinService } from "./pin.service"
+
+const dispatchRecordInclude = {
+  vehicle: { select: { vehicle_name: true, plate_number: true } },
+  responders: { include: { user: { select: { name: true } } } },
+  passengers: true,
+} as const
+
+type DispatchRecord = Prisma.VehicularDispatchGetPayload<{ include: typeof dispatchRecordInclude }>
+
+function toDispatchRecord(dispatch: DispatchRecord) {
+  return {
+    dispatch_id: dispatch.dispatch_id,
+    dispatch_date: dispatch.dispatch_date,
+    submitter_name: dispatch.submitter_name,
+    depart_time: dispatch.depart_time,
+    arrival_time: dispatch.arrival_time,
+    vehicle_name: dispatch.vehicle?.vehicle_name ?? dispatch.vehicle_name ?? "Unknown vehicle",
+    plate_number: dispatch.vehicle?.plate_number ?? "",
+    driver_name: dispatch.driver_name ?? "",
+    responders: dispatch.responders.map((responder) => responder.user.name),
+    from_location: dispatch.from_location ?? "",
+    to_location: dispatch.to_location ?? "",
+    transfers: dispatch.transfers.map((transfer) => transfer === "DROP_OFF" ? "Drop-Off" : "Pick-Up"),
+    odometer_in: dispatch.odometer_in,
+    odometer_out: dispatch.odometer_out,
+    passengers: dispatch.passengers,
+    status: dispatch.status,
+  }
+}
+
+async function findDispatchRecordById(id: string) {
+  const dispatch = await prisma.vehicularDispatch.findFirst({
+    where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+    include: dispatchRecordInclude,
+  })
+  if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
+  return toDispatchRecord(dispatch)
+}
+
+function getDateTime(date: string, time: string, period: "AM" | "PM") {
+  const [hourText, minuteText] = time.split(":")
+  let hour = Number(hourText)
+  const minute = Number(minuteText)
+
+  if (period === "AM" && hour === 12) hour = 0
+  if (period === "PM" && hour !== 12) hour += 12
+
+  return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`)
+}
+
+function toDateInputValue(date: Date | null | undefined): string {
+  if (!date) return ""
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
+function getTimeInputValue(date: Date | null | undefined) {
+  if (!date) return { time: "", period: "AM" as const }
+  const hour = date.getHours()
+  return {
+    time: `${String(hour % 12 || 12).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
+    period: hour >= 12 ? "PM" as const : "AM" as const,
+  }
+}
+
+function formatPassengerName(person: VehicularDispatchReportInput["passengers"][number]) {
+  return [person.name.firstName, person.name.middleInitial, person.name.surname, person.name.suffix]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ")
+}
+
+function formatPassengerAddress(person: VehicularDispatchReportInput["passengers"][number]) {
+  const { phase, package: packageNumber, block, lot } = person.address
+  return [
+    phase && `Phase ${phase}`,
+    packageNumber && `Package ${packageNumber}`,
+    block && `Block ${block}`,
+    lot && `Lot ${lot}`,
+  ].filter(Boolean).join(", ")
+}
+
+export const vehicularDispatchReportService = {
+  async list() {
+    const dispatches = await prisma.vehicularDispatch.findMany({
+      where: { operation_id: null, patient_log_id: null, archive: null },
+      orderBy: [{ dispatch_date: "desc" }, { createdAt: "desc" }],
+      include: dispatchRecordInclude,
+    })
+
+    return dispatches.map(toDispatchRecord)
+  },
+
+  async getById(id: string) {
+    return findDispatchRecordById(id)
+  },
+
+  async review(id: string, actor: { userId: string; role: Role }, pin: string, action: "authorize" | "validate" | "reject") {
+    if (action === "authorize") {
+      if (actor.role !== "TEAM_LEADER") throw new ForbiddenError("Only team leaders can send reports for review.")
+    } else if (actor.role !== "SUPER_ADMIN" && actor.role !== "DEPARTMENT_HEAD" && actor.role !== "DEPUTY") {
+      throw new ForbiddenError("Insufficient permissions.")
+    }
+
+    const dispatch = await prisma.vehicularDispatch.findFirst({
+      where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+    })
+    if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
+    await pinService.verifyPin(actor.userId, { pin })
+
+    if (action === "authorize") {
+      if (dispatch.status !== "PENDING") throw new ConflictError(`Cannot authorize from ${dispatch.status}.`)
+      await prisma.vehicularDispatch.update({ where: { dispatch_id: id }, data: { status: "TO_REVIEW" } })
+      return findDispatchRecordById(id)
+    }
+
+    if (dispatch.status !== "PENDING" && dispatch.status !== "TO_REVIEW") {
+      throw new ConflictError(`Cannot ${action} from ${dispatch.status}.`)
+    }
+    await prisma.vehicularDispatch.update({
+      where: { dispatch_id: id },
+      data: { status: action === "validate" ? "VALIDATED" : "REJECTED" },
+    })
+    return findDispatchRecordById(id)
+  },
+
+  async getOptions() {
+    const [vehicles, responders] = await Promise.all([
+      prisma.vehicle.findMany({
+        where: { status: "AVAILABLE" },
+        orderBy: [{ vehicle_name: "asc" }, { plate_number: "asc" }],
+        select: { vehicle_id: true, vehicle_name: true, plate_number: true },
+      }),
+      prisma.user.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { user_id: true, name: true },
+      }),
+    ])
+    return { vehicles, responders }
+  },
+
+  async getLatest() {
+    const dispatch = await prisma.vehicularDispatch.findFirst({
+      where: { operation_id: null, patient_log_id: null, archive: null },
+      orderBy: { createdAt: "desc" },
+      include: {
+        vehicle: { select: { vehicle_id: true, vehicle_name: true } },
+        passengers: true,
+        responders: true,
+      },
+    })
+    if (!dispatch) return null
+
+    const departure = getTimeInputValue(dispatch.depart_time)
+    const arrival = getTimeInputValue(dispatch.arrival_time)
+    return {
+      details: {
+        submitterName: dispatch.submitter_name ?? "",
+        date: toDateInputValue(dispatch.dispatch_date),
+        responders: dispatch.responders.map((responder) => responder.user_id),
+        transfers: dispatch.transfers.map((transfer) => transfer === "DROP_OFF" ? "Drop-Off" : "Pick-Up"),
+      },
+      dispatch: {
+        from: dispatch.from_location ?? "",
+        to: dispatch.to_location ?? "",
+        vehicle: dispatch.vehicle?.vehicle_id ?? "other",
+        vehicleOther: dispatch.vehicle ? "" : dispatch.vehicle_name ?? "",
+        driver: dispatch.driver_name ?? "",
+        departTime: departure.time,
+        departPeriod: departure.period,
+        arrivalTime: arrival.time,
+        arrivalPeriod: arrival.period,
+        odometerIn: dispatch.odometer_in == null ? "" : String(dispatch.odometer_in),
+        odometerOut: dispatch.odometer_out == null ? "" : String(dispatch.odometer_out),
+      },
+      passengers: dispatch.passengers.map((passenger) => ({
+        id: passenger.passenger_id,
+        name: {
+          firstName: passenger.first_name ?? passenger.full_name,
+          middleInitial: passenger.middle_initial ?? "",
+          surname: passenger.surname ?? "",
+          suffix: passenger.suffix ?? "",
+        },
+        birthdate: toDateInputValue(passenger.birthdate),
+        age: passenger.age,
+        gender: passenger.sex === "MALE" ? "Male" : "Female",
+        contactNumber: passenger.contact_no ?? "",
+        address: {
+          phase: passenger.address_phase ?? "",
+          package: passenger.address_package ?? "",
+          block: passenger.address_block ?? "",
+          lot: passenger.address_lot ?? "",
+        },
+      })),
+    }
+  },
+
+  async create(form: VehicularDispatchReportInput) {
+    const [vehicle, responders] = await Promise.all([
+      form.dispatch.vehicle === "other"
+        ? Promise.resolve(null)
+        : prisma.vehicle.findFirst({
+          where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
+          select: { vehicle_id: true },
+        }),
+      prisma.user.findMany({
+        where: { user_id: { in: form.details.responders }, isActive: true },
+        select: { user_id: true },
+      }),
+    ])
+    if (form.dispatch.vehicle !== "other" && !vehicle) {
+      throw new NotFoundError("Available vehicle", form.dispatch.vehicle)
+    }
+    if (responders.length !== form.details.responders.length) {
+      throw new ValidationError("One or more selected responders are unavailable.", {
+        responders: ["Refresh the form and select active responders."],
+      })
+    }
+
+    const departure = getDateTime(form.details.date, form.dispatch.departTime, form.dispatch.departPeriod)
+    const arrival = getDateTime(form.details.date, form.dispatch.arrivalTime, form.dispatch.arrivalPeriod)
+    if (arrival < departure) arrival.setDate(arrival.getDate() + 1)
+
+    return prisma.vehicularDispatch.create({
+      data: {
+        dispatch_date: new Date(`${form.details.date}T00:00:00`),
+        submitter_name: form.details.submitterName,
+        transfers: form.details.transfers.map((transfer) => transfer === "Drop-Off" ? "DROP_OFF" : "PICK_UP"),
+        dispatch_type: form.details.transfers[0] === "Drop-Off" ? "DROP_OFF" : form.details.transfers[0] === "Pick-Up" ? "PICK_UP" : null,
+        status: "PENDING",
+        submitted_by: null,
+        vehicle_id: vehicle?.vehicle_id ?? null,
+        vehicle_name: vehicle ? null : form.dispatch.vehicleOther?.trim() ?? null,
+        driver_name: form.dispatch.driver,
+        from_location: form.dispatch.from,
+        to_location: form.dispatch.to,
+        depart_time: departure,
+        arrival_time: arrival,
+        odometer_in: form.dispatch.odometerIn,
+        odometer_out: form.dispatch.odometerOut,
+        responders: {
+          create: form.details.responders.map((userId) => ({ user_id: userId })),
+        },
+        passengers: {
+          create: form.passengers.map((passenger) => ({
+            full_name: formatPassengerName(passenger),
+            first_name: passenger.name.firstName,
+            middle_initial: passenger.name.middleInitial || null,
+            surname: passenger.name.surname,
+            suffix: passenger.name.suffix || null,
+            age: passenger.age,
+            birthdate: new Date(`${passenger.birthdate}T00:00:00`),
+            sex: passenger.gender.toUpperCase() as "MALE" | "FEMALE",
+            contact_no: passenger.contactNumber || null,
+            address: formatPassengerAddress(passenger) || null,
+            address_phase: passenger.address.phase || null,
+            address_package: passenger.address.package || null,
+            address_block: passenger.address.block || null,
+            address_lot: passenger.address.lot || null,
+          })),
+        },
+      },
+      include: {
+        vehicle: { select: { vehicle_id: true, vehicle_name: true, plate_number: true } },
+        passengers: true,
+      },
+    })
+  },
+}

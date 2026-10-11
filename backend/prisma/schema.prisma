@@ -396,8 +396,13 @@ model VehicularDispatch {
   operation_id   String?
   patient_log_id String?
   dispatch_date  DateTime
+  submitter_name String?
+  nature_of_operation String?
+  transfers      DispatchType[] @default([])
+  status         OperationStatus @default(PENDING)
   submitted_by   String?
   vehicle_id     String?
+  vehicle_name   String?
   driver_id      String?
   driver_name    String?
   depart_time    DateTime?
@@ -463,11 +468,20 @@ model CivilianPassenger {
   passenger_id String  @id @default(uuid())
   dispatch_id  String
   full_name    String
+  first_name   String?
+  middle_initial String?
+  surname      String?
+  suffix       String?
   age          Int
+  birthdate    DateTime?
   sex          Gender
   contact_no   String?
   barangay     String?
   address      String?
+  address_phase    String?
+  address_package  String?
+  address_block    String?
+  address_lot      String?
 
   dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id], onDelete: Cascade)
 

@@ -1,6 +1,7 @@
 import { reportFormsController } from "@/controllers/reportForms.controller";
 import { operationController } from "@/controllers/operation.controller";
 import { patientLogController } from "@/controllers/patientLog.controller";
+import { vehicularDispatchReportController } from "@/controllers/vehicularDispatchReport.controller";
 import { requireAuth, requireRole } from "@/middleware/auth.middleware";
 import { createReportFormUpload } from "@/middleware/upload";
 import { ValidationError } from "@/shared/errors";
@@ -65,3 +66,9 @@ reportFormsRoutes.post("/report-forms/operations/latest", reportFormPinLimiter, 
 reportFormsRoutes.get("/report-forms/patients/latest", reportFormsController.getLatestPatientReport);
 reportFormsRoutes.post("/report-forms/operations", reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
 reportFormsRoutes.post("/report-forms/patients", reportFormPinLimiter, parseImages, reportFormsController.submitPatient);
+reportFormsRoutes.get("/report-forms/vehicular-dispatches/options", vehicularDispatchReportController.getOptions);
+reportFormsRoutes.get("/report-forms/vehicular-dispatches/latest", vehicularDispatchReportController.getLatest);
+reportFormsRoutes.post("/report-forms/vehicular-dispatches", reportFormPinLimiter, vehicularDispatchReportController.submit);
+reportFormsRoutes.get("/vehicular-dispatches/:id", requireAuth, vehicularDispatchReportController.getById);
+reportFormsRoutes.post("/vehicular-dispatches/:id/:action", requireAuth, vehicularDispatchReportController.review);
+reportFormsRoutes.get("/vehicular-dispatches", requireAuth, vehicularDispatchReportController.list);

@@ -1,11 +1,10 @@
 import CommonInput from "../../../components/common/widgets/CommonInput"
-import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
+import CommonSearchSelect from "../../../components/common/widgets/CommonSearchSelect"
 import CommonFormSection from "../component/CommonFormSection"
 
 import type { VehicularDispatchDetails, VehicularDispatch } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchErrors } from "./formValidation"
-import { VEHICULAR_OPERATION_TYPES, VEHICULAR_OPTIONS } from "../../../types/vehicularDispatchReport"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 
 type VehicularStep1Props = {
@@ -14,6 +13,9 @@ type VehicularStep1Props = {
   dispatch: VehicularDispatch
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
   errors: VehicularDispatchErrors
+  vehicleOptions: { label: string; value: string }[]
+  responderOptions: { label: string; value: string }[]
+  optionsLoading: boolean
 }
 
 export default function VehicularStep1({
@@ -22,11 +24,14 @@ export default function VehicularStep1({
   dispatch,
   onDispatchChange,
   errors,
+  vehicleOptions,
+  responderOptions,
+  optionsLoading,
 }: VehicularStep1Props) {
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
-      <CommonFormSection standardHeight={false} title="OPERATION DETAILS">
+      <CommonFormSection standardHeight={false} title="RESPONDER DETAILS">
         <div className="space-y-4">
           <CommonInput
             variant="compact"
@@ -46,14 +51,15 @@ export default function VehicularStep1({
             errorMessage={errors["details.date"]}
           />
 
-          <CommonSelect
+          <CommonSearchSelect
             variant="compact"
-            label="Nature of Operation"
-            placeholder="Dropdown Menu"
-            options={VEHICULAR_OPERATION_TYPES.map((nature) => ({ label: nature, value: nature }))}
-            value={details.natureOfOperation}
-            onChange={(e) => onDetailsChange({ natureOfOperation: e.target.value })}
-            errorMessage={errors["details.natureOfOperation"]}
+            label="Responders"
+            placeholder="Search responder..."
+            options={responderOptions}
+            value={details.responders}
+            onChange={(responders) => onDetailsChange({ responders })}
+            errorMessage={errors["details.responders"]}
+            disabled={optionsLoading}
           />
           <div>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
@@ -90,7 +96,8 @@ export default function VehicularStep1({
       <VehicularDispatchSection
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
-        vehicleOptions={VEHICULAR_OPTIONS}
+        vehicleOptions={vehicleOptions}
+        optionsLoading={optionsLoading}
         errors={errors}
       />
     </div>
