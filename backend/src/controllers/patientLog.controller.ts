@@ -25,7 +25,14 @@ export const patientLogController = {
 
   async review(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id, action } = validateOrThrow(PatientLogReviewParamsSchema.safeParse(req.params));
+      let requestedAction = req.params.action;
+      if (requestedAction === "authenticate") {
+        requestedAction = req.user?.role === "TEAM_LEADER" ? "authorize" : "validate";
+      }
+      const { id, action } = validateOrThrow(PatientLogReviewParamsSchema.safeParse({
+        ...req.params,
+        action: requestedAction,
+      }));
       const { pin } = validateOrThrow(PatientLogReviewSchema.safeParse(req.body));
       const patientLog = await patientLogService.review(id, req.user!, pin, action);
       res.status(200).json({ patientLog });

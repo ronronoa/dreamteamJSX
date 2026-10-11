@@ -124,9 +124,7 @@ export function validateStep3(formData: OperationLogData): FormErrors {
   if (description.length > 10000) errors["operationDescription.description"] = "Description must be 10,000 characters or fewer.";
   if (formData.inventory.length > 100) errors.inventory = "Add no more than 100 inventory entries.";
 
-  if (formData.operationDescription.images.length === 0) {
-    errors["operationDescription.images"] = "Attach at least one JPG, PNG, or WebP image.";
-  } else if (formData.operationDescription.images.length > MAX_IMAGE_COUNT) {
+  if (formData.operationDescription.images.length > MAX_IMAGE_COUNT) {
     errors["operationDescription.images"] = `Attach no more than ${MAX_IMAGE_COUNT} images.`;
   } else if (formData.operationDescription.images.some((image) => !isSupportedImage(image))) {
     errors["operationDescription.images"] = "Images must be JPG, PNG, or WebP and no larger than 8 MB each.";

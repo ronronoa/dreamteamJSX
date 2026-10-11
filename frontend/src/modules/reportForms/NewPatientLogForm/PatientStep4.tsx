@@ -43,7 +43,7 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
     transfer === "Drop-Off" || transfer === "Pick-Up",
   )
   const responderNames = responderDetails.responders.map((responderId) =>
-    options.responders.find((responder) => responder.user_id === responderId)?.name ?? responderId,
+    options.responders.find((responder) => responder.user_id === responderId)?.name ?? "Responder unavailable",
   )
   const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
@@ -68,7 +68,9 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
             <SummaryField label="To" value={dispatch.to} />
             <SummaryField
               label="Vehicle"
-              value={selectedVehicle ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})` : dispatch.vehicle}
+              value={selectedVehicle
+                ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})`
+                : dispatch.vehicle ? "Vehicle unavailable" : ""}
             />
             <SummaryField label="Driver" value={dispatch.driver} />
             <SummaryField

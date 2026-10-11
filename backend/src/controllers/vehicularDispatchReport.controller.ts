@@ -48,7 +48,14 @@ export const vehicularDispatchReportController = {
 
   async review(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id, action } = validateOrThrow(VehicularDispatchReviewParamsSchema.safeParse(req.params))
+      let requestedAction = req.params.action
+      if (requestedAction === "authenticate") {
+        requestedAction = req.user?.role === "TEAM_LEADER" ? "authorize" : "validate"
+      }
+      const { id, action } = validateOrThrow(VehicularDispatchReviewParamsSchema.safeParse({
+        ...req.params,
+        action: requestedAction,
+      }))
       const { pin } = validateOrThrow(VehicularDispatchReviewSchema.safeParse(req.body))
       const dispatch = await vehicularDispatchReportService.review(id, req.user!, pin, action)
       res.status(200).json({ dispatch })

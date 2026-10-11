@@ -84,10 +84,9 @@ export const isStep2Complete = (formData: PatientLogData) => {
 }
 
 export const isStep3Complete = (formData: PatientLogData) => {
-  const { waiverForm, inventory } = formData
+  const { inventory } = formData
 
   return (
-    waiverForm.images.length > 0 &&
     inventory.every(
       (item) =>
         item.itemName.trim() !== "" &&

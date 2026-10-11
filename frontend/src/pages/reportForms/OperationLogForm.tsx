@@ -308,7 +308,7 @@ const nextStep = () => {
                   )}
 
 
-                  {step === 4 && <OperationStep4 formData={formData} />}
+                  {step === 4 && <OperationStep4 formData={formData} options={formOptions} />}
 
                 </motion.div>
               </AnimatePresence>

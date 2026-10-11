@@ -106,9 +106,6 @@ export const reportFormsController = {
         throw new ValidationError("Review the operation report fields and try again.", fields);
       }
       const files = (req.files ?? []) as Express.Multer.File[];
-      if (files.length === 0) {
-        throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
-      }
       const record = await reportFormsService.createOperation(parsedForm.data, files);
       res.locals["activityActorName"] = parsedForm.data.operationDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ operation: record });
@@ -132,9 +129,6 @@ export const reportFormsController = {
         throw new ValidationError("Review the patient report fields and try again.", fields);
       }
       const files = (req.files ?? []) as Express.Multer.File[];
-      if (files.length === 0) {
-        throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
-      }
       const record = await reportFormsService.createPatient(parsedForm.data, files);
       res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ patientLog: record });

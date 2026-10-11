@@ -517,11 +517,11 @@ export const reportFormsService = {
             },
           },
         },
-        images: { create: files.map((file) => ({
+        ...(files.length > 0 ? { images: { create: files.map((file) => ({
           image_url: imageUrl(file),
           file_type: file.mimetype,
           uploaded_by: null,
-        })) },
+        })) } } : {}),
       },
       include: { patientLogs: true, images: true },
     });

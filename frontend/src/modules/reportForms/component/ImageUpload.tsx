@@ -147,7 +147,7 @@ export default function ImageUpload({
     <>
       <div className="mb-3 flex items-center justify-between">
         <label className="text-lg font-medium text-slate-900">
-          Attach Image/s
+          Attach Images (optional)
         </label>
 
         <CommonButton

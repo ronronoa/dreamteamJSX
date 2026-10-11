@@ -1,5 +1,5 @@
 import { Bell, CalendarDays, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import UserAvatar from "@/components/common/widgets/UserAvatar";
@@ -28,6 +28,29 @@ export default function DashboardHeader({
 
   const [now] = useState(() => new Date());
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (notificationsRef.current?.contains(target)) return;
+      setNotificationsOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [notificationsOpen]);
 
   const initials = getInitials(user?.name);
   const displayName = user?.name ?? "Guest";
@@ -70,7 +93,7 @@ export default function DashboardHeader({
           {formatDate(now, "dddd, D MMM YYYY")}
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
             type="button"
             aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
@@ -220,13 +243,15 @@ function NotificationsDropdown({
       </div>
 
       {/* Footer */}
-      <button
-        type="button"
-        onClick={onClose}
-        className="block w-full border-t border-gray-100 py-3 text-center text-xs font-semibold text-purple-700 hover:bg-gray-50"
-      >
-        View all notifications →
-      </button>
+      <div className="block w-full border-t border-gray-100 py-3 text-center text-xs font-semibold text-purple-700 hover:bg-gray-50">
+      </div>
+      {/* <button */}
+      {/*   type="button" */}
+      {/*   onClick={onClose} */}
+      {/*   className="block w-full border-t border-gray-100 py-3 text-center text-xs font-semibold text-purple-700 hover:bg-gray-50" */}
+      {/* > */}
+      {/*   View all notifications → */}
+      {/* </button> */}
     </div>
   );
 }

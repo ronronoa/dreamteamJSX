@@ -43,6 +43,7 @@ reportFormsRoutes.delete("/operations/:id/images/:attachmentId", requireAuth, re
 reportFormsRoutes.get("/patient-logs", requireAuth, patientLogController.list);
 reportFormsRoutes.get("/patient-logs/:id", requireAuth, patientLogController.getById);
 reportFormsRoutes.post("/patient-logs/:id/authorize", requireAuth, requireRole("TEAM_LEADER"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/authenticate", requireAuth, patientLogController.review);
 reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
 reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
 
