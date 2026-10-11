@@ -90,6 +90,9 @@ model User {
   patientImages         PatientImageAttachment[]
   activityLogs          ActivityLog[]                @relation("ActivityActor")
   archivedActivityLogs  ActivityLog[]                @relation("ActivityArchiver")
+  updatedSystemSettings SystemSetting[]              @relation("SystemSettingUpdater")
+  preferences           UserPreference?
+  notifications         Notification[]
   patientLogArchives    PatientLogArchive[]          @relation("PatientLogArchiver")
   dispatchArchives      VehicularDispatchArchive[]   @relation("DispatchArchiver")
   team                  ResponseTeam?                @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
@@ -271,6 +274,43 @@ model ActivityLog {
   @@index([module, status])
   @@index([actor_id])
   @@index([archivedAt])
+}
+
+model SystemSetting {
+  setting_key String   @id
+  value       String   @db.Text
+  updated_by  String?
+  updatedAt   DateTime @updatedAt
+
+  updater User? @relation("SystemSettingUpdater", fields: [updated_by], references: [user_id], onDelete: SetNull)
+}
+
+model UserPreference {
+  user_id                 String   @id
+  lowStockAlerts          Boolean  @default(false)
+  approvalNotifications   Boolean  @default(false)
+  sessionTimeout          String   @default("30-min")
+  notificationReadAt      DateTime?
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model Notification {
+  notification_id String   @id @default(uuid())
+  user_id         String
+  source_key      String
+  title           String
+  message         String   @db.Text
+  category        String
+  target          String
+  createdAt       DateTime @default(now())
+  readAt          DateTime?
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, source_key])
+  @@index([user_id, createdAt])
 }
 
 model OperationInventory {

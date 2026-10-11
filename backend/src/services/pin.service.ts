@@ -7,6 +7,16 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 15;
 
 export const pinService = {
+  async setGlobalPin(userId: string, pin: string) {
+    const pinHash = await argon2.hash(pin)
+    await prisma.systemSetting.upsert({
+      where: { setting_key: "security.globalPinHash" },
+      create: { setting_key: "security.globalPinHash", value: pinHash, updated_by: userId },
+      update: { value: pinHash, updated_by: userId },
+    })
+    return { success: true }
+  },
+
   async setPin(userId: string, data: SetPinInput) {
     const pinHash = await argon2.hash(data.pin);
 
@@ -85,6 +95,15 @@ export const pinService = {
   },
 
   async verifyReportFormPin(data: VerifyPinInput) {
+    const globalPinSetting = await prisma.systemSetting.findUnique({
+      where: { setting_key: "security.globalPinHash" },
+      select: { value: true },
+    })
+    if (globalPinSetting) {
+      if (await argon2.verify(globalPinSetting.value, data.pin)) return { valid: true }
+      throw new UnauthorizedError("Invalid global PIN.")
+    }
+
     const pinOwners = await prisma.user.findMany({
       where: {
         isActive: true,
@@ -100,9 +119,14 @@ export const pinService = {
 
     for (const pinOwner of pinOwners) {
       if (pinOwner.pinHash && await argon2.verify(pinOwner.pinHash, data.pin)) {
-        await prisma.user.update({
-          where: { user_id: pinOwner.user_id },
-          data: { pinFailedAttempts: 0, pinLockedUntil: null },
+        await prisma.systemSetting.upsert({
+          where: { setting_key: "security.globalPinHash" },
+          create: {
+            setting_key: "security.globalPinHash",
+            value: pinOwner.pinHash,
+            updated_by: pinOwner.user_id,
+          },
+          update: {},
         });
         return { valid: true };
       }

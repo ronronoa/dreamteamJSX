@@ -8,6 +8,8 @@ import { activityAuditMiddleware } from "@/middleware/activityAudit.middleware";
 import { archivesRoutes } from "./archives.routes";
 import { vehicleRoutes } from "./vehicle.routes";
 import { reportFormsRoutes } from "./reportForms.routes";
+import { settingsRoutes } from "./settings.routes";
+import { notificationsRoutes } from "./notifications.routes";
 
 export const apiRouter = Router()
 
@@ -20,3 +22,5 @@ apiRouter.use(inventoryRoutes)
 apiRouter.use(activityLogsRoutes)
 apiRouter.use(archivesRoutes)
 apiRouter.use(vehicleRoutes)
+apiRouter.use(settingsRoutes)
+apiRouter.use(notificationsRoutes)

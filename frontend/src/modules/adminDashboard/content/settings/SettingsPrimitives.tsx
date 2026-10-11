@@ -64,17 +64,20 @@ export function Toggle({
   checked,
   onChange,
   label,
+  disabled = false,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <Switch.Root
       checked={checked}
       onCheckedChange={onChange}
+      disabled={disabled}
       aria-label={label}
-      className={`relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 ${
+      className={`relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? "bg-purple-600" : "bg-gray-200"
       }`}
     >
@@ -91,17 +94,20 @@ export function Select({
   value,
   onChange,
   options,
+  disabled = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
+  disabled?: boolean;
 }) {
   return (
     <div className="relative">
       <select
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-56 cursor-pointer appearance-none rounded-md border border-gray-200 bg-gray-100 pl-3 pr-9 text-xs font-medium text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
+        className="h-9 w-56 cursor-pointer appearance-none rounded-md border border-gray-200 bg-gray-100 pl-3 pr-9 text-xs font-medium text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
