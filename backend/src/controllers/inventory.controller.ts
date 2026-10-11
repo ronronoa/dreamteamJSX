@@ -11,6 +11,15 @@ import { validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
 
 export const inventoryController = {
+  async listForReport(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const items = await inventoryService.listForReport();
+      res.status(200).json({ items });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async list(_req: Request, res: Response, next: NextFunction) {
     try {
       const result = await inventoryService.list();

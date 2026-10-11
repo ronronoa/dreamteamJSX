@@ -9,7 +9,6 @@ import CommonFormSection from "../component/CommonFormSection"
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
 import { validatePerson, type FormErrors } from "./formValidation"
-import FieldError from "../component/FieldError"
 
 type OperationStep2Props = {
   people: Person[]
@@ -21,6 +20,10 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
   const [draftErrors, setDraftErrors] = useState<FormErrors>({})
   const [attemptedAdd, setAttemptedAdd] = useState(false)
+
+  function formatGroupedErrors(fields: Array<[string, string]>) {
+    return fields.filter(([, message]) => Boolean(message)).map(([label, message]) => `${label}: ${message}`).join(" ")
+  }
 
   const updateDraft = (patch: Partial<Person>) => {
     const updatedDraft = { ...draft, ...patch }
@@ -63,7 +66,20 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       <CommonFormSection title="PEOPLE INVOLVED">
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Full Name</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Full Name</span>
+            {formatGroupedErrors([
+              ["Surname", draftErrors["name.surname"] ?? ""],
+              ["First name", draftErrors["name.firstName"] ?? ""],
+              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
+              ["Suffix", draftErrors["name.suffix"] ?? ""],
+            ]) && <span role="alert" className="text-xs font-medium text-red-700">{formatGroupedErrors([
+              ["Surname", draftErrors["name.surname"] ?? ""],
+              ["First name", draftErrors["name.firstName"] ?? ""],
+              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
+              ["Suffix", draftErrors["name.suffix"] ?? ""],
+            ])}</span>}
+          </label>
 
           <div className="grid grid-cols-[1fr_1fr_85px_85px] gap-1.5">
             <CommonInput
@@ -96,12 +112,6 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
             />
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            <FieldError message={draftErrors["name.surname"]} />
-            <FieldError message={draftErrors["name.firstName"]} />
-            <FieldError message={draftErrors["name.middleInitial"]} />
-            <FieldError message={draftErrors["name.suffix"]} />
-          </div>
         </div>
 
         <div className="mb-5 grid grid-cols-[1fr_80px] gap-2">
@@ -111,6 +121,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             label="Birthdate"
             value={draft.birthdate}
             onChange={(e) => handleBirthdateChange(e.target.value)}
+            errorMessage={draftErrors.birthdate}
           />
 
           <CommonInput
@@ -121,10 +132,11 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             readOnly
           />
         </div>
-        <FieldError message={draftErrors.birthdate} />
-
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Sex</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Sex</span>
+            {draftErrors.gender && <span role="alert" className="text-xs font-medium text-red-700">{draftErrors.gender}</span>}
+          </label>
 
           <div className="flex gap-10">
             <CommonCheckbox
@@ -139,7 +151,6 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               onChange={() => updateDraft({ gender: "Female" })}
             />
           </div>
-          <FieldError message={draftErrors.gender} />
         </div>
 
         <div className="mb-5">
@@ -150,12 +161,25 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             placeholder="09123456789"
             value={draft.contactNumber}
             onChange={(e) => updateDraft({ contactNumber: e.target.value })}
+            errorMessage={draftErrors.contactNumber}
           />
-          <FieldError message={draftErrors.contactNumber} />
         </div>
 
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Full Address</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Full Address</span>
+            {formatGroupedErrors([
+              ["Phase", draftErrors["address.phase"] ?? ""],
+              ["Package", draftErrors["address.package"] ?? ""],
+              ["Block", draftErrors["address.block"] ?? ""],
+              ["Lot", draftErrors["address.lot"] ?? ""],
+            ]) && <span role="alert" className="text-xs font-medium text-red-700">{formatGroupedErrors([
+              ["Phase", draftErrors["address.phase"] ?? ""],
+              ["Package", draftErrors["address.package"] ?? ""],
+              ["Block", draftErrors["address.block"] ?? ""],
+              ["Lot", draftErrors["address.lot"] ?? ""],
+            ])}</span>}
+          </label>
 
           <div className="flex items-center gap-2 text-sm">
             <span>Phase</span>
@@ -193,12 +217,6 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               value={draft.address.lot}
               onChange={(e) => updateDraft({ address: { ...draft.address, lot: e.target.value } })}
             />
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            <FieldError message={draftErrors["address.phase"]} />
-            <FieldError message={draftErrors["address.package"]} />
-            <FieldError message={draftErrors["address.block"]} />
-            <FieldError message={draftErrors["address.lot"]} />
           </div>
         </div>
 

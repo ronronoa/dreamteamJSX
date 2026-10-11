@@ -23,6 +23,7 @@ interface CommonInputProps
   variant?: CommonInputVariant
   showPasswordToggle?: boolean
   autoCapitalize?: boolean
+  errorMessage?: string
 }
 
 /**
@@ -67,6 +68,7 @@ export default function CommonInput({
   className = "",
   showPasswordToggle = false,
   autoCapitalize = false,
+  errorMessage,
   type,
   onChange,
   ...props
@@ -94,14 +96,17 @@ export default function CommonInput({
   return (
     <div>
       {label && (
-        <label htmlFor={props.id} className={labelClass}>
-          {label}
+        <label htmlFor={props.id} className={`${labelClass} flex flex-wrap items-baseline justify-between gap-x-2`}>
+          <span>{label}</span>
+          {errorMessage && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
         </label>
       )}
 
       <div>
         <InputBase
           {...(props as InputBaseProps)}
+          aria-invalid={Boolean(errorMessage)}
+          aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
           type={type}
           icon={LeadingIcon}
           hidePasswordToggle={!showPasswordToggle}

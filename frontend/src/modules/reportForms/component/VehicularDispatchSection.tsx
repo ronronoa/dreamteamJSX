@@ -2,7 +2,6 @@ import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
 import CommonFormSection from "./CommonFormSection"
-import FieldError from "./FieldError"
 import type { FormErrors } from "../OperationLogForm/formValidation"
 
 import type { VehicularDispatch } from "../../../types/operationLog"
@@ -49,8 +48,8 @@ export default function VehicularDispatchSection({
           placeholder="Ex. Barangay Hall"
           value={dispatch.from}
           onChange={(e) => onDispatchChange({ from: e.target.value })}
+          errorMessage={errors["dispatch.from"]}
         />
-        <FieldError message={errors["dispatch.from"]} />
 
         <CommonInput
           variant="compact"
@@ -58,8 +57,8 @@ export default function VehicularDispatchSection({
           placeholder="Ex. Barangay Hall"
           value={dispatch.to}
           onChange={(e) => onDispatchChange({ to: e.target.value })}
+          errorMessage={errors["dispatch.to"]}
         />
-        <FieldError message={errors["dispatch.to"]} />
 
         <CommonSelect
           variant="compact"
@@ -69,8 +68,8 @@ export default function VehicularDispatchSection({
           value={dispatch.vehicle}
           onChange={(e) => onDispatchChange({ vehicle: e.target.value })}
           disabled={optionsLoading}
+          errorMessage={errors["dispatch.vehicle"]}
         />
-        <FieldError message={errors["dispatch.vehicle"]} />
 
         {isOtherVehicle && (
           <>
@@ -82,8 +81,8 @@ export default function VehicularDispatchSection({
               onChange={(e) =>
                 onDispatchChange({ vehicleOther: e.target.value })
               }
+              errorMessage={errors["dispatch.vehicleOther"]}
             />
-            <FieldError message={errors["dispatch.vehicleOther"]} />
           </>
         )}
 
@@ -93,8 +92,8 @@ export default function VehicularDispatchSection({
           placeholder="e.g Juan Cruz"
           value={dispatch.driver}
           onChange={(e) => onDispatchChange({ driver: e.target.value })}
+          errorMessage={errors["dispatch.driver"]}
         />
-        <FieldError message={errors["dispatch.driver"]} />
 
         <div className="grid grid-cols-2 gap-5">
           <div>
@@ -104,8 +103,8 @@ export default function VehicularDispatchSection({
               period={dispatch.departPeriod}
               onTimeChange={(value) => onDispatchChange({ departTime: value })}
               onPeriodChange={(value) => onDispatchChange({ departPeriod: value })}
+              errorMessage={errors["dispatch.departTime"]}
             />
-            <FieldError message={errors["dispatch.departTime"]} />
           </div>
           <div>
             <CommonTimeInput
@@ -114,8 +113,8 @@ export default function VehicularDispatchSection({
               period={dispatch.arrivalPeriod}
               onTimeChange={(value) => onDispatchChange({ arrivalTime: value })}
               onPeriodChange={(value) => onDispatchChange({ arrivalPeriod: value })}
+              errorMessage={errors["dispatch.arrivalTime"]}
             />
-            <FieldError message={errors["dispatch.arrivalTime"]} />
           </div>
         </div>
 
@@ -130,8 +129,8 @@ export default function VehicularDispatchSection({
               placeholder="123456"
               value={dispatch.odometerIn}
               onChange={(e) => onDispatchChange({ odometerIn: e.target.value })}
+              errorMessage={errors["dispatch.odometerIn"]}
             />
-            <FieldError message={errors["dispatch.odometerIn"]} />
           </div>
           <div>
             <CommonInput
@@ -143,8 +142,8 @@ export default function VehicularDispatchSection({
               placeholder="123456"
               value={dispatch.odometerOut}
               onChange={(e) => onDispatchChange({ odometerOut: e.target.value })}
+              errorMessage={errors["dispatch.odometerOut"]}
             />
-            <FieldError message={errors["dispatch.odometerOut"]} />
           </div>
         </div>
       </div>

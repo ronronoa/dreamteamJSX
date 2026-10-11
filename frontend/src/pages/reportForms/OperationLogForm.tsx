@@ -8,6 +8,7 @@ import OperationStep1 from "../../modules/reportForms/OperationLogForm/Operation
 import OperationStep2 from "../../modules/reportForms/OperationLogForm/OperationStep2"
 import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
 import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
+import OperationLogLastStep from "../../modules/reportForms/OperationLogForm/OperationLogLastStep"
 import { isFormComplete, isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
 
 import {
@@ -23,6 +24,7 @@ import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
+import { ROUTES } from "../../routes"
 
 export default function OperationLogForm() {
   const [step, setStep] = useState(1)
@@ -30,7 +32,6 @@ export default function OperationLogForm() {
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
-  const [submitMessage, setSubmitMessage] = useState("")
   const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
   const [formOptions, setFormOptions] = useState<OperationFormOptions>({
     operationNatures: [],
@@ -70,8 +71,21 @@ export default function OperationLogForm() {
     }
   }, [optionsRequestId])
 
+  useEffect(() => {
+    if (step !== 5) return
+
+    const redirectTimer = window.setTimeout(() => {
+      navigate(ROUTES.CHOOSE_FORM)
+    }, 5000)
+
+    return () => window.clearTimeout(redirectTimer)
+  }, [navigate, step])
+
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
+  const submitErrors = [1, 2, 3].flatMap((formStep) =>
+    Object.values(validateStep(formStep, formData, formOptions)),
+  )
 
   const VARIANTS = {
     enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -130,7 +144,6 @@ const nextStep = () => {
 
   const openPinModal = () => {
     setPinError(undefined)
-    setSubmitMessage("")
     setPinModalShow(true)
   }
 
@@ -144,8 +157,7 @@ const nextStep = () => {
 
       setPinModalShow(false);
       setFormData(createEmptyOperationLogData());
-      setStep(1);
-      setSubmitMessage("Operation report submitted and is pending verification.");
+      setStep(5);
       setValidationErrors({});
     } catch (error) {
       console.error("Failed to submit operation:", error);
@@ -168,6 +180,8 @@ const nextStep = () => {
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [formData])
+
+  if (step === 5) return <OperationLogLastStep />
 
   return (
     <>
@@ -200,12 +214,6 @@ const nextStep = () => {
             <div className="mb-5 mt-8 text-center">
               <h1 className="text-4xl font-bold text-white">OPERATION LOG FORM</h1>
             </div>
-
-            {submitMessage && (
-              <p role="status" className="mb-3 rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-                {submitMessage}
-              </p>
-            )}
 
             <div className="relative w-full ">
               <AnimatePresence mode="wait" initial={false} custom={direction}>
@@ -254,6 +262,15 @@ const nextStep = () => {
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {step === totalSteps && submitErrors.length > 0 && (
+              <div role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <p className="font-semibold">Please fix these issues before submitting:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {[...new Set(submitErrors)].map((message) => <li key={message}>{message}</li>)}
+                </ul>
+              </div>
+            )}
 
             {optionsError && (
               <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

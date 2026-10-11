@@ -21,7 +21,7 @@ const D = ROUTES.DASHBOARD;
 const dashboardItem = { label: "TODO:Dashboard", href: D.ROOT, icon: LayoutDashboard };
 
 const operationItems = [
-  { label: "TODO:Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
+  { label: "Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
   { label: "TODO:Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
   { label: "TODO:Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
   { label: "Inventory",             href: D.INVENTORY,  icon: Package },

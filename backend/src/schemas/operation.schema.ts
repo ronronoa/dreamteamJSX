@@ -4,11 +4,11 @@ const OperationStatusEnum = z.enum(["PENDING", "TO_REVIEW" ,"VALIDATED", "REJECT
 const GenderEnum = z.enum(["MALE", "FEMALE"])
 
 export const CreateTeamSchema = z.object({
-    team_name: z.string().min(1).max(100)
+    team_name: z.string().trim().min(1, "Team name is required.").max(100)
 })
 
 export const UpdateTeamSchema = z.object({
-    team_name: z.string().min(1).max(100)
+    team_name: z.string().trim().min(1, "Team name is required.").max(100)
 })
 
 export const TeamIdParamSchema = z.object({

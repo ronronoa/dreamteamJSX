@@ -27,9 +27,37 @@ export const operationService = {
     },
 
     async deleteTeam(teamId: string) {
-        await this.findTeamById(teamId)
-        await prisma.responseTeam.delete({ where: {team_id: teamId}})
-        return { success: true }
+        try {
+            return await prisma.$transaction(async (transaction) => {
+                const team = await transaction.responseTeam.findUnique({ where: { team_id: teamId } });
+                if (!team) throw new NotFoundError("ResponseTeam", teamId);
+
+                const assignedUserCount = await transaction.user.count({ where: { team_id: teamId } });
+                if (assignedUserCount > 0) {
+                    throw new ConflictError(`This team is assigned to ${assignedUserCount} user${assignedUserCount === 1 ? "" : "s"}. Reassign those users before deleting it.`);
+                }
+
+                const [operationCount, assignmentCount] = await Promise.all([
+                    transaction.operationLog.count({ where: { team_id: teamId } }),
+                    transaction.operationTeamAssignment.count({ where: { team_id: teamId } }),
+                ]);
+                if (operationCount > 0 || assignmentCount > 0) {
+                    throw new ConflictError("This team is referenced by operation records and cannot be deleted.");
+                }
+
+                await transaction.responseTeam.delete({ where: { team_id: teamId } });
+                return { success: true };
+            });
+        } catch (error) {
+            if (error instanceof NotFoundError || error instanceof ConflictError) throw error;
+            if (
+                error && typeof error === "object" && "code" in error &&
+                error.code === "P2003"
+            ) {
+                throw new ConflictError("This team is still in use and cannot be deleted.");
+            }
+            throw error;
+        }
     },
 
     // Operation Log
@@ -50,6 +78,7 @@ export const operationService = {
                 team: true,
                 teamAssignments: { include: { team: true } },
                 submitter: { select: { user_id: true, name: true, username: true}},
+                validator: { select: { user_id: true, name: true, username: true}},
                 responders: { include: { user: { select: { user_id: true, name: true }}}},
                 personsInvolved: true,
                 inventoryEntries: true,

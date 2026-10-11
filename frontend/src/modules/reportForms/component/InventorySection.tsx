@@ -34,10 +34,12 @@ export default function InventorySection<T extends InventoryItem>({
 
   return (
     <CommonFormSection title="INVENTORY">
-      <FieldError message={errors.inventory} />
       <div className="flex h-full flex-col">
         <div className="mb-2 grid grid-cols-[1fr_140px_28px] gap-2">
-          <span className="text-lg font-bold text-slate-900">Item Name</span>
+          <span className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-bold text-slate-900">
+            Item Name
+            {errors.inventory && <span role="alert" className="text-xs font-medium text-red-700">{errors.inventory}</span>}
+          </span>
           <span className="text-lg font-bold text-slate-900">Quantity</span>
           <span />
         </div>
@@ -50,6 +52,7 @@ export default function InventorySection<T extends InventoryItem>({
                   variant="compact"
                   value={item.itemName}
                   onChange={(event) => updateItem(item.id, { itemName: event.target.value })}
+                  errorMessage={errors[`inventory.${index}.itemName`]}
                 />
                 <CommonInput
                   variant="compact"
@@ -57,6 +60,7 @@ export default function InventorySection<T extends InventoryItem>({
                   placeholder="e.g. 4 boxes"
                   value={item.quantity}
                   onChange={(event) => updateItem(item.id, { quantity: event.target.value })}
+                  errorMessage={errors[`inventory.${index}.quantity`]}
                 />
                 <button
                   type="button"
@@ -66,11 +70,6 @@ export default function InventorySection<T extends InventoryItem>({
                 >
                   <Trash size={16} />
                 </button>
-              </div>
-              <div className="grid grid-cols-[1fr_140px_28px] gap-2">
-                <FieldError message={errors[`inventory.${index}.itemName`]} />
-                <FieldError message={errors[`inventory.${index}.quantity`]} />
-                <span />
               </div>
             </div>
           ))}
@@ -86,6 +85,7 @@ export default function InventorySection<T extends InventoryItem>({
           <PackagePlus size={18} />
         </CommonButton>
       </div>
+      {errors.inventory && <FieldError message={errors.inventory} />}
     </CommonFormSection>
   )
 }

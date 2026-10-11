@@ -42,6 +42,24 @@ export async function fetchTeams(accessToken: string) {
   return result.teams;
 }
 
+export async function createTeam(accessToken: string, teamName: string) {
+  return request<{ team: TeamOption }>("/teams", accessToken, {
+    method: "POST",
+    body: JSON.stringify({ team_name: teamName }),
+  });
+}
+
+export async function updateTeam(accessToken: string, teamId: string, teamName: string) {
+  return request<{ team: TeamOption }>(`/teams/${teamId}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify({ team_name: teamName }),
+  });
+}
+
+export async function deleteTeam(accessToken: string, teamId: string) {
+  return request<{ success: boolean }>(`/teams/${teamId}`, accessToken, { method: "DELETE" });
+}
+
 export async function createManagedUser(accessToken: string, input: ManagedUserInput & { password: string }) {
   return request<{ user: ManagedUser }>("/users", accessToken, {
     method: "POST",

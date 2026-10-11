@@ -6,6 +6,7 @@ export const inventoryRoutes = Router();
 
 const inventoryManagers = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"] as const;
 
+inventoryRoutes.get("/inventory/report-form-options", inventoryController.listForReport);
 inventoryRoutes.get("/inventory", requireAuth, inventoryController.list);
 inventoryRoutes.post("/inventory", requireAuth, requireRole(...inventoryManagers), inventoryController.create);
 inventoryRoutes.patch("/inventory/:id", requireAuth, requireRole(...inventoryManagers), inventoryController.update);

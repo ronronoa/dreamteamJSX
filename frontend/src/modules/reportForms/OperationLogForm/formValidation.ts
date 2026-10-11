@@ -7,7 +7,6 @@ export type FormErrors = Record<string, string>;
 const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_COUNT = 10;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const PHONE_NUMBER_PATTERN = /^[+\d(). -]{7,20}$/;
 const INVENTORY_QUANTITY_PATTERN = /^(\d+)(?:\s+[A-Za-z][A-Za-z0-9 _-]{0,39})?$/;
 const OPERATION_TIME_PATTERN = /^(0[1-9]|1[0-2]):[0-5][0-9]$/;
 
@@ -38,33 +37,33 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   const errors: FormErrors = {};
 
   const submitterName = operationDetails.submitterName.trim();
-  if (!submitterName) errors["operationDetails.submitterName"] = "Enter the submitter name.";
-  else if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
+  if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
   if (!operationDetails.date || operationDetails.date > new Date().toISOString().slice(0, 10)) {
     errors["operationDetails.date"] = "Choose a valid date that is not in the future.";
   }
   if (!options.operationNatures.some((nature) => nature.name === operationDetails.natureOfOperation)) {
     errors["operationDetails.natureOfOperation"] = "Choose an operation type.";
   }
-  validateNamePart(operationDetails.nameOfCaller.surname, 80, "Enter the caller's surname.", "operationDetails.nameOfCaller.surname", errors);
-  validateNamePart(operationDetails.nameOfCaller.firstName, 80, "Enter the caller's first name.", "operationDetails.nameOfCaller.firstName", errors);
+  validateOptionalNamePart(operationDetails.nameOfCaller.surname, 80, "Surname must be 80 characters or fewer.", "operationDetails.nameOfCaller.surname", errors);
+  validateOptionalNamePart(operationDetails.nameOfCaller.firstName, 80, "First name must be 80 characters or fewer.", "operationDetails.nameOfCaller.firstName", errors);
   if (operationDetails.nameOfCaller.middleInitial.trim().length > 10) errors["operationDetails.nameOfCaller.middleInitial"] = "Middle initial must be 10 characters or fewer.";
   if (operationDetails.nameOfCaller.suffix.trim().length > 20) errors["operationDetails.nameOfCaller.suffix"] = "Suffix must be 20 characters or fewer.";
   if (operationDetails.teamAssigned.length === 0) errors["operationDetails.teamAssigned"] = "Select at least one team.";
   if (operationDetails.teamAssigned.some((teamId) => !options.teams.some((team) => team.team_id === teamId))) {
     errors["operationDetails.teamAssigned"] = "Refresh the form and select an available team.";
   }
-  if (operationDetails.responders.length === 0) errors["operationDetails.responders"] = "Select a responder.";
-  if (operationDetails.responders.some((userId) => !options.responders.some((responder) => responder.user_id === userId))) {
+  if (operationDetails.responders.some((userId) => !options.responders.some(
+    (responder) => responder.user_id === userId && responder.team_id !== null && operationDetails.teamAssigned.includes(responder.team_id),
+  ))) {
     errors["operationDetails.responders"] = "Refresh the form and select an available responder.";
   }
 
-  validateTextLength(dispatch.from, 200, "Enter the departure location.", "dispatch.from", errors);
-  validateTextLength(dispatch.to, 200, "Enter the destination.", "dispatch.to", errors);
+  validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
+  validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
   if (!options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
     errors["dispatch.vehicle"] = "Select an available vehicle.";
   }
-  validateTextLength(dispatch.driver, 120, "Enter the driver's name.", "dispatch.driver", errors);
+  validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
   if (!OPERATION_TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time.";
   if (!OPERATION_TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time.";
 
@@ -94,15 +93,12 @@ export function validatePerson(person: Person): FormErrors {
   }
 
   if (person.gender === "") errors.gender = "Select a sex.";
-  const phoneDigits = person.contactNumber.replace(/\D/g, "").length;
-  if (!PHONE_NUMBER_PATTERN.test(person.contactNumber.trim()) || phoneDigits < 7 || phoneDigits > 15) {
-    errors.contactNumber = "Enter a valid contact number with 7 to 15 digits.";
-  }
+  if (person.contactNumber.trim().length > 20) errors.contactNumber = "Contact number must be 20 characters or fewer.";
 
-  validateTextLength(person.address.phase, 30, "Enter the phase.", "address.phase", errors);
-  validateTextLength(person.address.package, 30, "Enter the package.", "address.package", errors);
-  validateTextLength(person.address.block, 30, "Enter the block.", "address.block", errors);
-  validateTextLength(person.address.lot, 30, "Enter the lot.", "address.lot", errors);
+  validateOptionalTextLength(person.address.phase, 30, "Phase must be 30 characters or fewer.", "address.phase", errors);
+  validateOptionalTextLength(person.address.package, 30, "Package must be 30 characters or fewer.", "address.package", errors);
+  validateOptionalTextLength(person.address.block, 30, "Block must be 30 characters or fewer.", "address.block", errors);
+  validateOptionalTextLength(person.address.lot, 30, "Lot must be 30 characters or fewer.", "address.lot", errors);
 
   return errors;
 }
@@ -113,11 +109,6 @@ export function validateStep2(formData: OperationLogData): FormErrors {
     errors.people = "Add no more than 100 people to one report.";
     return errors;
   }
-  if (formData.people.length === 0) {
-    errors.people = "Add at least one person involved in the operation.";
-    return errors;
-  }
-
   formData.people.forEach((person, index) => {
     for (const [field, message] of Object.entries(validatePerson(person))) {
       errors[`people.${index}.${field}`] = message;
@@ -129,7 +120,6 @@ export function validateStep2(formData: OperationLogData): FormErrors {
 export function validateStep3(formData: OperationLogData): FormErrors {
   const errors: FormErrors = {};
   const description = formData.operationDescription.description.trim();
-  if (!description) errors["operationDescription.description"] = "Enter an operation description.";
   if (description.length > 10000) errors["operationDescription.description"] = "Description must be 10,000 characters or fewer.";
   if (formData.inventory.length > 100) errors.inventory = "Add no more than 100 inventory entries.";
 
@@ -183,11 +173,10 @@ function validateNamePart(value: string, maxLength: number, requiredMessage: str
   if (trimmedValue.length > maxLength) errors[field] = `Must be ${maxLength} characters or fewer.`;
 }
 
-function validateTextLength(value: string, maxLength: number, requiredMessage: string, field: string, errors: FormErrors) {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    errors[field] = requiredMessage;
-    return;
-  }
-  if (trimmedValue.length > maxLength) errors[field] = `Must be ${maxLength} characters or fewer.`;
+function validateOptionalNamePart(value: string, maxLength: number, message: string, field: string, errors: FormErrors) {
+  if (value.trim().length > maxLength) errors[field] = message;
+}
+
+function validateOptionalTextLength(value: string, maxLength: number, message: string, field: string, errors: FormErrors) {
+  if (value.trim().length > maxLength) errors[field] = message;
 }

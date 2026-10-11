@@ -21,6 +21,22 @@ function getInventoryStatus(quantity: number, minimum: number, expiry: Date | nu
 }
 
 export const inventoryService = {
+  async listForReport() {
+    const databaseItems = await listInventoryItems();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return databaseItems
+      .filter((item) => item.quantity > 0 && (!item.expiry || item.expiry >= today))
+      .map((item) => ({
+        itemId: item.itemId,
+        item: item.item,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+      }));
+  },
+
   async list() {
     const [databaseItems, nextItemCode] = await Promise.all([
       listInventoryItems(),

@@ -1,11 +1,9 @@
 import CommonTextarea from "../../../components/common/widgets/CommonTextarea"
 import CommonFormSection from "../component/CommonFormSection"
-import InventorySection from "../component/InventorySection"
+import OperationInventorySection from "../component/OperationInventorySection"
 
 import type { InventoryItem, OperationDescription } from "../../../types/operationLog"
-import { createEmptyInventoryItem } from "../../../types/operationLog"
 import ImageUpload from "../component/ImageUpload"
-import FieldError from "../component/FieldError"
 import type { FormErrors } from "./formValidation"
 
 type OperationStep3Props = {
@@ -28,7 +26,10 @@ export default function OperationStep3({
       <CommonFormSection title="OPERATION DESCRIPTION">
         <div className="flex h-full flex-col">
           <div className="mb-5">
-            <label className="mb-1 block text-lg font-medium text-slate-900">Description</label>
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Description</span>
+              {errors["operationDescription.description"] && <span role="alert" className="text-xs font-medium text-red-700">{errors["operationDescription.description"]}</span>}
+            </label>
 
             <CommonTextarea
               variant="compact"
@@ -36,8 +37,8 @@ export default function OperationStep3({
               placeholder="Provide a detailed description of the eve, actions taken, and current status"
               value={operationDescription.description}
               onChange={(e) => onOperationDescriptionChange({ description: e.target.value })}
+              errorMessage={errors["operationDescription.description"]}
             />
-            <FieldError message={errors["operationDescription.description"]} />
           </div>
 
           <ImageUpload
@@ -50,10 +51,9 @@ export default function OperationStep3({
         </div>
       </CommonFormSection>
 
-      <InventorySection
+      <OperationInventorySection
         inventory={inventory}
         onInventoryChange={onInventoryChange}
-        createEmptyItem={createEmptyInventoryItem}
         errors={errors}
       />
     </div>

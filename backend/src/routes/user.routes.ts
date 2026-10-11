@@ -4,6 +4,7 @@ import { Router } from "express";
 import multer from "multer";
 import { createProfileImageUpload } from "@/middleware/upload";
 import { ValidationError } from "@/shared/errors";
+import { operationController } from "@/controllers/operation.controller";
 
 export const userRoutes = Router()
 const profileImageUpload = createProfileImageUpload();
@@ -41,3 +42,10 @@ userRoutes.post("/users", userController.create)
 userRoutes.patch("/users/:id", userController.update)
 userRoutes.post("/users/:id/reset-password", userController.resetPassword)
 userRoutes.delete("/users/:id", userController.delete)
+
+// Teams are managed alongside user accounts and supply the user team selector.
+userRoutes.get("/teams", requireAuth, operationController.listTeams)
+userRoutes.get("/teams/:id", requireAuth, operationController.getTeamById)
+userRoutes.post("/teams", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.createTeam)
+userRoutes.patch("/teams/:id", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.updateTeam)
+userRoutes.delete("/teams/:id", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.deleteTeam)

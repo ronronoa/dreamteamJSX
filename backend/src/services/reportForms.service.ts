@@ -61,9 +61,9 @@ export const reportFormsService = {
         select: { team_id: true, team_name: true },
       }),
       prisma.user.findMany({
-        where: { isActive: true, role: "MEMBER" },
+        where: { isActive: true, team_id: { not: null } },
         orderBy: { name: "asc" },
-        select: { user_id: true, name: true },
+        select: { user_id: true, name: true, team_id: true },
       }),
       prisma.vehicle.findMany({
         where: { status: "AVAILABLE" },
@@ -88,7 +88,11 @@ export const reportFormsService = {
         select: { team_id: true },
       }),
       prisma.user.findMany({
-        where: { user_id: { in: form.operationDetails.responders }, isActive: true, role: "MEMBER" },
+        where: {
+          user_id: { in: form.operationDetails.responders },
+          isActive: true,
+          team_id: { in: teamIds },
+        },
         select: { user_id: true },
       }),
       prisma.operationNature.findFirst({

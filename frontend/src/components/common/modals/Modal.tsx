@@ -7,6 +7,7 @@ interface ModalProps {
   children: ReactNode;
   className?: string;
   dismissable?: boolean;
+  large?: boolean
 }
 
 
@@ -30,7 +31,8 @@ export default function Modal({
   onClose,
   children,
   className = "",
-  dismissable = true
+  dismissable = true,
+  large = false
 }: ModalProps) {
   useEffect(() => {
     if (!open || !dismissable) return;
@@ -59,7 +61,7 @@ export default function Modal({
     >
       <div
         className={`
-        w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto
+        w-full ${large ? "max-w-7xl" : "max-w-lg"} rounded-3xl bg-white p-6 shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto
         modal-open
         ${className}
         `}

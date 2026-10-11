@@ -10,6 +10,7 @@ interface CommonTimeInputProps {
   period: "AM" | "PM"
   onTimeChange: (value: string) => void
   onPeriodChange: (value: "AM" | "PM") => void
+  errorMessage?: string
 }
 
 type Digits = [string, string, string, string]
@@ -74,6 +75,7 @@ export default function CommonTimeInput({
   period,
   onTimeChange,
   onPeriodChange,
+  errorMessage,
 }: CommonTimeInputProps) {
   const [digits, setDigits] = useState<Digits>(() => toDigits(time))
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
@@ -156,8 +158,9 @@ export default function CommonTimeInput({
 
   return (
     <div>
-      <label className="mb-1 block text-lg font-medium text-slate-900">
-        {label}
+      <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+        <span>{label}</span>
+        {errorMessage && <span role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
       </label>
 
       <div className="flex" onBlur={handleBlur}>

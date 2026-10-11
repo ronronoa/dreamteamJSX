@@ -8,22 +8,24 @@ interface ImagePreviewModalProps {
   open: boolean
   onClose: () => void
   file: File | null
+  image?: { name: string; url: string } | null
 }
 
 export default function ImagePreviewModal({
   open,
   onClose,
   file,
+  image = null,
 }: ImagePreviewModalProps) {
   const [isMaximized, setIsMaximized] = useState(false)
 
   const imageUrl = useMemo(() => {
-    if (!file) return ""
+    if (!file) return image?.url ?? ""
 
     const objectUrl = URL.createObjectURL(file)
 
     return objectUrl
-  }, [file])
+  }, [file, image?.url])
 
   useEffect(() => {
     return () => {
@@ -54,7 +56,8 @@ useEffect(() => {
   }
 }, [open, isMaximized])
 
-  if (!file || !imageUrl) return null
+  const imageName = file?.name ?? image?.name
+  if (!imageName || !imageUrl) return null
 
   return (
     <>
@@ -65,7 +68,7 @@ useEffect(() => {
       >
         <div className="flex flex-row items-center justify-between">
           <h2 className="truncate text-lg font-bold text-slate-900">
-            {file.name}
+            {imageName}
           </h2>
 
           <CommonButton
@@ -85,7 +88,7 @@ useEffect(() => {
         >
           <img
             src={imageUrl}
-            alt={file.name}
+            alt={imageName}
             className="max-h-[70vh] w-full rounded-md object-contain"
           />
 
@@ -107,7 +110,7 @@ useEffect(() => {
           className="fixed inset-4 z-50 flex flex-col rounded-md bg-black/90">
           <div className="flex items-center justify-between p-3">
             <span className="truncate text-sm font-medium text-white">
-              {file.name}
+              {imageName}
             </span>
 
             <CommonButton
@@ -122,7 +125,7 @@ useEffect(() => {
           <div className="flex flex-1 items-center justify-center overflow-auto p-4">
             <img
               src={imageUrl}
-              alt={file.name}
+              alt={imageName}
               className="max-h-full max-w-full object-contain"
             />
           </div>

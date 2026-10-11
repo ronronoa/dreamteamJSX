@@ -137,6 +137,8 @@ export type InventoryItem = {
   id: string
   itemName: string
   quantity: string
+  inventoryItemId?: string
+  unit?: string
 }
 
 export const createEmptyOperationDescription = (): OperationDescription => ({

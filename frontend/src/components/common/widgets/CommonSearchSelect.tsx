@@ -34,6 +34,7 @@ interface CommonSearchSelectProps
   value?: string[]
   onChange?: (value: string[], options: CommonSearchSelectOption[]) => void
   emptyMessage?: string
+  errorMessage?: string
 }
 
 export default function CommonSearchSelect({
@@ -43,6 +44,7 @@ export default function CommonSearchSelect({
   value = [],
   onChange,
   emptyMessage = "No results found",
+  errorMessage,
   placeholder = "Search...",
   className = "",
   ...props
@@ -105,10 +107,17 @@ export default function CommonSearchSelect({
 
   return (
     <div ref={containerRef} className="relative">
-      {label && <label htmlFor={props.id} className={labelClass}>{label}</label>}
+      {label && (
+        <label htmlFor={props.id} className={`${labelClass} flex flex-wrap items-baseline justify-between gap-x-2`}>
+          <span>{label}</span>
+          {errorMessage && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
+        </label>
+      )}
 
       <InputBase
         {...(props as InputBaseProps)}
+        aria-invalid={Boolean(errorMessage)}
+        aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
         type="text"
         autoComplete="off"
         value={displayValue}

@@ -4,7 +4,7 @@ import { apiFetch } from "./apiFetch";
 export interface OperationFormOptions {
   operationNatures: Array<{ name: string }>;
   teams: Array<{ team_id: string; team_name: string }>;
-  responders: Array<{ user_id: string; name: string }>;
+  responders: Array<{ user_id: string; name: string; team_id: string | null }>;
   vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string }>;
 }
 
@@ -12,7 +12,15 @@ export async function fetchOperationFormOptions(): Promise<OperationFormOptions>
   const response = await apiFetch("/report-forms/operations/options");
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(result.message ?? `Request failed (${response.status})`);
+    const fieldDetails = result.fields && typeof result.fields === "object"
+      ? Object.entries(result.fields as Record<string, unknown>)
+          .map(([field, messages]) => {
+            const readableMessages = Array.isArray(messages) ? messages.join(" ") : String(messages);
+            return `${field}: ${readableMessages}`;
+          })
+          .join("\n")
+      : "";
+    throw new Error(fieldDetails || result.message || `Request failed (${response.status})`);
   }
   if (
     !Array.isArray(result.operationNatures) ||
@@ -47,7 +55,15 @@ export async function submitOperationLog(
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(result.message ?? `Request failed (${response.status})`);
+    const fieldDetails = result.fields && typeof result.fields === "object"
+      ? Object.entries(result.fields as Record<string, unknown>)
+          .map(([field, messages]) => {
+            const readableMessages = Array.isArray(messages) ? messages.join(" ") : String(messages);
+            return `${field}: ${readableMessages}`;
+          })
+          .join("\n")
+      : "";
+    throw new Error(fieldDetails || result.message || `Request failed (${response.status})`);
   }
   return result;
 }

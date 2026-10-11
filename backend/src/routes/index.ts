@@ -8,7 +8,6 @@ import { activityAuditMiddleware } from "@/middleware/activityAudit.middleware";
 import { archivesRoutes } from "./archives.routes";
 import { vehicleRoutes } from "./vehicle.routes";
 import { reportFormsRoutes } from "./reportForms.routes";
-import { teamRoutes } from "./team.routes";
 
 export const apiRouter = Router()
 
@@ -17,7 +16,6 @@ apiRouter.use(authRoutes)
 apiRouter.use(pinRoutes)
 apiRouter.use(userRoutes)
 apiRouter.use(reportFormsRoutes)
-apiRouter.use(teamRoutes)
 apiRouter.use(inventoryRoutes)
 apiRouter.use(activityLogsRoutes)
 apiRouter.use(archivesRoutes)

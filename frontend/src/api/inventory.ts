@@ -65,6 +65,19 @@ export async function fetchInventory(accessToken: string): Promise<InventoryList
   };
 }
 
+export async function fetchReportFormInventory(): Promise<InventoryRecord[]> {
+  const response = await apiFetch("/inventory/report-form-options");
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message ?? `Request failed (${response.status})`);
+  }
+  if (!Array.isArray(result.items)) {
+    throw new Error("The server returned an invalid inventory list.");
+  }
+
+  return result.items as InventoryRecord[];
+}
+
 export interface CreateInventoryItemInput {
   itemName: string;
   category: string;

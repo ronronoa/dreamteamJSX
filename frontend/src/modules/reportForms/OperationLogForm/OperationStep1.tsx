@@ -1,12 +1,12 @@
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
+import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import CommonFormSection from "../component/CommonFormSection"
 
 import type { OperationDetails, VehicularDispatch } from "../../../types/operationLog"
 import type { OperationFormOptions } from "../../../api/operationForm"
 import type { FormErrors } from "./formValidation"
-import FieldError from "../component/FieldError"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 
 type OperationStep1Props = {
@@ -30,11 +30,18 @@ export default function OperationStep1({
 }: OperationStep1Props) {
   const toggleTeam = (team: string) => {
     const isSelected = operationDetails.teamAssigned.includes(team)
+    const updatedTeams = isSelected
+      ? operationDetails.teamAssigned.filter((selectedTeam) => selectedTeam !== team)
+      : [...operationDetails.teamAssigned, team]
+    const availableResponderIds = new Set(
+      options.responders
+        .filter((responder) => responder.team_id && updatedTeams.includes(responder.team_id))
+        .map((responder) => responder.user_id),
+    )
 
     onOperationDetailsChange({
-      teamAssigned: isSelected
-        ? operationDetails.teamAssigned.filter((t) => t !== team)
-        : [...operationDetails.teamAssigned, team],
+      teamAssigned: updatedTeams,
+      responders: operationDetails.responders.filter((responderId) => availableResponderIds.has(responderId)),
     })
   }
 
@@ -48,8 +55,8 @@ export default function OperationStep1({
             placeholder="Place holder"
             value={operationDetails.submitterName}
             onChange={(e) => onOperationDetailsChange({ submitterName: e.target.value })}
+            errorMessage={errors["operationDetails.submitterName"]}
           />
-          <FieldError message={errors["operationDetails.submitterName"]} />
 
           <CommonInput
             variant="compact"
@@ -57,8 +64,8 @@ export default function OperationStep1({
             label="Date"
             value={operationDetails.date}
             onChange={(e) => onOperationDetailsChange({ date: e.target.value })}
+            errorMessage={errors["operationDetails.date"]}
           />
-          <FieldError message={errors["operationDetails.date"]} />
 
           <CommonSelect
             variant="compact"
@@ -68,11 +75,26 @@ export default function OperationStep1({
             value={operationDetails.natureOfOperation}
             onChange={(e) => onOperationDetailsChange({ natureOfOperation: e.target.value })}
             disabled={optionsLoading || options.operationNatures.length === 0}
+            errorMessage={errors["operationDetails.natureOfOperation"]}
           />
-          <FieldError message={errors["operationDetails.natureOfOperation"]} />
 
           <div>
-            <label className="mb-1 block text-lg font-medium text-slate-900">Name of Caller</label>
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Name of Caller</span>
+              {[
+                ["Surname", errors["operationDetails.nameOfCaller.surname"]],
+                ["First name", errors["operationDetails.nameOfCaller.firstName"]],
+                ["Middle initial", errors["operationDetails.nameOfCaller.middleInitial"]],
+                ["Suffix", errors["operationDetails.nameOfCaller.suffix"]],
+              ].some(([, message]) => Boolean(message)) && <span role="alert" className="text-xs font-medium text-red-700">
+                {[
+                  ["Surname", errors["operationDetails.nameOfCaller.surname"]],
+                  ["First name", errors["operationDetails.nameOfCaller.firstName"]],
+                  ["Middle initial", errors["operationDetails.nameOfCaller.middleInitial"]],
+                  ["Suffix", errors["operationDetails.nameOfCaller.suffix"]],
+                ].filter((entry): entry is [string, string] => Boolean(entry[1])).map(([label, message]) => `${label}: ${message}`).join(" ")}
+              </span>}
+            </label>
 
             <div className="grid grid-cols-[1fr_1fr_80px_80px] gap-2">
               <CommonInput
@@ -111,16 +133,13 @@ export default function OperationStep1({
                 }
               />
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              <FieldError message={errors["operationDetails.nameOfCaller.surname"]} />
-              <FieldError message={errors["operationDetails.nameOfCaller.firstName"]} />
-              <FieldError message={errors["operationDetails.nameOfCaller.middleInitial"]} />
-              <FieldError message={errors["operationDetails.nameOfCaller.suffix"]} />
-            </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-lg font-medium text-slate-900">Team Assigned</label>
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Team Assigned</span>
+              {errors["operationDetails.teamAssigned"] && <span role="alert" className="text-xs font-medium text-red-700">{errors["operationDetails.teamAssigned"]}</span>}
+            </label>
 
             <div className="flex gap-8">
               {options.teams.map((team) => (
@@ -132,19 +151,20 @@ export default function OperationStep1({
                 />
               ))}
             </div>
-            <FieldError message={errors["operationDetails.teamAssigned"]} />
           </div>
 
-          <CommonSelect
+          <CommonSearchSelect
             variant="compact"
             label="Responders"
-            placeholder="Drop Checkbox"
-            options={options.responders.map((responder) => ({ label: responder.name, value: responder.user_id }))}
-            value={operationDetails.responders[0] ?? ""}
-            onChange={(e) => onOperationDetailsChange({ responders: [e.target.value] })}
-            disabled={optionsLoading || options.responders.length === 0}
+            placeholder={operationDetails.teamAssigned.length > 0 ? "Search responders..." : "Select a team first"}
+            options={options.responders
+              .filter((responder) => responder.team_id && operationDetails.teamAssigned.includes(responder.team_id))
+              .map((responder) => ({ label: responder.name, value: responder.user_id }))}
+            value={operationDetails.responders}
+            onChange={(responders) => onOperationDetailsChange({ responders })}
+            disabled={optionsLoading || operationDetails.teamAssigned.length === 0}
+            errorMessage={errors["operationDetails.responders"]}
           />
-          <FieldError message={errors["operationDetails.responders"]} />
         </div>
       </CommonFormSection>
 
