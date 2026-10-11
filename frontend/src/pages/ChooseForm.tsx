@@ -56,6 +56,7 @@ export default function ChooseForm() {
 
 
               <CommonButton
+                onClick={() => navigate((ROUTES.VEHICULARDISPATCH_FORM))}
                 variant="orange"
                 className="flex h-32 sm:h-64 w-full flex-col items-center justify-center"
               >
