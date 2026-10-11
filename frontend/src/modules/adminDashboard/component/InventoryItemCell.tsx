@@ -4,7 +4,16 @@ const DATE_FMT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-export default function InventoryItemCell({ expiry, now }: { expiry: Date; now: number }) {
+export default function InventoryItemCell({ expiry, now }: { expiry: Date | null; now: number }) {
+  if (!expiry) {
+    return (
+      <div className="leading-tight">
+        <p className="text-xs font-semibold text-gray-400">No expiry</p>
+        <p className="text-[10px] text-gray-400">Not tracked</p>
+      </div>
+    );
+  }
+
   const days = Math.ceil((expiry.getTime() - now) / 86_400_000);
 
   const label =

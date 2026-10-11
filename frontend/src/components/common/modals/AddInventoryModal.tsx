@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, X, Lock, Plus, ChevronDown } from "lucide-react";
 import Modal from "./Modal";
 import CommonButton from "../widgets/CommonButton";
@@ -8,10 +8,14 @@ export interface AddInventoryFormValues {
   itemId: string;
   name: string;
   category: string;
+  unit?: string;
   quantity: number;
   minThreshold: number;
   expiryDate: string;
+  adjustmentReason: string;
 }
+
+export type InventoryFormMode = "add" | "edit";
 
 interface AddInventoryModalProps {
   open: boolean;
@@ -19,7 +23,9 @@ interface AddInventoryModalProps {
   onClose: () => void;
   /** Auto-generated ID passed down from the parent. */
   itemId?: string;
-  onSubmit?: (values: AddInventoryFormValues) => void | Promise<void>;
+  mode?: InventoryFormMode;
+  initialValues?: AddInventoryFormValues;
+  onSubmit?: (values: AddInventoryFormValues) => void | boolean | Promise<void | boolean>;
 }
 
 const CATEGORIES = [
@@ -35,6 +41,8 @@ export default function AddInventoryModal({
   error,
   onClose,
   itemId = "INV-010",
+  mode = "add",
+  initialValues,
   onSubmit,
 }: AddInventoryModalProps) {
   const [name, setName] = useState("");
@@ -42,6 +50,25 @@ export default function AddInventoryModal({
   const [quantity, setQuantity] = useState("");
   const [minThreshold, setMinThreshold] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setName(initialValues?.name ?? "");
+    setCategory(initialValues?.category ?? "Medical");
+    setQuantity(initialValues ? String(initialValues.quantity) : "");
+    setMinThreshold(initialValues ? String(initialValues.minThreshold) : "");
+    setExpiryDate(initialValues?.expiryDate ?? "");
+    setAdjustmentReason("");
+  }, [
+    open,
+    initialValues?.itemId,
+    initialValues?.name,
+    initialValues?.category,
+    initialValues?.quantity,
+    initialValues?.minThreshold,
+    initialValues?.expiryDate,
+  ]);
 
   function reset() {
     setName("");
@@ -49,19 +76,26 @@ export default function AddInventoryModal({
     setQuantity("");
     setMinThreshold("");
     setExpiryDate("");
+    setAdjustmentReason("");
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await onSubmit?.({
-      itemId,
-      name,
-      category,
-      quantity: Number(quantity) || 0,
-      minThreshold: Number(minThreshold) || 0,
-      expiryDate,
-    });
-    reset();
+    try {
+      const submitted = await onSubmit?.({
+        itemId,
+        name,
+        category,
+        quantity: Number(quantity) || 0,
+        minThreshold: Number(minThreshold) || 0,
+        expiryDate,
+        adjustmentReason,
+      });
+      if (submitted === false) return;
+      reset();
+    } catch {
+      // Keep the entered values available so the user can retry after an error.
+    }
   }
 
   function handleClose() {
@@ -80,10 +114,12 @@ export default function AddInventoryModal({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">
-                Add New Item
+                {mode === "edit" ? "Edit Item" : "Add New Item"}
               </h2>
               <p className="text-xs text-slate-600">
-                Register a new supply item to the emergency inventory.
+                {mode === "edit"
+                  ? "Update this supply item's inventory details."
+                  : "Register a new supply item to the emergency inventory."}
               </p>
             </div>
           </div>
@@ -145,6 +181,9 @@ export default function AddInventoryModal({
                   focus:border-purple-400 focus:ring-2 focus:ring-purple-400
                 "
               >
+                {mode === "edit" && !CATEGORIES.includes(category) && (
+                  <option value={category}>{category}</option>
+                )}
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -163,16 +202,18 @@ export default function AddInventoryModal({
             <div className="relative">
               <CommonInput
                 id="item-quantity"
-                label="Quantity *"
+                label={mode === "edit" ? "Current Quantity" : "Quantity *"}
                 type="number"
                 min={0}
+                max={1_000_000_000}
+                step={1}
                 placeholder="0"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 required
               />
               <span className="pointer-events-none absolute bottom-4 right-4 text-sm text-gray-400">
-                units
+                {initialValues?.unit ?? "units"}
               </span>
             </div>
             <CommonInput
@@ -180,12 +221,25 @@ export default function AddInventoryModal({
               label="Minimum Threshold *"
               type="number"
               min={0}
+              max={1_000_000_000}
+              step={1}
               placeholder="0"
               value={minThreshold}
               onChange={(e) => setMinThreshold(e.target.value)}
               required
             />
           </div>
+          {mode === "edit" && initialValues && Number(quantity) !== initialValues.quantity && (
+            <CommonInput
+              id="item-adjustment-reason"
+              label="Reason for quantity change *"
+              placeholder="Explain the stock correction"
+              value={adjustmentReason}
+              onChange={(event) => setAdjustmentReason(event.target.value)}
+              required
+              maxLength={250}
+            />
+          )}
           <p className="-mt-2 text-xs text-gray-500">
             Alert will trigger when stock falls below this level.
           </p>
@@ -218,8 +272,8 @@ export default function AddInventoryModal({
               Cancel
             </CommonButton>
             <CommonButton type="submit" variant="purple">
-              <Plus size={16} className="" />
-              Add Item
+              {mode === "edit" ? <Box size={16} /> : <Plus size={16} />}
+              {mode === "edit" ? "Save Changes" : "Add Item"}
             </CommonButton>
           </div>
         </form>

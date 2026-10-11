@@ -332,30 +332,37 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 8. Inventory — Phase 6 (not built)
+## 8. Inventory — core workflows implemented
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
-| `GET` | `/api/inventory` | Any authenticated | List inventory items |
-| `POST` | `/api/inventory` | DEPARTMENT_HEAD+ | Create inventory item |
-| `PATCH` | `/api/inventory/:id` | DEPARTMENT_HEAD+ | Update inventory item |
-| `POST` | `/api/inventory/stock-in` | DEPARTMENT_HEAD+ | Add stock (STOCK_IN) |
-| `POST` | `/api/inventory/adjust` | SUPER_ADMIN | Manual stock adjustment |
-| `GET` | `/api/inventory/:id/transactions` | Any authenticated | View transaction history |
+| `GET` | `/api/inventory` | Any authenticated | List active inventory and stock/expiry summary |
+| `POST` | `/api/inventory` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Create an item and record its initial stock |
+| `PATCH` | `/api/inventory/:id` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Update item details and minimum quantity |
+| `POST` | `/api/inventory/stock-in` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Add stock (STOCK_IN) |
+| `POST` | `/api/inventory/adjust` | SUPER_ADMIN | Apply a signed, reasoned stock adjustment |
+| `GET` | `/api/inventory/:id/transactions` | Any authenticated | View paginated transaction history |
 
 **Request/Response shapes:**
 
 ```typescript
 // POST /api/inventory
-// Body: { itemName: string, category: string, unit: string, stockQuantity: number, stockType?: string }
+// Body: { itemName: string, category: string, unit?: string, stockQuantity: number, minimumQuantity: number, expiryDate?: string | null }
+// Returns: { item: InventoryItem }
+
+// GET /api/inventory
+// Returns: { items: InventoryItem[], nextItemCode: string, stats: InventoryOverview }
+
+// PATCH /api/inventory/:id
+// Body: { itemName?: string, category?: string, unit?: string, minimumQuantity?: number, expiryDate?: string | null }
 // Returns: { item: InventoryItem }
 
 // POST /api/inventory/stock-in
-// Body: { itemId: string, quantity: number }
+// Body: { itemId: string, quantity: number, reason?: string }
 // Returns: { transaction: InventoryTransaction, newStock: number }
 
 // POST /api/inventory/adjust
-// Body: { itemId: string, quantity: number, reason: string }
+// Body: { itemId: string, quantity: number, reason: string } // quantity is a signed stock delta
 // Returns: { transaction: InventoryTransaction, newStock: number }
 
 // GET /api/inventory/:id/transactions

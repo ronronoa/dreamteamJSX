@@ -24,7 +24,7 @@ const operationItems = [
   { label: "TODO:Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
   { label: "TODO:Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
   { label: "TODO:Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
-  { label: "TODO:Inventory",             href: D.INVENTORY,  icon: Package },
+  { label: "Inventory",             href: D.INVENTORY,  icon: Package },
 ];
 
 const archiveItem  = { label: "TODO:Archived Logs", href: D.ARCHIVES, icon: Archive };

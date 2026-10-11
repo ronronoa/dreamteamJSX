@@ -181,10 +181,13 @@ model Vehicle {
 
 model InventoryItem {
   item_id        String   @id @default(uuid())
+  item_code      String   @unique
   item_name      String
   category       String
   unit           String
   stock_quantity Int      @default(0)
+  minimum_quantity Int    @default(0)
+  expiry_date    DateTime?
   stock_type     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -202,6 +205,7 @@ model InventoryTransaction {
   user_id          String
   transaction_type InventoryTransactionType
   quantity         Int
+  reason           String?
   transaction_date DateTime                 @default(now())
 
   item InventoryItem @relation(fields: [item_id], references: [item_id])
