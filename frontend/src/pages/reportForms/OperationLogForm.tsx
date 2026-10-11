@@ -19,20 +19,52 @@ import {
   type InventoryItem,
   type OperationDescription,
 } from "../../types/operationLog"
-import { fetchOperationFormOptions, submitOperationLog, type OperationFormOptions } from "../../api/operationForm"
+import { fetchLatestOperationReport, fetchOperationFormOptions, submitOperationLog, type OperationFormOptions } from "../../api/operationForm"
 import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
+import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+
+const OPERATION_DRAFT_KEY = "reportForms.operation.draft"
+const OPERATION_LATEST_KEY = "reportForms.operation.latest"
+
+function normalizeOperationReport(value: unknown): OperationLogData {
+  const emptyReport = createEmptyOperationLogData()
+  if (typeof value !== "object" || value === null) return emptyReport
+
+  const report = value as Partial<OperationLogData>
+  return {
+    ...emptyReport,
+    ...report,
+    operationDetails: { ...emptyReport.operationDetails, ...report.operationDetails },
+    dispatch: { ...emptyReport.dispatch, ...report.dispatch },
+    people: Array.isArray(report.people) ? report.people : [],
+    operationDescription: {
+      ...emptyReport.operationDescription,
+      ...report.operationDescription,
+      images: [],
+    },
+    inventory: Array.isArray(report.inventory) ? report.inventory : [],
+  }
+}
 
 export default function OperationLogForm() {
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
-  const [pinModalShow, setPinModalShow] = useState(false)
+  const [pinModalShow, setPinModalShow] = useState(() => !hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY))
+  const [pinModalMode, setPinModalMode] = useState<"submit" | "load">(() =>
+    hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY) ? "submit" : "load",
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
-  const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
+  const [formData, setFormData] = useState<OperationLogData>(() => readStoredReport(
+    OPERATION_DRAFT_KEY,
+    OPERATION_LATEST_KEY,
+    createEmptyOperationLogData,
+    normalizeOperationReport,
+  ))
   const [formOptions, setFormOptions] = useState<OperationFormOptions>({
     operationNatures: [],
     teams: [],
@@ -143,17 +175,32 @@ const nextStep = () => {
   }
 
   const openPinModal = () => {
+    setPinModalMode("submit")
     setPinError(undefined)
     setPinModalShow(true)
   }
 
   const handleSubmit = async (pin: string) => {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     setPinError(undefined);
 
 
     try {
+      if (pinModalMode === "load") {
+        const latestReport = await fetchLatestOperationReport(pin)
+        if (!latestReport) throw new Error("No saved operation report was found.")
+        const normalizedReport = normalizeOperationReport(latestReport)
+        setFormData(normalizedReport)
+        saveStoredReport(OPERATION_LATEST_KEY, normalizedReport)
+        removeStoredReport(OPERATION_DRAFT_KEY)
+        setPinModalShow(false)
+        setValidationErrors({})
+        return
+      }
+
       await submitOperationLog(pin, formData);
+      saveStoredReport(OPERATION_LATEST_KEY, normalizeOperationReport(formData))
+      removeStoredReport(OPERATION_DRAFT_KEY)
 
       setPinModalShow(false);
       setFormData(createEmptyOperationLogData());
@@ -167,6 +214,10 @@ const nextStep = () => {
     }
   };
 
+
+  useEffect(() => {
+    if (!isFormEmpty(formData)) saveStoredReport(OPERATION_DRAFT_KEY, normalizeOperationReport(formData))
+  }, [formData])
 
   useEffect(() => {
     const hasUnsavedChanges = !isFormEmpty(formData)
@@ -187,7 +238,7 @@ const nextStep = () => {
     <>
       {pinModalShow && (
         <PinModal
-          title="OPERATION LOG"
+          title={pinModalMode === "load" ? "LOAD PREVIOUS OPERATION LOG" : "OPERATION LOG"}
           open={pinModalShow}
           onClose={() => setPinModalShow(false)}
           onSubmit={handleSubmit}

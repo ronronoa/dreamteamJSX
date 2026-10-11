@@ -1,24 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { OperationReportInput } from "@/schemas/operationReport.schema";
+import type { PatientReportInput } from "@/schemas/patientReport.schema";
 
 type UploadedFile = Express.Multer.File;
-type FormObject = Record<string, unknown>;
 
 const REPORT_IMAGE_DIRECTORY = "/uploads/report-forms/";
 
 function imageUrl(file: UploadedFile) {
   return `${REPORT_IMAGE_DIRECTORY}${file.filename}`;
-}
-
-function asObject(value: unknown): FormObject {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
-  return value as FormObject;
-}
-
-function asString(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
 }
 
 function formatPersonName(name: {
@@ -53,7 +44,237 @@ function formatAddress(address: OperationReportInput["people"][number]["address"
   ].filter(Boolean).join(", ");
 }
 
+function getDateInputValue(date: Date | null | undefined) {
+  if (!date) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function getTimeInputValue(date: Date | null | undefined) {
+  if (!date) return { time: "", period: "AM" as const };
+  const hour = date.getHours();
+  return {
+    time: `${hour % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")}`,
+    period: hour >= 12 ? "PM" as const : "AM" as const,
+  };
+}
+
+function splitPersonName(fullName: string | null | undefined) {
+  const parts = fullName?.trim().split(/\s+/).filter(Boolean) ?? [];
+  if (parts.length === 0) return { firstName: "", middleInitial: "", surname: "", suffix: "" };
+  if (parts.length === 1) return { firstName: parts[0] ?? "", middleInitial: "", surname: "", suffix: "" };
+  if (parts.length === 2) return { firstName: parts[0] ?? "", middleInitial: "", surname: parts[1] ?? "", suffix: "" };
+  if (parts.length === 3) {
+    return { firstName: parts[0] ?? "", middleInitial: parts[1] ?? "", surname: parts[2] ?? "", suffix: "" };
+  }
+  return {
+    firstName: parts[0] ?? "",
+    middleInitial: parts.length > 3 ? parts[1] ?? "" : "",
+    surname: parts.length > 3 ? parts[2] ?? "" : parts.slice(1, -1).join(" "),
+    suffix: parts.length > 3 ? parts.at(-1) ?? "" : "",
+  };
+}
+
 export const reportFormsService = {
+  async getLatestOperationReport() {
+    const operation = await prisma.operationLog.findFirst({
+      where: { archive: null },
+      orderBy: { createdAt: "desc" },
+      include: {
+        teamAssignments: true,
+        responders: true,
+        personsInvolved: true,
+        inventoryEntries: true,
+        inventoryItems: { include: { item: { select: { item_id: true, item_name: true, unit: true } } } },
+        dispatches: { orderBy: { dispatch_date: "desc" }, take: 1 },
+        images: true,
+      },
+    });
+    if (!operation) return null;
+
+    const dispatch = operation.dispatches[0];
+    const depart = getTimeInputValue(dispatch?.depart_time);
+    const arrival = getTimeInputValue(dispatch?.arrival_time);
+    const inventoryFromEntries = await Promise.all(operation.inventoryEntries.map(async (entry) => {
+      const stockItem = await prisma.inventoryItem.findFirst({
+        where: { item_name: entry.item_name },
+        orderBy: { createdAt: "desc" },
+        select: { item_id: true, unit: true },
+      });
+      return {
+        id: entry.entry_id,
+        itemName: entry.item_name,
+        quantity: entry.unit ? `${entry.quantity} ${entry.unit}` : String(entry.quantity),
+        ...(stockItem ? { inventoryItemId: stockItem.item_id, unit: stockItem.unit } : {}),
+      };
+    }));
+    const inventory = inventoryFromEntries.length > 0
+      ? inventoryFromEntries
+      : operation.inventoryItems.map((entry) => ({
+        id: `${operation.operation_id}-${entry.item_id}`,
+        itemName: entry.item.item_name,
+        quantity: entry.item.unit ? `${entry.quantity} ${entry.item.unit}` : String(entry.quantity),
+        inventoryItemId: entry.item.item_id,
+        unit: entry.item.unit,
+      }));
+
+    return {
+      pinNumber: null,
+      operationDetails: {
+        submitterName: operation.submitter_name ?? "",
+        date: getDateInputValue(operation.operation_date),
+        natureOfOperation: operation.nature_of_operation,
+        nameOfCaller: splitPersonName(operation.name_of_caller),
+        teamAssigned: operation.teamAssignments.map((assignment) => assignment.team_id),
+        responders: operation.responders.map((responder) => responder.user_id),
+      },
+      dispatch: {
+        from: dispatch?.from_location ?? "",
+        to: dispatch?.to_location ?? "",
+        vehicle: dispatch?.vehicle_id ?? "",
+        driver: dispatch?.driver_name ?? "",
+        departTime: depart.time,
+        departPeriod: depart.period,
+        arrivalTime: arrival.time,
+        arrivalPeriod: arrival.period,
+        odometerIn: dispatch?.odometer_in == null ? "" : String(dispatch.odometer_in),
+        odometerOut: dispatch?.odometer_out == null ? "" : String(dispatch.odometer_out),
+      },
+      people: operation.personsInvolved.map((person) => ({
+        id: person.person_id,
+        name: splitPersonName(person.full_name),
+        birthdate: getDateInputValue(person.birthdate),
+        age: person.age,
+        gender: person.sex === "MALE" ? "Male" : "Female",
+        contactNumber: person.contact_no ?? "",
+        address: {
+          phase: person.address_phase ?? "",
+          package: person.address_package ?? "",
+          block: person.address_block ?? "",
+          lot: person.address_lot ?? "",
+        },
+      })),
+      operationDescription: { description: operation.event_description, images: [] },
+      inventory,
+    };
+  },
+
+  async getLatestPatientReport() {
+    const patientLog = await prisma.patientLog.findFirst({
+      where: { report_data: { not: Prisma.DbNull } },
+      orderBy: { createdAt: "desc" },
+      select: { report_data: true },
+    });
+    if (!patientLog || typeof patientLog.report_data !== "object" || patientLog.report_data === null || Array.isArray(patientLog.report_data)) {
+      return null;
+    }
+
+    const reportData = patientLog.report_data as Record<string, unknown>;
+    return {
+      ...reportData,
+      pinNumber: null,
+      waiverForm: { images: [] },
+    };
+  },
+
+  async getLastReportFormInventorySelection() {
+    const [latestOperation, recentPatientLogs] = await Promise.all([
+      prisma.operationLog.findFirst({
+        where: {
+          OR: [
+            { inventoryItems: { some: {} } },
+            { inventoryEntries: { some: {} } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          createdAt: true,
+          inventoryItems: {
+            orderBy: { item_id: "desc" },
+            take: 1,
+            select: { item_id: true, quantity: true },
+          },
+          inventoryEntries: {
+            orderBy: { entry_id: "desc" },
+            take: 1,
+            select: { item_name: true, quantity: true },
+          },
+        },
+      }),
+      prisma.patientLog.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        select: { createdAt: true, report_data: true },
+      }),
+    ]);
+
+    let operationSelection: { inventoryItemId: string; quantity: string; createdAt: Date } | null = null;
+    const linkedInventoryItem = latestOperation?.inventoryItems[0];
+    if (linkedInventoryItem && latestOperation) {
+      operationSelection = {
+        inventoryItemId: linkedInventoryItem.item_id,
+        quantity: String(linkedInventoryItem.quantity),
+        createdAt: latestOperation.createdAt,
+      };
+    }
+
+    const operationEntry = latestOperation?.inventoryEntries[0];
+    if (!operationSelection && operationEntry && latestOperation) {
+      const stockItem = await prisma.inventoryItem.findFirst({
+        where: { item_name: operationEntry.item_name },
+        orderBy: { createdAt: "desc" },
+        select: { item_id: true },
+      });
+      if (stockItem) {
+        operationSelection = {
+          inventoryItemId: stockItem.item_id,
+          quantity: String(operationEntry.quantity),
+          createdAt: latestOperation.createdAt,
+        };
+      }
+    }
+
+    let patientSelection: { inventoryItemId: string; quantity: string; createdAt: Date } | null = null;
+    for (const patientLog of recentPatientLogs) {
+      const reportData = patientLog.report_data;
+      if (typeof reportData !== "object" || reportData === null || Array.isArray(reportData)) continue;
+      const inventory = (reportData as Record<string, unknown>).inventory;
+      if (!Array.isArray(inventory)) continue;
+
+      const latestEntry = [...inventory].reverse().find((entry) => {
+        if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return false;
+        const item = entry as Record<string, unknown>;
+        return typeof item.inventoryItemId === "string" && typeof item.quantity === "string";
+      }) as Record<string, unknown> | undefined;
+      if (!latestEntry) continue;
+
+      const amount = String(latestEntry.quantity).match(/^\s*(\d+)/)?.[1];
+      if (!amount) continue;
+      patientSelection = {
+        inventoryItemId: latestEntry.inventoryItemId as string,
+        quantity: amount,
+        createdAt: patientLog.createdAt,
+      };
+      break;
+    }
+
+    if (!operationSelection) return patientSelection;
+    if (!patientSelection) return operationSelection;
+    return operationSelection.createdAt >= patientSelection.createdAt ? operationSelection : patientSelection;
+  },
+
+  async getPatientFormOptions() {
+    const [teams, responders, vehicles] = await Promise.all([
+      prisma.responseTeam.findMany({ orderBy: { team_name: "asc" }, select: { team_id: true, team_name: true } }),
+      prisma.user.findMany({
+        where: { isActive: true, team_id: { not: null } },
+        orderBy: { name: "asc" },
+        select: { user_id: true, name: true, team_id: true },
+      }),
+      prisma.vehicle.findMany({ where: { status: "AVAILABLE" }, orderBy: { vehicle_name: "asc" }, select: { vehicle_id: true, vehicle_name: true, plate_number: true } }),
+    ]);
+    return { teams, responders, vehicles };
+  },
+
   async getOperationFormOptions() {
     const [teams, responders, vehicles, operationNatures] = await Promise.all([
       prisma.responseTeam.findMany({
@@ -214,100 +435,101 @@ export const reportFormsService = {
     });
   },
 
-  async createPatient(form: Record<string, unknown>, files: UploadedFile[]) {
-    const patientDetails = asObject(form["patientDetails"]);
-    const responderDetails = asObject(form["responderDetails"]);
-    const medical = asObject(form["firstAidHospital"]);
-    const patientName = asObject(patientDetails["name"]);
-    const address = asObject(patientDetails["address"]);
-    const contactPerson = asObject(patientDetails["contactPerson"]);
-    const patientFullName = formatPersonName({
-      firstName: asString(patientName["firstName"]),
-      middleInitial: asString(patientName["middleInitial"]),
-      surname: asString(patientName["surname"]),
-      suffix: asString(patientName["suffix"]),
-    });
-    const contactFullName = formatPersonName({
-      firstName: asString(contactPerson["firstName"]),
-      middleInitial: asString(contactPerson["middleInitial"]),
-      surname: asString(contactPerson["surname"]),
-      suffix: asString(contactPerson["suffix"]),
-    });
-    const birthdate = asString(patientDetails["birthdate"]);
-    const reportDate = asString(responderDetails["date"]);
-    const submitterName = asString(responderDetails["submitterName"]);
-    if (!submitterName || submitterName.length > 120) {
-      throw new ValidationError("Enter a submitter name up to 120 characters.", {
-        submitterName: ["Enter a submitter name up to 120 characters."],
-      });
+  async createPatient(form: PatientReportInput, files: UploadedFile[]) {
+    const [teams, responders, vehicle] = await Promise.all([
+      prisma.responseTeam.findMany({
+        where: { team_id: { in: form.responderDetails.teamAssigned } },
+        select: { team_id: true },
+      }),
+      prisma.user.findMany({
+        where: {
+          user_id: { in: form.responderDetails.responders },
+          isActive: true,
+          team_id: { in: form.responderDetails.teamAssigned },
+        },
+        select: { user_id: true },
+      }),
+      prisma.vehicle.findFirst({
+        where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
+        select: { vehicle_id: true },
+      }),
+    ]);
+    if (teams.length !== new Set(form.responderDetails.teamAssigned).size) {
+      throw new ValidationError("One or more selected teams are unavailable.", { teamAssigned: ["Refresh and select active teams."] });
     }
-    if (!patientFullName || !birthdate || !reportDate || Number.isNaN(Date.parse(birthdate)) || Number.isNaN(Date.parse(reportDate))) {
-      throw new ValidationError("Patient name, birthdate, and report date are required.", {
-        patientDetails: ["Patient name, birthdate, and report date are required."],
-      });
+    if (responders.length !== new Set(form.responderDetails.responders).size) {
+      throw new ValidationError("One or more selected responders are unavailable.", { responders: ["Refresh and select active responders."] });
     }
-    if (files.length === 0) {
-      throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
-    }
+    if (!vehicle) throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
 
-    const typeByForm: Record<string, "INTER_FACILITY_TRANSFER" | "PICK_UP" | "DROP_OFF"> = {
-      "INTER-FACILITY TRANSFER": "INTER_FACILITY_TRANSFER",
-      "PICK UP": "PICK_UP",
-      "DROP OFF": "DROP_OFF",
-    };
-    const requestType = asString(responderDetails["typeOfRequest"]).toUpperCase().replaceAll("_", " ");
-    const mappedRequestType = typeByForm[requestType];
-    if (!mappedRequestType) {
-      throw new ValidationError("Choose a valid patient request type.", {
-        typeOfRequest: ["Choose a valid patient request type."],
-      });
-    }
-    const payload = { ...form, uploadedImages: files.map(imageUrl) } as Prisma.InputJsonValue;
+    const { patientDetails, responderDetails, firstAidHospital, dispatch } = form;
+    const patientFullName = formatPersonName(patientDetails.name);
+    const contactFullName = formatPersonName(patientDetails.contactPerson);
+    const reportDate = responderDetails.date;
+    const departure = getDateTime(reportDate, dispatch.departTime, dispatch.departPeriod);
+    const arrival = getDateTime(reportDate, dispatch.arrivalTime, dispatch.arrivalPeriod);
+    if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
+    const hospitalIn = getDateTime(reportDate, firstAidHospital.hospitalInTime, firstAidHospital.hospitalInPeriod);
+    const hospitalOut = getDateTime(reportDate, firstAidHospital.hospitalOutTime, firstAidHospital.hospitalOutPeriod);
+    if (hospitalOut < hospitalIn) hospitalOut.setDate(hospitalOut.getDate() + 1);
+    const reportPayload = {
+      ...form,
+      dispatch: { ...dispatch, odometerIn: String(dispatch.odometerIn), odometerOut: String(dispatch.odometerOut) },
+      uploadedImages: files.map(imageUrl),
+    } as Prisma.InputJsonValue;
 
     const record = await prisma.patient.create({
       data: {
         full_name: patientFullName,
-        birthday: new Date(`${birthdate}T00:00:00`),
-        sex: asString(patientDetails["sex"]).toUpperCase() === "FEMALE" ? "FEMALE" : "MALE",
-        contact_person: contactFullName || "Not provided",
-        contact_number: asString(patientDetails["contactNumber"]) || "Not provided",
-        phase: asString(address["phase"]) || null,
-        package: asString(address["package"]) || null,
-        block: asString(address["block"]) || null,
-        lot: asString(address["lot"]) || null,
+        birthday: new Date(`${patientDetails.birthdate}T00:00:00`),
+        sex: patientDetails.sex.toUpperCase() as "MALE" | "FEMALE",
+        contact_person: contactFullName,
+        contact_number: patientDetails.contactNumber,
+        phase: patientDetails.address.phase || null,
+        package: patientDetails.address.package || null,
+        block: patientDetails.address.block || null,
+        lot: patientDetails.address.lot || null,
         patientLogs: {
           create: {
             log_date: new Date(`${reportDate}T00:00:00`),
-            type_of_request: mappedRequestType,
-            submitted_by: null,
-            submitter_name: submitterName,
+            type_of_request: responderDetails.typeOfRequest,
+            submitter_name: responderDetails.submitterName,
             status: "PENDING",
-            name_of_caller: formatPersonName({
-              firstName: asString(asObject(responderDetails["caller"])["firstName"]),
-              middleInitial: asString(asObject(responderDetails["caller"])["middleInitial"]),
-              surname: asString(asObject(responderDetails["caller"])["surname"]),
-              suffix: asString(asObject(responderDetails["caller"])["suffix"]),
-            }) || null,
-            bp: asString(medical["bp"]) || null,
-            pr: asString(medical["pr"]) || null,
-            spo2: asString(medical["spo2"]) || null,
-            temp: asString(medical["temp"]) || null,
-            medical_assessment: asString(medical["medicalAssessment"]) || null,
-            hospital_name: asString(medical["hospitalName"]) || null,
-            hospital_representative: formatPersonName({
-              firstName: asString(asObject(medical["hospitalRepresentative"])["firstName"]),
-              middleInitial: asString(asObject(medical["hospitalRepresentative"])["middleInitial"]),
-              surname: asString(asObject(medical["hospitalRepresentative"])["surname"]),
-              suffix: asString(asObject(medical["hospitalRepresentative"])["suffix"]),
-            }) || null,
-            report_data: payload,
+            name_of_caller: formatPersonName(responderDetails.caller) || null,
+            bp: firstAidHospital.bp || null,
+            pr: firstAidHospital.pr || null,
+            spo2: firstAidHospital.spo2 || null,
+            temp: firstAidHospital.temp || null,
+            medical_assessment: firstAidHospital.medicalAssessment || null,
+            hospital_name: firstAidHospital.hospitalName || null,
+            hospital_representative: formatPersonName(firstAidHospital.hospitalRepresentative) || null,
+            hospital_in_time: hospitalIn,
+            hospital_out_time: hospitalOut,
+            report_data: reportPayload,
+            responders: {
+              create: responderDetails.responders.map((userId) => ({ user_id: userId })),
+            },
+            dispatches: {
+              create: {
+                dispatch_date: new Date(`${reportDate}T00:00:00`),
+                vehicle_id: vehicle.vehicle_id,
+                driver_name: dispatch.driver,
+                from_location: dispatch.from,
+                to_location: dispatch.to,
+                depart_time: departure,
+                arrival_time: arrival,
+                odometer_in: dispatch.odometerIn,
+                odometer_out: dispatch.odometerOut,
+                dispatch_type: responderDetails.typeOfRequest === "PICK_UP" ? "PICK_UP" : "DROP_OFF",
+              },
+            },
           },
         },
-        ...(files.length > 0 ? { images: { create: files.map((file) => ({
+        images: { create: files.map((file) => ({
           image_url: imageUrl(file),
           file_type: file.mimetype,
           uploaded_by: null,
-        })) } } : {}),
+        })) },
       },
       include: { patientLogs: true, images: true },
     });

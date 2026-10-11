@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { PackagePlus, Trash, X } from "lucide-react"
 
-import { fetchReportFormInventory, type InventoryRecord } from "@/api/inventory"
+import {
+  fetchLastReportFormInventorySelection,
+  fetchReportFormInventory,
+  type InventoryRecord,
+  type LastReportFormInventorySelection,
+} from "@/api/inventory"
 import type { InventoryItem as OperationInventoryItem } from "@/types/operationLog"
 import CommonButton from "../../../components/common/widgets/CommonButton"
 import CommonInput from "../../../components/common/widgets/CommonInput"
@@ -14,14 +19,47 @@ type InventorySectionProps = {
   errors?: Record<string, string>
 }
 
+const LAST_INVENTORY_SELECTION_KEY = "reportForms.lastInventorySelection";
+
+type LastInventorySelection = {
+  inventoryItemId: string;
+  quantity: string;
+};
+
+function getLastInventorySelection(): LastInventorySelection | null {
+  try {
+    const storedValue = localStorage.getItem(LAST_INVENTORY_SELECTION_KEY);
+    if (!storedValue) return null;
+
+    const selection: unknown = JSON.parse(storedValue);
+    if (typeof selection !== "object" || selection === null) return null;
+
+    const candidate = selection as Partial<LastInventorySelection>;
+    if (typeof candidate.inventoryItemId !== "string" || typeof candidate.quantity !== "string") return null;
+    return { inventoryItemId: candidate.inventoryItemId, quantity: candidate.quantity };
+  } catch {
+    return null;
+  }
+}
+
+function saveLastInventorySelection(selection: LastInventorySelection) {
+  try {
+    localStorage.setItem(LAST_INVENTORY_SELECTION_KEY, JSON.stringify(selection));
+  } catch {
+    // Inventory entry should still succeed when browser storage is unavailable.
+  }
+}
+
 export default function InventorySection({ inventory, onInventoryChange, errors = {} }: InventorySectionProps) {
   const [stockItems, setStockItems] = useState<InventoryRecord[]>([])
+  const [databaseSelection, setDatabaseSelection] = useState<LastReportFormInventorySelection | null>(null)
   const [itemsLoading, setItemsLoading] = useState(true)
   const [itemsError, setItemsError] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedStockItemId, setSelectedStockItemId] = useState("")
   const [quantity, setQuantity] = useState("")
   const [addError, setAddError] = useState("")
+  const didAutoFillRef = useRef(false)
 
   useEffect(() => {
     let isCurrentRequest = true
@@ -30,8 +68,12 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
       setItemsLoading(true)
       setItemsError("")
       try {
-        const items = await fetchReportFormInventory()
+        const [items, recentSelection] = await Promise.all([
+          fetchReportFormInventory(),
+          fetchLastReportFormInventorySelection().catch(() => null),
+        ])
         if (isCurrentRequest) setStockItems(items)
+        if (isCurrentRequest) setDatabaseSelection(recentSelection)
       } catch (error) {
         if (isCurrentRequest) {
           setItemsError(error instanceof Error ? error.message : "Could not load inventory items.")
@@ -47,6 +89,45 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
     }
   }, [])
 
+  useEffect(() => {
+    if (didAutoFillRef.current || itemsLoading) return
+    if (inventory.length > 0) {
+      didAutoFillRef.current = true
+      return
+    }
+
+    const localSelection = getLastInventorySelection()
+    const localItem = localSelection
+      ? stockItems.find((item) => item.itemId === localSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
+      : undefined
+    const savedSelection = localItem
+      ? localSelection
+      : databaseSelection
+    const savedItem = savedSelection
+      ? stockItems.find((item) => item.itemId === savedSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
+      : undefined
+
+    if (!savedSelection || !savedItem) {
+      didAutoFillRef.current = true
+      return
+    }
+
+    const requestedQuantity = Number(savedSelection.quantity)
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1 || requestedQuantity > savedItem.quantity) {
+      didAutoFillRef.current = true
+      return
+    }
+
+    onInventoryChange([{
+      id: crypto.randomUUID(),
+      itemName: savedItem.item,
+      quantity: savedItem.unit ? `${requestedQuantity} ${savedItem.unit}` : String(requestedQuantity),
+      inventoryItemId: savedItem.itemId,
+      unit: savedItem.unit,
+    }])
+    didAutoFillRef.current = true
+  }, [databaseSelection, inventory, itemsLoading, onInventoryChange, stockItems])
+
   const availableItems = useMemo(
     () => stockItems.filter((item) => item.quantity > 0 && item.status !== "Expired" && !inventory.some((entry) => entry.inventoryItemId === item.itemId)),
     [inventory, stockItems],
@@ -55,8 +136,16 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
   const selectedItem = availableItems.find((item) => item.itemId === selectedStockItemId)
 
   function openAddModal() {
-    setSelectedStockItemId("")
-    setQuantity("")
+    const localSelection = getLastInventorySelection()
+    const localSelectionIsAvailable = localSelection && availableItems.some((item) => item.itemId === localSelection.inventoryItemId)
+    const databaseSelectionIsAvailable = databaseSelection && availableItems.some((item) => item.itemId === databaseSelection.inventoryItemId)
+    const lastSelection = localSelectionIsAvailable
+      ? localSelection
+      : databaseSelectionIsAvailable
+        ? databaseSelection
+        : null
+    setSelectedStockItemId(lastSelection?.inventoryItemId ?? "")
+    setQuantity(lastSelection?.quantity ?? "")
     setAddError("")
     setIsAddModalOpen(true)
   }
@@ -91,6 +180,10 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
         unit: selectedItem.unit,
       },
     ])
+    saveLastInventorySelection({
+      inventoryItemId: selectedItem.itemId,
+      quantity,
+    })
     setIsAddModalOpen(false)
   }
 

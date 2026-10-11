@@ -78,6 +78,28 @@ export async function fetchReportFormInventory(): Promise<InventoryRecord[]> {
   return result.items as InventoryRecord[];
 }
 
+export interface LastReportFormInventorySelection {
+  inventoryItemId: string;
+  quantity: string;
+}
+
+export async function fetchLastReportFormInventorySelection(): Promise<LastReportFormInventorySelection | null> {
+  const response = await apiFetch("/report-forms/inventory/last-selection");
+  const result = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(result?.message ?? `Request failed (${response.status})`);
+  }
+  if (result === null) return null;
+  if (
+    typeof result !== "object" ||
+    typeof result.inventoryItemId !== "string" ||
+    typeof result.quantity !== "string"
+  ) {
+    throw new Error("The server returned an invalid recent inventory selection.");
+  }
+  return result as LastReportFormInventorySelection;
+}
+
 export interface CreateInventoryItemInput {
   itemName: string;
   category: string;

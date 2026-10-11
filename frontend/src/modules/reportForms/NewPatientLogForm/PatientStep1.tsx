@@ -1,9 +1,9 @@
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
-import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
+import type { PatientFormOptions } from "@/api/patientForm"
 
 import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
 
@@ -11,20 +11,6 @@ const PatientRequestType = [
   { label: "INTER FACILITY TRANSFER", value: "INTER_FACILITY_TRANSFER" },
   { label: "PICK UP", value: "PICK_UP" },
   { label: "DROP OFF", value: "DROP_OFF" },
-  { label: "Other", value: "other" },
-]
-
-const TRANSFER_OPTIONS = ["Drop-off", "Pick-up"]
-
-const RESPONDER_OPTIONS = [
-  { label: "Responder 1", value: "responder-1" },
-  { label: "Responder 2", value: "responder-2" },
-]
-
-const VEHICLE_OPTIONS = [
-  { label: "Vehicle 1", value: "vehicle-1" },
-  { label: "Vehicle 2", value: "vehicle-2" },
-  { label: "Other", value: "other" },
 ]
 
 type PatientStep1Props = {
@@ -32,6 +18,8 @@ type PatientStep1Props = {
   onResponderDetailsChange: (patch: Partial<ResponderDetails>) => void
   dispatch: VehicularDispatch
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
+  options: PatientFormOptions
+  optionsLoading: boolean
 }
 
 export default function PatientStep1({
@@ -39,16 +27,9 @@ export default function PatientStep1({
   onResponderDetailsChange,
   dispatch,
   onDispatchChange,
+  options,
+  optionsLoading,
 }: PatientStep1Props) {
-
-  const toggleTeam = (team: string) => {
-    const isSelected = responderDetails.teamAssigned.includes(team)
-    onResponderDetailsChange({
-      teamAssigned: isSelected
-        ? responderDetails.teamAssigned.filter((t) => t !== team)
-        : [...responderDetails.teamAssigned, team],
-    })
-  }
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
@@ -133,32 +114,43 @@ export default function PatientStep1({
             variant="compact"
             label="Responders"
             placeholder="Search responder..."
-            options={RESPONDER_OPTIONS}
+            options={options.responders
+              .filter((responder) => responder.team_id && responderDetails.teamAssigned.includes(responder.team_id))
+              .map((responder) => ({ label: responder.name, value: responder.user_id }))}
             value={responderDetails.responders}
             onChange={(vals) => onResponderDetailsChange({ responders: vals })}
+            disabled={optionsLoading}
           />
 
-          <div>
-            <label className="mb-1 block text-lg font-medium text-slate-900">Transfer</label>
-
-            <div className="flex gap-8">
-              {TRANSFER_OPTIONS.map((team) => (
-                <CommonCheckbox
-                  key={team}
-                  label={team}
-                  checked={responderDetails.teamAssigned.includes(team)}
-                  onChange={() => toggleTeam(team)}
-                />
-              ))}
-            </div>
-          </div>
+          <CommonSearchSelect
+            variant="compact"
+            label="Team Assigned"
+            placeholder="Search team..."
+            options={options.teams.map((team) => ({ label: team.team_name, value: team.team_id }))}
+            value={responderDetails.teamAssigned}
+            onChange={(vals) => {
+              const availableResponders = new Set(options.responders
+                .filter((responder) => responder.team_id && vals.includes(responder.team_id))
+                .map((responder) => responder.user_id))
+              onResponderDetailsChange({
+                teamAssigned: vals,
+                responders: responderDetails.responders.filter((id) => availableResponders.has(id)),
+              })
+            }}
+            disabled={optionsLoading}
+          />
         </div>
       </CommonFormSection>
 
       <VehicularDispatchSection
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
-        vehicleOptions={VEHICLE_OPTIONS}
+        vehicleOptions={options.vehicles.map((vehicle) => ({
+          label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
+          value: vehicle.vehicle_id,
+        }))}
+        optionsLoading={optionsLoading}
+        allowOther={false}
       />
     </div>
   )

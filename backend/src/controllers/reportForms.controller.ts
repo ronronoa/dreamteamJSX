@@ -4,6 +4,7 @@ import { pinService } from "@/services/pin.service";
 import { reportFormsService } from "@/services/reportForms.service";
 import { VerifyPinSchema } from "@/schemas/pin.schema";
 import { OperationReportSchema } from "@/schemas/operationReport.schema";
+import { PatientReportSchema } from "@/schemas/patientReport.schema";
 import { unlink } from "node:fs/promises";
 
 async function removeUploadedFiles(req: Request) {
@@ -50,6 +51,47 @@ export const reportFormsController = {
     }
   },
 
+  async getPatientOptions(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const options = await reportFormsService.getPatientFormOptions();
+      res.status(200).json(options);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getLastInventorySelection(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const selection = await reportFormsService.getLastReportFormInventorySelection();
+      res.status(200).json(selection ? {
+        inventoryItemId: selection.inventoryItemId,
+        quantity: selection.quantity,
+      } : null);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getLatestOperationReport(req: Request, res: Response, next: NextFunction) {
+    try {
+      await pinService.verifyReportFormPin(getPin(req));
+      const report = await reportFormsService.getLatestOperationReport();
+      res.status(200).json({ report });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getLatestPatientReport(_req: Request, res: Response, next: NextFunction) {
+    try {
+      // Previously gated by the report PIN; prefill is now available without a PIN.
+      const report = await reportFormsService.getLatestPatientReport();
+      res.status(200).json({ report });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async submitOperation(req: Request, res: Response, next: NextFunction) {
     try {
       await pinService.verifyReportFormPin(getPin(req));
@@ -79,8 +121,20 @@ export const reportFormsController = {
     try {
       await pinService.verifyReportFormPin(getPin(req));
       const form = parseJsonField(req.body.formData, "formData");
+      const parsedForm = PatientReportSchema.safeParse(form);
+      if (!parsedForm.success) {
+        const fields: Record<string, string[]> = {};
+        for (const issue of parsedForm.error.issues) {
+          const field = issue.path.join(".") || "formData";
+          fields[field] = [...(fields[field] ?? []), issue.message];
+        }
+        throw new ValidationError("Review the patient report fields and try again.", fields);
+      }
       const files = (req.files ?? []) as Express.Multer.File[];
-      const record = await reportFormsService.createPatient(form, files);
+      if (files.length === 0) {
+        throw new ValidationError("Attach at least one report image.", { images: ["Attach at least one report image."] });
+      }
+      const record = await reportFormsService.createPatient(parsedForm.data, files);
       res.status(201).json({ patientLog: record });
     } catch (error) {
       await removeUploadedFiles(req);

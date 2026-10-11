@@ -8,10 +8,12 @@ import type {
   PatientLogData,
   PersonName,
 } from "../../../types/patientLog"
+import type { PatientFormOptions } from "@/api/patientForm"
 import { useState } from "react"
 
 type PatientStep4Props = {
   formData: PatientLogData
+  options: PatientFormOptions
 }
 
 const formatPersonName = (name: PersonName) => {
@@ -21,7 +23,7 @@ const formatPersonName = (name: PersonName) => {
     .trim()
 }
 
-export default function PatientStep4({ formData }: PatientStep4Props) {
+export default function PatientStep4({ formData, options }: PatientStep4Props) {
   const {
     responderDetails,
     dispatch,
@@ -37,6 +39,13 @@ export default function PatientStep4({ formData }: PatientStep4Props) {
     previewIndex !== null ? waiverForm.images[previewIndex] : null
 
   const { phase, package: pkg, block, lot } = patientDetails.address
+  const teamNames = responderDetails.teamAssigned.map((teamId) =>
+    options.teams.find((team) => team.team_id === teamId)?.team_name ?? teamId,
+  )
+  const responderNames = responderDetails.responders.map((responderId) =>
+    options.responders.find((responder) => responder.user_id === responderId)?.name ?? responderId,
+  )
+  const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
   return (
     <main className="flex w-full flex-col gap-4">
@@ -48,8 +57,8 @@ export default function PatientStep4({ formData }: PatientStep4Props) {
             <SummaryField label="Date" value={responderDetails.date} />
             <SummaryField label="Type of Request" value={responderDetails.typeOfRequest} />
             <SummaryField label="Caller" value={formatPersonName(responderDetails.caller)} />
-            <SummaryField label="Team Assigned" value={responderDetails.teamAssigned.join(", ")} />
-            <SummaryField label="Responders" value={responderDetails.responders.join(", ")} />
+            <SummaryField label="Team Assigned" value={teamNames.join(", ")} />
+            <SummaryField label="Responders" value={responderNames.join(", ")} />
           </div>
         </CommonFormSection>
 
@@ -57,7 +66,10 @@ export default function PatientStep4({ formData }: PatientStep4Props) {
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
-            <SummaryField label="Vehicle" value={dispatch.vehicle} />
+            <SummaryField
+              label="Vehicle"
+              value={selectedVehicle ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})` : dispatch.vehicle}
+            />
             <SummaryField label="Driver" value={dispatch.driver} />
             <SummaryField
               label="Depart"

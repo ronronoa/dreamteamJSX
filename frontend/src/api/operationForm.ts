@@ -33,12 +33,27 @@ export async function fetchOperationFormOptions(): Promise<OperationFormOptions>
   return result as OperationFormOptions;
 }
 
+export async function fetchLatestOperationReport(pin: string): Promise<OperationLogData | null> {
+  const response = await apiFetch("/report-forms/operations/latest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pinNumber: pin }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.message ?? `Request failed (${response.status})`);
+  if (!result.report) return null;
+  return result.report as OperationLogData;
+}
+
 export async function submitOperationLog(
   pin: string,
   formData: OperationLogData,
 ) {
+
   const requestBody = new FormData();
+
   requestBody.append("pinNumber", pin);
+
   requestBody.append("formData", JSON.stringify({
     operationDetails: formData.operationDetails,
     dispatch: formData.dispatch,
@@ -46,9 +61,11 @@ export async function submitOperationLog(
     operationDescription: { description: formData.operationDescription.description },
     inventory: formData.inventory,
   }));
+
   formData.operationDescription.images.forEach((image) => {
     requestBody.append("images", image);
   });
+
   const response = await apiFetch("/report-forms/operations", {
     method: "POST",
     body: requestBody,

@@ -20,6 +20,7 @@ type VehicularDispatchSectionProps = {
   errors?: FormErrors
   optionsLoading?: boolean
   title?: string
+  allowOther?: boolean
 }
 
 export default function VehicularDispatchSection({
@@ -29,9 +30,10 @@ export default function VehicularDispatchSection({
   errors = {},
   optionsLoading = false,
   title = "VEHICULAR DISPATCH",
+  allowOther = true,
 }: VehicularDispatchSectionProps) {
   // Always append "Other" — skip if caller already supplied it.
-  const optionsWithOther = vehicleOptions.some(
+  const optionsWithOther = !allowOther || vehicleOptions.some(
     (opt) => opt.value === OTHER_VEHICLE_VALUE
   )
     ? vehicleOptions

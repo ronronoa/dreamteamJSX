@@ -1,7 +1,7 @@
 import { activityLogsService } from "@/services/activityLogs.service";
 import type { RequestHandler } from "express";
 
-const IGNORED_PATHS = ["/operations/debug-submit", "/activity-logs/archive"];
+const IGNORED_PATHS = ["/operations/debug-submit", "/activity-logs/archive", "/auth/logout"];
 const INVENTORY_TRANSACTION_PATHS = ["/inventory/stock-in", "/inventory/adjust"];
 
 export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
