@@ -8,6 +8,8 @@
 |--------|----------|------|---------|
 | `POST` | `/api/auth/signup` | Public (rate limited) | Register new user |
 | `POST` | `/api/auth/signin` | Public (rate limited) | Login with email or username, returns JWT tokens |
+| `GET` | `/api/checksession` | Public (refresh cookie optional) | Validate the Bearer access token or rotate a valid refresh cookie; returns the basic user profile and access token |
+| `GET` | `/api/auth/checksession` | Alias for `/api/checksession` | Compatibility route for clients upgrading from the previous refresh-cookie path |
 | `POST` | `/api/auth/refresh` | Public (rate limited) | Refresh access token |
 | `POST` | `/api/auth/logout` | Any authenticated | Revoke refresh token |
 | `POST` | `/api/auth/set-pin` | Any authenticated | Set or change PIN (4-6 digits) |

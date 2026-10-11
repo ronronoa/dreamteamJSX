@@ -38,16 +38,23 @@ export function AuthProvider({children}: {children: ReactNode}){
   }
 
   async function refresh(){
-    const data = await apiRefresh();
+    const data = await apiRefresh(session?.accessToken);
     if (!data) return;
     setSession(data);
   }
 
   useEffect(() => {
-    (async () => {
-      await refresh();
-      setLoading(false);
-    })();
+    let isMounted = true;
+
+    void apiRefresh().then((data) => {
+      if (isMounted && data) setSession(data);
+    }).finally(() => {
+      if (isMounted) setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [])
 
   useEffect(() => {

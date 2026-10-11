@@ -18,13 +18,20 @@ function getRefreshCookie(req: Request): string | undefined {
 }
 
 function setRefreshCookie(res: Response, token: string) {
+  // Clear the old narrower path so clients do not send duplicate cookies after upgrading.
+  res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env["NODE_ENV"] === "production",
-    path: "/api/auth",
+    path: "/api",
     maxAge: REFRESH_MAX_AGE_MS,
   });
+}
+
+function clearRefreshCookie(res: Response) {
+  res.clearCookie(REFRESH_COOKIE, { path: "/api" });
+  res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
 }
 
 function getFirstZodIssue(error: z.ZodError): z.ZodIssue {
@@ -34,6 +41,38 @@ function getFirstZodIssue(error: z.ZodError): z.ZodIssue {
 }
 
 export const authController = {
+  async checkSession(req: Request, res: Response, next: NextFunction) {
+    try {
+      const authorization = req.headers.authorization;
+      const accessToken = authorization?.startsWith("Bearer ")
+        ? authorization.slice("Bearer ".length).trim()
+        : "";
+
+      if (accessToken) {
+        const activeSession = await authService.checkAccessToken(accessToken);
+        if (activeSession) {
+          res.status(200).json(activeSession);
+          return;
+        }
+      }
+
+      const refreshToken = getRefreshCookie(req);
+      const parsed = RefreshTokenSchema.safeParse({ refreshToken });
+      if (!parsed.success) {
+        throw new UnauthorizedError("Session is missing or expired");
+      }
+
+      const refreshedSession = await authService.refresh(parsed.data.refreshToken);
+      setRefreshCookie(res, refreshedSession.refreshToken);
+      res.status(200).json({
+        user: refreshedSession.user,
+        accessToken: refreshedSession.accessToken,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async signUp(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = SignUpSchema.safeParse(req.body);
@@ -111,7 +150,7 @@ export const authController = {
 
       await authService.logout(token);
 
-      res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
+      clearRefreshCookie(res);
 
       res.status(204).send();
     } catch (err) {

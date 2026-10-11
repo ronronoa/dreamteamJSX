@@ -7,8 +7,8 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const response = await fetch(`${API_URL}/auth/refresh`, {
-          method: "POST",
+        const response = await fetch(`${API_URL}/auth/checksession`, {
+          method: "GET",
           credentials: "include",
         });
         if (!response.ok) return null;
@@ -34,7 +34,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   const headers = new Headers(options.headers);
   const opts: RequestInit = { ...options, headers, credentials: "include" };
 
-  let response = await fetch(url, opts);
+  const response = await fetch(url, opts);
   if (response.status !== 401 || path === "/auth/refresh") return response;
 
   const accessToken = await refreshAccessToken();

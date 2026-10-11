@@ -7,7 +7,7 @@ import type { z } from "zod";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { prisma } from "@/lib/prisma";
 import { toSafeUser } from "@/utils/user";
-import { generateAccessToken, generateRefreshToken, parseRefreshToken } from "@/utils/token";
+import { generateAccessToken, generateRefreshToken, parseAccessToken, parseRefreshToken } from "@/utils/token";
 import { hashRefreshToken } from "@/utils/refresh-token";
 
 let dummyPasswordHashPromise: Promise<string> | null = null;
@@ -20,6 +20,21 @@ function getDummyPasswordHash(): Promise<string> {
 }
 
 export const authService = {
+  async checkAccessToken(accessToken: string) {
+    const parsed = parseAccessToken(accessToken);
+    if (!parsed.success) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { user_id: parsed.data.userId },
+    });
+    if (!user || !user.isActive) return null;
+
+    return {
+      user: toSafeUser(user),
+      accessToken,
+    };
+  },
+
   async signUp(data: SignUpInput) {
     const hashedPassword = await hashPassword(data.password);
 
