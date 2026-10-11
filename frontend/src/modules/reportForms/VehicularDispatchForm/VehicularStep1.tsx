@@ -3,27 +3,26 @@ import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 
-import type { OperationDetails, VehicularDispatch } from "../../../types/operationLog"
-import type { OperationFormOptions } from "../../../api/operationForm"
+import type { VehicularDispatchDetails, VehicularDispatch } from "../../../types/vehicularDispatchReport"
+import type { VehicularDispatchErrors } from "./formValidation"
+import { VEHICULAR_OPERATION_TYPES, VEHICULAR_OPTIONS } from "../../../types/vehicularDispatchReport"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 
-type OperationStep1Props = {
-  operationDetails: OperationDetails
-  onOperationDetailsChange: (patch: Partial<OperationDetails>) => void
+type VehicularStep1Props = {
+  details: VehicularDispatchDetails
+  onDetailsChange: (patch: Partial<VehicularDispatchDetails>) => void
   dispatch: VehicularDispatch
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
-  options: OperationFormOptions
-  optionsLoading: boolean
+  errors: VehicularDispatchErrors
 }
 
 export default function VehicularStep1({
-  operationDetails,
-  onOperationDetailsChange,
+  details,
+  onDetailsChange,
   dispatch,
   onDispatchChange,
-  options,
-  optionsLoading,
-}: OperationStep1Props) {
+  errors,
+}: VehicularStep1Props) {
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
@@ -32,27 +31,29 @@ export default function VehicularStep1({
           <CommonInput
             variant="compact"
             label="Name of Submitter"
-            placeholder="Place holder"
-            value={operationDetails.submitterName}
-            onChange={(e) => onOperationDetailsChange({ submitterName: e.target.value })}
+            placeholder="Enter submitter name"
+            value={details.submitterName}
+            onChange={(e) => onDetailsChange({ submitterName: e.target.value })}
+            errorMessage={errors["details.submitterName"]}
           />
 
           <CommonInput
             variant="compact"
             type="date"
             label="Date"
-            value={operationDetails.date}
-            onChange={(e) => onOperationDetailsChange({ date: e.target.value })}
+            value={details.date}
+            onChange={(e) => onDetailsChange({ date: e.target.value })}
+            errorMessage={errors["details.date"]}
           />
 
           <CommonSelect
             variant="compact"
             label="Nature of Operation"
             placeholder="Dropdown Menu"
-            options={options.operationNatures.map((nature) => ({ label: nature.name, value: nature.name }))}
-            value={operationDetails.natureOfOperation}
-            onChange={(e) => onOperationDetailsChange({ natureOfOperation: e.target.value })}
-            disabled={optionsLoading || options.operationNatures.length === 0}
+            options={VEHICULAR_OPERATION_TYPES.map((nature) => ({ label: nature, value: nature }))}
+            value={details.natureOfOperation}
+            onChange={(e) => onDetailsChange({ natureOfOperation: e.target.value })}
+            errorMessage={errors["details.natureOfOperation"]}
           />
           <div>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
@@ -62,11 +63,26 @@ export default function VehicularStep1({
             <div className="flex gap-8">
               <CommonCheckbox
                 label="Drop-Off"
+                checked={details.transfers.includes("Drop-Off")}
+                onChange={(event) => onDetailsChange({
+                  transfers: event.target.checked
+                    ? [...details.transfers, "Drop-Off"]
+                    : details.transfers.filter((transfer) => transfer !== "Drop-Off"),
+                })}
               />
               <CommonCheckbox
                 label="Pick-Up"
+                checked={details.transfers.includes("Pick-Up")}
+                onChange={(event) => onDetailsChange({
+                  transfers: event.target.checked
+                    ? [...details.transfers, "Pick-Up"]
+                    : details.transfers.filter((transfer) => transfer !== "Pick-Up"),
+                })}
               />
             </div>
+            {errors["details.transfers"] && (
+              <p role="alert" className="mt-1 text-sm text-red-700">{errors["details.transfers"]}</p>
+            )}
           </div>
         </div>
       </CommonFormSection>
@@ -74,11 +90,8 @@ export default function VehicularStep1({
       <VehicularDispatchSection
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
-        optionsLoading={optionsLoading}
-        vehicleOptions={options.vehicles.map((vehicle) => ({
-          label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
-          value: vehicle.vehicle_id,
-        }))}
+        vehicleOptions={VEHICULAR_OPTIONS}
+        errors={errors}
       />
     </div>
   )

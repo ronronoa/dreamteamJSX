@@ -6,21 +6,29 @@ import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 
-import type { Person } from "../../../types/operationLog"
-import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
+import { calculateAge } from "../../../types/operationLog"
+import { createEmptyPerson, type Person } from "../../../types/vehicularDispatchReport"
+import type { VehicularDispatchErrors } from "./formValidation"
+import { formatDate } from "@/utils/dateTime"
 
-type OperationStep2Props = {
+const MAX_PASSENGERS = 100
+const MAX_CONTACT_NUMBER_LENGTH = 20
+
+type VehicularStep2Props = {
   people: Person[]
   onPeopleChange: (people: Person[]) => void
+  errors: VehicularDispatchErrors
 }
 
-export default function VehicularStep2({ people, onPeopleChange }: OperationStep2Props) {
+export default function VehicularStep2({ people, onPeopleChange, errors }: VehicularStep2Props) {
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
+  const [draftError, setDraftError] = useState("")
 
 
   const updateDraft = (patch: Partial<Person>) => {
     const updatedDraft = { ...draft, ...patch }
     setDraft(updatedDraft)
+    setDraftError("")
   }
 
   const handleBirthdateChange = (birthdate: string) => {
@@ -28,9 +36,28 @@ export default function VehicularStep2({ people, onPeopleChange }: OperationStep
   }
 
   const addPerson = () => {
+    if (people.length >= MAX_PASSENGERS) {
+      setDraftError(`Add no more than ${MAX_PASSENGERS} passengers.`)
+      return
+    }
 
-    onPeopleChange([...people, { ...draft, id: crypto.randomUUID() }])
+    const today = formatDate(new Date(), "YYYY-MM-DD")
+    if (!draft.name.surname.trim() || !draft.name.firstName.trim() || !draft.birthdate || !draft.gender) {
+      setDraftError("Enter the passenger's name, birthdate, and sex before adding them.")
+      return
+    }
+    if (draft.birthdate > today || draft.age === "") {
+      setDraftError("Choose a valid birthdate that is not in the future.")
+      return
+    }
+    if (draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH) {
+      setDraftError(`Contact number must be ${MAX_CONTACT_NUMBER_LENGTH} characters or fewer.`)
+      return
+    }
+
+    onPeopleChange([...people, { ...draft }])
     setDraft(createEmptyPerson())
+    setDraftError("")
   }
 
   const removePerson = (id: string) => {
@@ -95,6 +122,7 @@ export default function VehicularStep2({ people, onPeopleChange }: OperationStep
             type="date"
             label="Birthdate"
             value={draft.birthdate}
+            max={formatDate(new Date(), "YYYY-MM-DD")}
             onChange={(e) => handleBirthdateChange(e.target.value)}
           />
 
@@ -182,11 +210,13 @@ export default function VehicularStep2({ people, onPeopleChange }: OperationStep
         </div>
 
         <div className="mt-auto pt-5">
+          {draftError && <p role="alert" className="mb-2 text-sm text-red-700">{draftError}</p>}
           <CommonButton
             type="button"
             variant="orange"
             className="flex w-full items-center justify-center gap-2"
             onClick={addPerson}
+            disabled={people.length >= MAX_PASSENGERS}
           >
             Add
             <UserRoundPlus size={18} />
@@ -195,8 +225,16 @@ export default function VehicularStep2({ people, onPeopleChange }: OperationStep
       </CommonFormSection>
 
       <CommonFormSection padded={false}>
-          <p role="alert" className="px-3 pt-3 text-sm font-medium text-red-700">
-          </p>
+        {Object.entries(errors).some(([key]) => key.startsWith("passengers")) && (
+          <div role="alert" className="m-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p className="font-semibold">Please correct the passenger details:</p>
+            <ul className="mt-1 list-inside list-disc">
+              {Object.entries(errors)
+                .filter(([key]) => key.startsWith("passengers"))
+                .map(([key, message]) => <li key={key}>{message}</li>)}
+            </ul>
+          </div>
+        )}
         <div className="h-full overflow-x-auto min-h-21.25">
           <table className="w-full border-collapse text-sm">
             <thead>
