@@ -2,13 +2,15 @@ import { useState } from "react"
 import { Trash, UserRoundPlus } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
 import { validatePerson, type FormErrors } from "./formValidation"
+
+const CommonInput = createFormAutocomplete("operations")
 
 type OperationStep2Props = {
   people: Person[]

@@ -329,6 +329,7 @@ export default function VehicularDispatchForm() {
                       vehicleOptions={formOptions.vehicles.map((vehicle) => ({
                         label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
                         value: vehicle.vehicle_id,
+                        currentOdometer: vehicle.current_odometer,
                       }))}
                       responderOptions={formOptions.responders.map((responder) => ({
                         label: responder.name,

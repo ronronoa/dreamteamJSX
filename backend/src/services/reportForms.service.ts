@@ -3,10 +3,57 @@ import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors";
 import { Prisma } from "@/generated/prisma/client";
 import type { OperationReportInput } from "@/schemas/operationReport.schema";
 import type { PatientReportInput } from "@/schemas/patientReport.schema";
+import { saveVehicleOdometerFromDispatch } from "@/services/vehicleOdometer.service";
 
 type UploadedFile = Express.Multer.File;
 
 const REPORT_IMAGE_DIRECTORY = "/uploads/report-forms/";
+const SUGGESTION_RECORD_LIMIT = 300;
+
+type ReportSuggestions = Record<string, string[]>;
+
+function addSuggestion(suggestions: ReportSuggestions, field: string, value: unknown) {
+  if (typeof value !== "string") return;
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return;
+
+  const values = suggestions[field] ?? [];
+  if (values.some((existingValue) => existingValue.toLocaleLowerCase() === trimmedValue.toLocaleLowerCase())) return;
+  values.push(trimmedValue);
+  suggestions[field] = values;
+}
+
+function addPersonNameSuggestions(suggestions: ReportSuggestions, fullName: string | null | undefined) {
+  const parts = fullName?.trim().split(/\s+/).filter(Boolean) ?? [];
+  if (parts.length === 0) return;
+
+  addSuggestion(suggestions, "person.surname", parts.length > 1 ? parts.at(-1) : parts[0]);
+  addSuggestion(suggestions, "person.firstName", parts[0]);
+  if (parts.length > 2) addSuggestion(suggestions, "person.middleInitial", parts[1]);
+  if (parts.length > 3) addSuggestion(suggestions, "person.suffix", parts.at(-1));
+}
+
+function addAddressSuggestions(suggestions: ReportSuggestions, address: {
+  phase?: string | null;
+  package?: string | null;
+  block?: string | null;
+  lot?: string | null;
+}) {
+  addSuggestion(suggestions, "person.address.phase", address.phase);
+  addSuggestion(suggestions, "person.address.package", address.package);
+  addSuggestion(suggestions, "person.address.block", address.block);
+  addSuggestion(suggestions, "person.address.lot", address.lot);
+}
+
+function addSavedFormSuggestions(suggestions: ReportSuggestions, value: unknown, prefix = "") {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return;
+
+  for (const [key, childValue] of Object.entries(value)) {
+    const field = prefix ? `${prefix}.${key}` : key;
+    if (typeof childValue === "string") addSuggestion(suggestions, field, childValue);
+    else if (typeof childValue === "object" && childValue !== null) addSavedFormSuggestions(suggestions, childValue, field);
+  }
+}
 
 function imageUrl(file: UploadedFile) {
   return `${REPORT_IMAGE_DIRECTORY}${file.filename}`;
@@ -75,6 +122,110 @@ function splitPersonName(fullName: string | null | undefined) {
 }
 
 export const reportFormsService = {
+  async getReportFormSuggestions(formType: "operations" | "patients" | "vehicular-dispatches") {
+    const suggestions: ReportSuggestions = {};
+
+    if (formType === "operations") {
+      const records = await prisma.operationLog.findMany({
+        where: { archive: null },
+        orderBy: { createdAt: "desc" },
+        take: SUGGESTION_RECORD_LIMIT,
+        select: {
+          submitter_name: true,
+          name_of_caller: true,
+          nature_of_operation: true,
+          event_description: true,
+          dispatches: { select: { from_location: true, to_location: true, driver_name: true } },
+          personsInvolved: { select: { full_name: true, contact_no: true, address_phase: true, address_package: true, address_block: true, address_lot: true } },
+        },
+      });
+      for (const record of records) {
+        addSuggestion(suggestions, "details.submitterName", record.submitter_name);
+        addSuggestion(suggestions, "details.caller", record.name_of_caller);
+        addPersonNameSuggestions(suggestions, record.name_of_caller);
+        addSuggestion(suggestions, "details.natureOfOperation", record.nature_of_operation);
+        addSuggestion(suggestions, "description", record.event_description);
+        for (const dispatch of record.dispatches) {
+          addSuggestion(suggestions, "dispatch.from", dispatch.from_location);
+          addSuggestion(suggestions, "dispatch.to", dispatch.to_location);
+          addSuggestion(suggestions, "dispatch.driver", dispatch.driver_name);
+        }
+        for (const person of record.personsInvolved) {
+          addPersonNameSuggestions(suggestions, person.full_name);
+          addSuggestion(suggestions, "person.contactNumber", person.contact_no);
+          addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
+        }
+      }
+      return suggestions;
+    }
+
+    if (formType === "patients") {
+      const records = await prisma.patientLog.findMany({
+        where: { archive: null },
+        orderBy: { createdAt: "desc" },
+        take: SUGGESTION_RECORD_LIMIT,
+        select: {
+          submitter_name: true,
+          name_of_caller: true,
+          medical_assessment: true,
+          hospital_name: true,
+          hospital_representative: true,
+          report_data: true,
+          patient: { select: { full_name: true, contact_person: true, contact_number: true, phase: true, package: true, block: true, lot: true } },
+          dispatches: { select: { from_location: true, to_location: true, driver_name: true } },
+        },
+      });
+      for (const record of records) {
+        addSuggestion(suggestions, "responderDetails.submitterName", record.submitter_name);
+        addSuggestion(suggestions, "responderDetails.caller", record.name_of_caller);
+        addPersonNameSuggestions(suggestions, record.name_of_caller);
+        addSuggestion(suggestions, "firstAidHospital.medicalAssessment", record.medical_assessment);
+        addSuggestion(suggestions, "firstAidHospital.hospitalName", record.hospital_name);
+        addSuggestion(suggestions, "firstAidHospital.hospitalRepresentative", record.hospital_representative);
+        addPersonNameSuggestions(suggestions, record.patient.full_name);
+        addPersonNameSuggestions(suggestions, record.patient.contact_person);
+        addPersonNameSuggestions(suggestions, record.hospital_representative);
+        addSuggestion(suggestions, "patientDetails.contactNumber", record.patient.contact_number);
+        addSuggestion(suggestions, "person.contactNumber", record.patient.contact_number);
+        addAddressSuggestions(suggestions, { phase: record.patient.phase, package: record.patient.package, block: record.patient.block, lot: record.patient.lot });
+        for (const dispatch of record.dispatches) {
+          addSuggestion(suggestions, "dispatch.from", dispatch.from_location);
+          addSuggestion(suggestions, "dispatch.to", dispatch.to_location);
+          addSuggestion(suggestions, "dispatch.driver", dispatch.driver_name);
+        }
+        addSavedFormSuggestions(suggestions, record.report_data);
+      }
+      return suggestions;
+    }
+
+    const records = await prisma.vehicularDispatch.findMany({
+      where: { operation_id: null, patient_log_id: null, archive: null },
+      orderBy: { createdAt: "desc" },
+      take: SUGGESTION_RECORD_LIMIT,
+      select: {
+        submitter_name: true,
+        from_location: true,
+        to_location: true,
+        driver_name: true,
+        vehicle_name: true,
+        passengers: { select: { full_name: true, contact_no: true, address_phase: true, address_package: true, address_block: true, address_lot: true } },
+      },
+    });
+    for (const record of records) {
+      addSuggestion(suggestions, "details.submitterName", record.submitter_name);
+      addSuggestion(suggestions, "dispatch.from", record.from_location);
+      addSuggestion(suggestions, "dispatch.to", record.to_location);
+      addSuggestion(suggestions, "dispatch.driver", record.driver_name);
+      addSuggestion(suggestions, "dispatch.vehicleOther", record.vehicle_name);
+      for (const person of record.passengers) {
+        addPersonNameSuggestions(suggestions, person.full_name);
+        addSuggestion(suggestions, "person.contactNumber", person.contact_no);
+        addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
+      }
+    }
+    return suggestions;
+  },
+
   async getLatestOperationReport() {
     const operation = await prisma.operationLog.findFirst({
       where: { archive: null },
@@ -270,7 +421,7 @@ export const reportFormsService = {
         orderBy: { name: "asc" },
         select: { user_id: true, name: true, team_id: true },
       }),
-      prisma.vehicle.findMany({ where: { status: "AVAILABLE" }, orderBy: { vehicle_name: "asc" }, select: { vehicle_id: true, vehicle_name: true, plate_number: true } }),
+      prisma.vehicle.findMany({ where: { status: "AVAILABLE" }, orderBy: { vehicle_name: "asc" }, select: { vehicle_id: true, vehicle_name: true, plate_number: true, current_odometer: true } }),
     ]);
     return { teams, responders, vehicles };
   },
@@ -289,7 +440,7 @@ export const reportFormsService = {
       prisma.vehicle.findMany({
         where: { status: "AVAILABLE" },
         orderBy: { vehicle_name: "asc" },
-        select: { vehicle_id: true, vehicle_name: true, plate_number: true },
+        select: { vehicle_id: true, vehicle_name: true, plate_number: true, current_odometer: true },
       }),
       prisma.operationNature.findMany({
         where: { isActive: true },
@@ -368,6 +519,12 @@ export const reportFormsService = {
     if (arrivalTime < departTime) arrivalTime.setDate(arrivalTime.getDate() + 1);
 
     return prisma.$transaction(async (transaction) => {
+      await saveVehicleOdometerFromDispatch(
+        transaction,
+        vehicle.vehicle_id,
+        form.dispatch.odometerIn,
+        form.dispatch.odometerOut,
+      );
       const operation = await transaction.operationLog.create({
         data: {
           team_id: teamId,
@@ -470,7 +627,14 @@ export const reportFormsService = {
       uploadedImages: files.map(imageUrl),
     } as Prisma.InputJsonValue;
 
-    const record = await prisma.patient.create({
+    const record = await prisma.$transaction(async (transaction) => {
+      await saveVehicleOdometerFromDispatch(
+        transaction,
+        vehicle.vehicle_id,
+        dispatch.odometerIn,
+        dispatch.odometerOut,
+      );
+      return transaction.patient.create({
       data: {
         full_name: patientFullName,
         birthday: new Date(`${patientDetails.birthdate}T00:00:00`),
@@ -524,6 +688,7 @@ export const reportFormsService = {
         })) } } : {}),
       },
       include: { patientLogs: true, images: true },
+      });
     });
 
     const patientLog = record.patientLogs[0];

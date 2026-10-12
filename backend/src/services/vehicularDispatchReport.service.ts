@@ -4,6 +4,7 @@ import type { Role } from "@/generated/prisma/enums"
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors"
 import type { VehicularDispatchReportInput } from "@/schemas/vehicularDispatchReport.schema"
 import { pinService } from "./pin.service"
+import { saveVehicleOdometerFromDispatch } from "./vehicleOdometer.service"
 
 const dispatchRecordInclude = {
   vehicle: { select: { vehicle_name: true, plate_number: true } },
@@ -135,7 +136,7 @@ export const vehicularDispatchReportService = {
       prisma.vehicle.findMany({
         where: { status: "AVAILABLE" },
         orderBy: [{ vehicle_name: "asc" }, { plate_number: "asc" }],
-        select: { vehicle_id: true, vehicle_name: true, plate_number: true },
+        select: { vehicle_id: true, vehicle_name: true, plate_number: true, current_odometer: true },
       }),
       prisma.user.findMany({
         where: { isActive: true },
@@ -228,7 +229,17 @@ export const vehicularDispatchReportService = {
     const arrival = getDateTime(form.details.date, form.dispatch.arrivalTime, form.dispatch.arrivalPeriod)
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1)
 
-    return prisma.vehicularDispatch.create({
+    return prisma.$transaction(async (transaction) => {
+      if (vehicle) {
+        await saveVehicleOdometerFromDispatch(
+          transaction,
+          vehicle.vehicle_id,
+          form.dispatch.odometerIn,
+          form.dispatch.odometerOut,
+        )
+      }
+
+      return transaction.vehicularDispatch.create({
       data: {
         dispatch_date: new Date(`${form.details.date}T00:00:00`),
         submitter_name: form.details.submitterName,
@@ -271,6 +282,7 @@ export const vehicularDispatchReportService = {
         vehicle: { select: { vehicle_id: true, vehicle_name: true, plate_number: true } },
         passengers: true,
       },
+      })
     })
   },
 }

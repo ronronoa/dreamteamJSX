@@ -11,3 +11,15 @@ vehicleRoutes.post(
   requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"),
   vehicleController.create,
 );
+vehicleRoutes.patch(
+  "/vehicles/fleet/:id/odometer",
+  requireAuth,
+  requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"),
+  vehicleController.updateOdometer,
+);
+vehicleRoutes.patch(
+  "/vehicles/fleet/:id/availability",
+  requireAuth,
+  requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"),
+  vehicleController.updateAvailability,
+);

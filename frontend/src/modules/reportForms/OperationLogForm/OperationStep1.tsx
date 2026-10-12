@@ -1,4 +1,4 @@
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
@@ -8,6 +8,8 @@ import type { OperationDetails, VehicularDispatch } from "../../../types/operati
 import type { OperationFormOptions } from "../../../api/operationForm"
 import type { FormErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
+
+const CommonInput = createFormAutocomplete("operations")
 
 type OperationStep1Props = {
   operationDetails: OperationDetails
@@ -169,6 +171,7 @@ export default function OperationStep1({
       </CommonFormSection>
 
       <VehicularDispatchSection
+        formType="operations"
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
         errors={errors}
@@ -176,6 +179,7 @@ export default function OperationStep1({
         vehicleOptions={options.vehicles.map((vehicle) => ({
           label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
           value: vehicle.vehicle_id,
+          currentOdometer: vehicle.current_odometer,
         }))}
       />
     </div>

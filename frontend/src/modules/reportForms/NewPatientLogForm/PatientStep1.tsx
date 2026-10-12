@@ -1,4 +1,4 @@
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonFormSection from "../component/CommonFormSection"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
@@ -7,6 +7,8 @@ import type { PatientFormOptions } from "@/api/patientForm"
 import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
 import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
+
+const CommonInput = createFormAutocomplete("patients")
 
 const PatientRequestType = [
   { label: "INTER FACILITY TRANSFER", value: "INTER_FACILITY_TRANSFER" },
@@ -155,11 +157,13 @@ export default function PatientStep1({
       </CommonFormSection>
 
       <VehicularDispatchSection
+        formType="patients"
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
         vehicleOptions={options.vehicles.map((vehicle) => ({
           label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
           value: vehicle.vehicle_id,
+          currentOdometer: vehicle.current_odometer,
         }))}
         optionsLoading={optionsLoading}
         allowOther={false}

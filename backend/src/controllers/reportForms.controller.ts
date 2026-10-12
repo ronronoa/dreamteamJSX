@@ -42,6 +42,19 @@ function getPin(req: Request) {
 }
 
 export const reportFormsController = {
+  async getReportFormSuggestions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const formType = req.params["formType"];
+      if (formType !== "operations" && formType !== "patients" && formType !== "vehicular-dispatches") {
+        throw new ValidationError("Unknown report form type.");
+      }
+      const suggestions = await reportFormsService.getReportFormSuggestions(formType);
+      res.status(200).json(suggestions);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getOperationOptions(_req: Request, res: Response, next: NextFunction) {
     try {
       const options = await reportFormsService.getOperationFormOptions();

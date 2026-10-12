@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Trash, UserRoundPlus } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 
@@ -13,6 +13,7 @@ import { formatDate } from "@/utils/dateTime"
 
 const MAX_PASSENGERS = 100
 const MAX_CONTACT_NUMBER_LENGTH = 20
+const CommonInput = createFormAutocomplete("vehicular-dispatches")
 
 type VehicularStep2Props = {
   people: Person[]

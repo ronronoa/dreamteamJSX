@@ -1,6 +1,6 @@
-import CommonTextarea from "../../../components/common/widgets/CommonTextarea"
 import CommonFormSection from "../component/CommonFormSection"
 import OperationInventorySection from "../component/OperationInventorySection"
+import ReportAutocompleteTextarea from "../component/ReportAutocompleteTextarea"
 
 import type { InventoryItem, OperationDescription } from "../../../types/operationLog"
 import ImageUpload from "../component/ImageUpload"
@@ -31,7 +31,9 @@ export default function OperationStep3({
               {errors["operationDescription.description"] && <span role="alert" className="text-xs font-medium text-red-700">{errors["operationDescription.description"]}</span>}
             </label>
 
-            <CommonTextarea
+            <ReportAutocompleteTextarea
+              formType="operations"
+              suggestionField="description"
               variant="compact"
               rows={6}
               placeholder="Provide a detailed description of the eve, actions taken, and current status"

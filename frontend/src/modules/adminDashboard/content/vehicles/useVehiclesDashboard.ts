@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { createFleetVehicle, fetchFleetVehicles, type FleetVehicle } from "@/api/vehicles";
+import {
+  createFleetVehicle,
+  fetchFleetVehicles,
+  updateFleetVehicleAvailability,
+  updateFleetVehicleOdometer,
+  type FleetVehicle,
+} from "@/api/vehicles";
 import { fetchVehicularDispatchRecords, reviewVehicularDispatch, type VehicleDispatchRecord } from "@/api/vehicularDispatches";
 import { archiveRecord } from "@/api/archives";
 import { getPageCount } from "@/utils/pagination";
@@ -18,6 +24,8 @@ export function useVehiclesDashboard() {
   const [plateNumber, setPlateNumber] = useState("");
   const [fleetLoading, setFleetLoading] = useState(true);
   const [savingVehicle, setSavingVehicle] = useState(false);
+  const [savingOdometerId, setSavingOdometerId] = useState<string | null>(null);
+  const [updatingAvailabilityId, setUpdatingAvailabilityId] = useState<string | null>(null);
   const [fleetError, setFleetError] = useState("");
   const [fleetMessage, setFleetMessage] = useState("");
   const [dispatchLoading, setDispatchLoading] = useState(true);
@@ -223,9 +231,42 @@ export function useVehiclesDashboard() {
     }
   }
 
+  async function saveVehicleOdometer(vehicleId: string, currentOdometer: number) {
+    if (!accessToken || savingOdometerId) return;
+    setSavingOdometerId(vehicleId);
+    setFleetError("");
+    setFleetMessage("");
+    try {
+      await updateFleetVehicleOdometer(accessToken, vehicleId, currentOdometer);
+      setFleetMessage("Vehicle odometer updated.");
+      await loadFleet();
+    } catch (error) {
+      setFleetError(error instanceof Error ? error.message : "Could not update the vehicle odometer.");
+    } finally {
+      setSavingOdometerId(null);
+    }
+  }
+
+  async function toggleVehicleAvailability(vehicle: FleetVehicle) {
+    if (!accessToken || updatingAvailabilityId) return;
+    setUpdatingAvailabilityId(vehicle.vehicle_id);
+    setFleetError("");
+    setFleetMessage("");
+    try {
+      const available = vehicle.status !== "AVAILABLE";
+      await updateFleetVehicleAvailability(accessToken, vehicle.vehicle_id, available);
+      setFleetMessage(`${vehicle.vehicle_name} marked ${available ? "available" : "unavailable"}.`);
+      await loadFleet();
+    } catch (error) {
+      setFleetError(error instanceof Error ? error.message : "Could not update vehicle availability.");
+    } finally {
+      setUpdatingAvailabilityId(null);
+    }
+  }
+
   return {
     fleetVehicles, vehicleName, setVehicleName, plateNumber, setPlateNumber,
-    fleetLoading, savingVehicle, fleetError, fleetMessage, canManageFleet,
+    fleetLoading, savingVehicle, savingOdometerId, updatingAvailabilityId, fleetError, fleetMessage, canManageFleet,
     dispatchRecords, dispatchLoading, dispatchError, loadDispatchRecords, handleAddVehicle,
     role, busy, search, statusFilter, filterOpen, pendingPage, reviewedPage,
     selectedRecord, reviewTarget, pinError, successMessage, pendingRows, reviewedRows,
@@ -237,5 +278,7 @@ export function useVehiclesDashboard() {
     setPdfConfirmationOpen, setArchiveConfirmationOpen,
     updateSearch, updateStatusFilter, openReview, handleReview, openDetails, toggleSelection,
     printSelectedRecords, archiveSelectedRecords,
+    saveVehicleOdometer,
+    toggleVehicleAvailability,
   };
 }

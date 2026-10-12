@@ -1,4 +1,4 @@
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "../../../components/common/widgets/CommonSearchSelect"
 import CommonFormSection from "../component/CommonFormSection"
@@ -7,13 +7,15 @@ import type { VehicularDispatchDetails, VehicularDispatch } from "../../../types
 import type { VehicularDispatchErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 
+const CommonInput = createFormAutocomplete("vehicular-dispatches")
+
 type VehicularStep1Props = {
   details: VehicularDispatchDetails
   onDetailsChange: (patch: Partial<VehicularDispatchDetails>) => void
   dispatch: VehicularDispatch
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
   errors: VehicularDispatchErrors
-  vehicleOptions: { label: string; value: string }[]
+  vehicleOptions: { label: string; value: string; currentOdometer: number }[]
   responderOptions: { label: string; value: string }[]
   optionsLoading: boolean
 }
@@ -94,6 +96,7 @@ export default function VehicularStep1({
       </CommonFormSection>
 
       <VehicularDispatchSection
+        formType="vehicular-dispatches"
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
         vehicleOptions={vehicleOptions}

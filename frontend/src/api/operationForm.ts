@@ -5,7 +5,7 @@ export interface OperationFormOptions {
   operationNatures: Array<{ name: string }>;
   teams: Array<{ team_id: string; team_name: string }>;
   responders: Array<{ user_id: string; name: string; team_id: string | null }>;
-  vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string }>;
+  vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string; current_odometer: number }>;
 }
 
 export async function fetchOperationFormOptions(): Promise<OperationFormOptions> {

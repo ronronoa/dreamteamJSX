@@ -16,7 +16,7 @@ const styles: Record<CommonInputVariant, { label: string; wrapper: string; input
   },
 }
 
-interface CommonInputProps
+export interface CommonInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "autoCapitalize"> {
   label?: string
   icon?: ReactNode

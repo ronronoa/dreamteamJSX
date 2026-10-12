@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Check, ChevronRight, Filter, RefreshCw, X } from "lucide-react"
 import DataTable from "@/components/common/DataTable"
 import Modal from "@/components/common/modals/Modal"
@@ -14,6 +15,7 @@ import TableSearch from "../component/TableSearch"
 import TableStatus from "../component/TableStatus"
 import VehicularDispatchDetails from "./vehicles/VehicularDispatchDetails"
 import { useVehiclesDashboard, VEHICLE_PAGE_SIZE } from "./vehicles/useVehiclesDashboard"
+import type { FleetVehicle } from "@/api/vehicles"
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
@@ -22,6 +24,77 @@ const STATUS_FILTERS = [
   { value: "VALIDATED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ]
+
+function FleetVehicleRow({ vehicle, canEdit, saving, availabilitySaving, onSave, onAvailabilityChange }: {
+  vehicle: FleetVehicle
+  canEdit: boolean
+  saving: boolean
+  availabilitySaving: boolean
+  onSave: (vehicleId: string, currentOdometer: number) => void
+  onAvailabilityChange: (vehicle: FleetVehicle) => void
+}) {
+  const [odometer, setOdometer] = useState(String(vehicle.current_odometer ?? 0))
+  const parsedOdometer = Number(odometer)
+  const isValidOdometer = /^\d+$/.test(odometer) && Number.isSafeInteger(parsedOdometer)
+  const hasChanged = odometer !== String(vehicle.current_odometer ?? 0)
+
+  return (
+    <tr className="border-b border-gray-50 last:border-0">
+      <td className="py-3 font-medium text-gray-800">{vehicle.vehicle_name}</td>
+      <td className="py-3 text-gray-600">{vehicle.plate_number}</td>
+      <td className="py-3">
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold ${vehicle.status === "AVAILABLE" ? "text-emerald-700" : "text-amber-700"}`}>
+            {vehicle.status === "AVAILABLE" ? "Available" : vehicle.status === "IN_USE" ? "In use" : "Unavailable"}
+          </span>
+          {canEdit && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={vehicle.status === "AVAILABLE"}
+              aria-label={`${vehicle.status === "AVAILABLE" ? "Mark" : "Make"} ${vehicle.vehicle_name} ${vehicle.status === "AVAILABLE" ? "unavailable" : "available"}`}
+              disabled={availabilitySaving}
+              onClick={() => onAvailabilityChange(vehicle)}
+              className={`relative h-5 w-9 rounded-full p-0 transition-colors disabled:opacity-60 ${
+                vehicle.status === "AVAILABLE" ? "bg-emerald-600" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                  vehicle.status === "AVAILABLE" ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          )}
+        </div>
+      </td>
+      <td className="py-3">
+        {canEdit ? (
+          <input
+            aria-label={`Current odometer for ${vehicle.vehicle_name}`}
+            type="number"
+            min={0}
+            step={1}
+            value={odometer}
+            onChange={(event) => setOdometer(event.target.value)}
+            className="h-8 w-32 rounded-md border border-gray-200 px-2 text-sm"
+          />
+        ) : <span className="text-gray-600">{vehicle.current_odometer.toLocaleString()} km</span>}
+      </td>
+      {canEdit && (
+        <td className="py-3 text-right">
+          <CommonButton
+            compact
+            disabled={saving || !hasChanged || !isValidOdometer}
+            onClick={() => onSave(vehicle.vehicle_id, parsedOdometer)}
+          >
+            {saving ? "Saving…" : "Save"}
+          </CommonButton>
+        </td>
+      )}
+    </tr>
+  )
+}
 
 function getStatusVariant(status: VehicleLogStatus) {
   if (status === "VALIDATED") return "approved" as const
@@ -193,8 +266,28 @@ export default function Vehicles() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-gray-100 text-xs text-gray-500"><tr><th className="py-2">Vehicle</th><th className="py-2">Plate number</th><th className="py-2">Status</th></tr></thead>
-                <tbody>{dashboard.fleetVehicles.map((vehicle) => <tr key={vehicle.vehicle_id} className="border-b border-gray-50 last:border-0"><td className="py-3 font-medium text-gray-800">{vehicle.vehicle_name}</td><td className="py-3 text-gray-600">{vehicle.plate_number}</td><td className="py-3 text-gray-600">{vehicle.status.replace("_", " ")}</td></tr>)}</tbody>
+                <thead className="border-b border-gray-100 text-xs text-gray-500">
+                  <tr>
+                    <th className="py-2">Vehicle</th>
+                    <th className="py-2">Plate number</th>
+                    <th className="py-2">Status</th>
+                    <th className="py-2">Current odometer</th>
+                    {dashboard.canManageFleet && <th className="py-2" />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboard.fleetVehicles.map((vehicle) => (
+                    <FleetVehicleRow
+                      key={vehicle.vehicle_id}
+                      vehicle={vehicle}
+                      canEdit={dashboard.canManageFleet}
+                      saving={dashboard.savingOdometerId === vehicle.vehicle_id}
+                      availabilitySaving={dashboard.updatingAvailabilityId === vehicle.vehicle_id}
+                      onSave={dashboard.saveVehicleOdometer}
+                      onAvailabilityChange={dashboard.toggleVehicleAvailability}
+                    />
+                  ))}
+                </tbody>
               </table>
             </div>
           )}

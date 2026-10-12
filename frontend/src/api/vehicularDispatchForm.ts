@@ -2,7 +2,7 @@ import type { VehicularDispatchReportData } from "../types/vehicularDispatchRepo
 import { apiFetch } from "./apiFetch"
 
 export interface VehicularDispatchFormOptions {
-  vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string }>
+  vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string; current_odometer: number }>
   responders: Array<{ user_id: string; name: string }>
 }
 

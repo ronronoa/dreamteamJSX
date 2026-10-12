@@ -6,4 +6,14 @@ export const CreateVehicleSchema = z.object({
     .transform((plateNumber) => plateNumber.toUpperCase()),
 });
 
+export const UpdateVehicleOdometerSchema = z.object({
+  currentOdometer: z.number().int().nonnegative("Odometer must be zero or greater.").max(2_000_000_000),
+});
+
+export const UpdateVehicleAvailabilitySchema = z.object({
+  available: z.boolean(),
+});
+
 export type CreateVehicleInput = z.infer<typeof CreateVehicleSchema>;
+export type UpdateVehicleOdometerInput = z.infer<typeof UpdateVehicleOdometerSchema>;
+export type UpdateVehicleAvailabilityInput = z.infer<typeof UpdateVehicleAvailabilitySchema>;

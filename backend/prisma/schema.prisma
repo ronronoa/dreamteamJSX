@@ -208,6 +208,7 @@ model Vehicle {
   vehicle_id   String        @id @default(uuid())
   vehicle_name String
   plate_number String        @unique
+  current_odometer Int       @default(0)
   status       VehicleStatus @default(AVAILABLE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

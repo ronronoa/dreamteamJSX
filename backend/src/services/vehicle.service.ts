@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { ConflictError } from "@/shared/errors";
+import { ConflictError, NotFoundError } from "@/shared/errors";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import type { CreateVehicleInput } from "@/schemas/vehicle.schema";
+import type {
+  CreateVehicleInput,
+  UpdateVehicleAvailabilityInput,
+  UpdateVehicleOdometerInput,
+} from "@/schemas/vehicle.schema";
 
 export const vehicleService = {
   list() {
@@ -22,5 +26,23 @@ export const vehicleService = {
       }
       throw error;
     }
+  },
+
+  async updateOdometer(vehicleId: string, data: UpdateVehicleOdometerInput) {
+    const result = await prisma.vehicle.updateMany({
+      where: { vehicle_id: vehicleId },
+      data: { current_odometer: data.currentOdometer },
+    });
+    if (result.count === 0) throw new NotFoundError("Vehicle", vehicleId);
+    return prisma.vehicle.findUniqueOrThrow({ where: { vehicle_id: vehicleId } });
+  },
+
+  async updateAvailability(vehicleId: string, data: UpdateVehicleAvailabilityInput) {
+    const result = await prisma.vehicle.updateMany({
+      where: { vehicle_id: vehicleId },
+      data: { status: data.available ? "AVAILABLE" : "MAINTENANCE" },
+    });
+    if (result.count === 0) throw new NotFoundError("Vehicle", vehicleId);
+    return prisma.vehicle.findUniqueOrThrow({ where: { vehicle_id: vehicleId } });
   },
 };

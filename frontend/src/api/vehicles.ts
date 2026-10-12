@@ -5,6 +5,7 @@ export interface FleetVehicle {
   vehicle_name: string;
   plate_number: string;
   status: "AVAILABLE" | "IN_USE" | "MAINTENANCE";
+  current_odometer: number;
 }
 
 async function request<T>(path: string, accessToken: string, options: RequestInit = {}) {
@@ -35,5 +36,27 @@ export function createFleetVehicle(
   return request<{ vehicle: FleetVehicle }>("/vehicles/fleet", accessToken, {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export function updateFleetVehicleOdometer(
+  accessToken: string,
+  vehicleId: string,
+  currentOdometer: number,
+) {
+  return request<{ vehicle: FleetVehicle }>(`/vehicles/fleet/${vehicleId}/odometer`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify({ currentOdometer }),
+  });
+}
+
+export function updateFleetVehicleAvailability(
+  accessToken: string,
+  vehicleId: string,
+  available: boolean,
+) {
+  return request<{ vehicle: FleetVehicle }>(`/vehicles/fleet/${vehicleId}/availability`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify({ available }),
   });
 }
