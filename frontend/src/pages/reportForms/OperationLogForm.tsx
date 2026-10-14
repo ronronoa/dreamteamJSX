@@ -30,6 +30,19 @@ import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport
 const OPERATION_DRAFT_KEY = "reportForms.operation.draft"
 const OPERATION_LATEST_KEY = "reportForms.operation.latest"
 
+function normalizeTimeInput(value: unknown): string {
+  if (typeof value !== "string") return ""
+
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim())
+  if (!match) return value
+
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour < 1 || hour > 12 || minute > 59) return value
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+}
+
 function normalizeOperationReport(value: unknown): OperationLogData {
   const emptyReport = createEmptyOperationLogData()
   if (typeof value !== "object" || value === null) return emptyReport
@@ -39,24 +52,27 @@ function normalizeOperationReport(value: unknown): OperationLogData {
     ...emptyReport,
     ...report,
     operationDetails: { ...emptyReport.operationDetails, ...report.operationDetails },
-    dispatch: { ...emptyReport.dispatch, ...report.dispatch },
+    dispatch: {
+      ...emptyReport.dispatch,
+      ...report.dispatch,
+      departTime: normalizeTimeInput(report.dispatch?.departTime),
+      arrivalTime: normalizeTimeInput(report.dispatch?.arrivalTime),
+    },
     people: Array.isArray(report.people) ? report.people : [],
     operationDescription: {
       ...emptyReport.operationDescription,
       ...report.operationDescription,
       images: [],
     },
-    inventory: Array.isArray(report.inventory) ? report.inventory : [],
+    // inventory: Array.isArray(report.inventory) ? report.inventory : [],
+    inventory:[],
   }
 }
 
 export default function OperationLogForm() {
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
-  const [pinModalShow, setPinModalShow] = useState(() => !hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY))
-  const [pinModalMode, setPinModalMode] = useState<"submit" | "load">(() =>
-    hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY) ? "submit" : "load",
-  )
+  const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
   const [formData, setFormData] = useState<OperationLogData>(() => readStoredReport(
@@ -102,6 +118,26 @@ export default function OperationLogForm() {
       isCurrentRequest = false
     }
   }, [optionsRequestId])
+
+  useEffect(() => {
+    if (hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY)) return
+
+    let isCurrentRequest = true
+    async function loadPreviousReport() {
+      try {
+        const latestReport = await fetchLatestOperationReport()
+        if (!isCurrentRequest || !latestReport) return
+        const normalizedReport = normalizeOperationReport(latestReport)
+        setFormData(normalizedReport)
+        saveStoredReport(OPERATION_LATEST_KEY, normalizedReport)
+      } catch (error) {
+        console.error("Could not load the previous operation report:", error)
+      }
+    }
+
+    void loadPreviousReport()
+    return () => { isCurrentRequest = false }
+  }, [])
 
   useEffect(() => {
     if (step !== 5) return
@@ -175,7 +211,6 @@ const nextStep = () => {
   }
 
   const openPinModal = () => {
-    setPinModalMode("submit")
     setPinError(undefined)
     setPinModalShow(true)
   }
@@ -186,18 +221,6 @@ const nextStep = () => {
 
 
     try {
-      if (pinModalMode === "load") {
-        const latestReport = await fetchLatestOperationReport(pin)
-        if (!latestReport) throw new Error("No saved operation report was found.")
-        const normalizedReport = normalizeOperationReport(latestReport)
-        setFormData(normalizedReport)
-        saveStoredReport(OPERATION_LATEST_KEY, normalizedReport)
-        removeStoredReport(OPERATION_DRAFT_KEY)
-        setPinModalShow(false)
-        setValidationErrors({})
-        return
-      }
-
       await submitOperationLog(pin, formData);
       saveStoredReport(OPERATION_LATEST_KEY, normalizeOperationReport(formData))
       removeStoredReport(OPERATION_DRAFT_KEY)
@@ -238,7 +261,7 @@ const nextStep = () => {
     <>
       {pinModalShow && (
         <PinModal
-          title={pinModalMode === "load" ? "LOAD PREVIOUS OPERATION LOG" : "OPERATION LOG"}
+          title="OPERATION LOG"
           open={pinModalShow}
           onClose={() => setPinModalShow(false)}
           onSubmit={handleSubmit}

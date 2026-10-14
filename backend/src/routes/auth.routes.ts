@@ -5,7 +5,7 @@ import { requireAuth } from "@/middleware/auth.middleware";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: 999,
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });

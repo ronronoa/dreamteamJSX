@@ -34,12 +34,14 @@ function validateDispatchDetails(data: VehicularDispatchReportData): VehicularDi
   if (details.transfers.length === 0) errors["details.transfers"] = "Select at least one transfer type."
   if (!dispatch.from.trim()) errors["dispatch.from"] = "Enter the departure location."
   if (!dispatch.to.trim()) errors["dispatch.to"] = "Enter the destination."
-  if (!dispatch.vehicle.trim()) errors["dispatch.vehicle"] = "Choose a vehicle."
+  const hasNoVehicle = dispatch.vehicle === "none"
+  if (!dispatch.vehicle.trim()) errors["dispatch.vehicle"] = "Choose a vehicle or None."
   if (dispatch.vehicle === "other" && !dispatch.vehicleOther?.trim()) errors["dispatch.vehicleOther"] = "Specify the vehicle."
-  if (!dispatch.driver.trim()) errors["dispatch.driver"] = "Enter the driver's name."
+  if (!hasNoVehicle && !dispatch.driver.trim()) errors["dispatch.driver"] = "Enter the driver's name."
   if (!TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time."
   if (!TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time."
 
+  if (hasNoVehicle) return errors
   const odometerIn = parseOdometer(dispatch.odometerIn)
   const odometerOut = parseOdometer(dispatch.odometerOut)
   if (odometerIn === null) errors["dispatch.odometerIn"] = "Enter a non-negative whole number."

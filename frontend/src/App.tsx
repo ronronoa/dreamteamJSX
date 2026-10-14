@@ -30,6 +30,7 @@ import SettingsPage from "./modules/adminDashboard/content/SettingsPage"
 import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
 import RoleGuard from "./components/RoleGuard"
 import VehicularDispatchForm from "./pages/reportForms/VehicularDispatchForm"
+import BackendStatusBanner from "./components/BackendStatusBanner"
 
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <BackendStatusBanner/>
       {loading && <LoadingScreen />}
       <Routes>
 

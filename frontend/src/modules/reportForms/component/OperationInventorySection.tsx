@@ -89,44 +89,44 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
     }
   }, [])
 
-  useEffect(() => {
-    if (didAutoFillRef.current || itemsLoading) return
-    if (inventory.length > 0) {
-      didAutoFillRef.current = true
-      return
-    }
-
-    const localSelection = getLastInventorySelection()
-    const localItem = localSelection
-      ? stockItems.find((item) => item.itemId === localSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
-      : undefined
-    const savedSelection = localItem
-      ? localSelection
-      : databaseSelection
-    const savedItem = savedSelection
-      ? stockItems.find((item) => item.itemId === savedSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
-      : undefined
-
-    if (!savedSelection || !savedItem) {
-      didAutoFillRef.current = true
-      return
-    }
-
-    const requestedQuantity = Number(savedSelection.quantity)
-    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1 || requestedQuantity > savedItem.quantity) {
-      didAutoFillRef.current = true
-      return
-    }
-
-    onInventoryChange([{
-      id: crypto.randomUUID(),
-      itemName: savedItem.item,
-      quantity: savedItem.unit ? `${requestedQuantity} ${savedItem.unit}` : String(requestedQuantity),
-      inventoryItemId: savedItem.itemId,
-      unit: savedItem.unit,
-    }])
-    didAutoFillRef.current = true
-  }, [databaseSelection, inventory, itemsLoading, onInventoryChange, stockItems])
+  // useEffect(() => {
+  //   if (didAutoFillRef.current || itemsLoading) return
+  //   if (inventory.length > 0) {
+  //     didAutoFillRef.current = true
+  //     return
+  //   }
+  //
+  //   const localSelection = getLastInventorySelection()
+  //   const localItem = localSelection
+  //     ? stockItems.find((item) => item.itemId === localSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
+  //     : undefined
+  //   const savedSelection = localItem
+  //     ? localSelection
+  //     : databaseSelection
+  //   const savedItem = savedSelection
+  //     ? stockItems.find((item) => item.itemId === savedSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
+  //     : undefined
+  //
+  //   if (!savedSelection || !savedItem) {
+  //     didAutoFillRef.current = true
+  //     return
+  //   }
+  //
+  //   const requestedQuantity = Number(savedSelection.quantity)
+  //   if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1 || requestedQuantity > savedItem.quantity) {
+  //     didAutoFillRef.current = true
+  //     return
+  //   }
+  //
+  //   onInventoryChange([{
+  //     id: crypto.randomUUID(),
+  //     itemName: savedItem.item,
+  //     quantity: savedItem.unit ? `${requestedQuantity} ${savedItem.unit}` : String(requestedQuantity),
+  //     inventoryItemId: savedItem.itemId,
+  //     unit: savedItem.unit,
+  //   }])
+  //   didAutoFillRef.current = true
+  // }, [databaseSelection, inventory, itemsLoading, onInventoryChange, stockItems])
 
   const availableItems = useMemo(
     () => stockItems.filter((item) => item.quantity > 0 && item.status !== "Expired" && !inventory.some((entry) => entry.inventoryItemId === item.itemId)),

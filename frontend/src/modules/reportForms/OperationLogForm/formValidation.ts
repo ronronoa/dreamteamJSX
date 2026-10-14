@@ -61,13 +61,19 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
 
   validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
   validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
-  if (!options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
-    errors["dispatch.vehicle"] = "Select an available vehicle.";
+  const hasNoVehicle = dispatch.vehicle === "none"
+  const isOtherVehicle = dispatch.vehicle === "other"
+  if (!hasNoVehicle && !isOtherVehicle && !options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
+    errors["dispatch.vehicle"] = "Select an available vehicle, Other, or None.";
   }
-  validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
+  if (isOtherVehicle && !dispatch.vehicleOther?.trim()) errors["dispatch.vehicleOther"] = "Specify the vehicle.";
+  if (!hasNoVehicle) {
+    validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
+  }
   if (!OPERATION_TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time.";
   if (!OPERATION_TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time.";
 
+  if (hasNoVehicle) return errors;
   const odometerIn = parseOdometer(dispatch.odometerIn);
   const odometerOut = parseOdometer(dispatch.odometerOut);
   if (odometerIn === null) errors["dispatch.odometerIn"] = "Enter a non-negative whole number.";

@@ -50,18 +50,21 @@ export const VehicularDispatchReportSchema = z.object({
   dispatch: z.object({
     from: z.string().trim().min(1).max(200),
     to: z.string().trim().min(1).max(200),
-    vehicle: z.string().trim().min(1),
+    vehicle: z.union([z.uuid(), z.literal("other"), z.literal("none")]),
     vehicleOther: z.string().trim().max(120).optional(),
-    driver: z.string().trim().min(1).max(120),
+    driver: z.string().trim().max(120),
     departTime: timeSchema,
     departPeriod: z.enum(["AM", "PM"]),
     arrivalTime: timeSchema,
     arrivalPeriod: z.enum(["AM", "PM"]),
-    odometerIn: odometerSchema,
-    odometerOut: odometerSchema,
-  }).refine((dispatch) => dispatch.odometerOut >= dispatch.odometerIn, {
-    path: ["odometerOut"],
-    message: "Odometer out must be greater than or equal to odometer in.",
+    odometerIn: z.union([odometerSchema, z.literal("")]),
+    odometerOut: z.union([odometerSchema, z.literal("")]),
+  }).refine((dispatch) => dispatch.vehicle === "none" || (typeof dispatch.odometerIn === "number" && typeof dispatch.odometerOut === "number"), {
+    path: ["odometerIn"], message: "Enter odometer readings when a vehicle is selected.",
+  }).refine((dispatch) => dispatch.vehicle === "none" || dispatch.odometerOut === "" || dispatch.odometerIn === "" || dispatch.odometerOut >= dispatch.odometerIn, {
+    path: ["odometerOut"], message: "Odometer out must be greater than or equal to odometer in.",
+  }).refine((dispatch) => dispatch.vehicle !== "none" || dispatch.driver === "", {
+    path: ["driver"], message: "Driver is not used when no vehicle is selected.",
   }).refine((dispatch) => dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim()), {
     path: ["vehicleOther"],
     message: "Specify the vehicle.",

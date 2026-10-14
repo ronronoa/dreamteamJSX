@@ -166,7 +166,6 @@ export default function PatientStep1({
           currentOdometer: vehicle.current_odometer,
         }))}
         optionsLoading={optionsLoading}
-        allowOther={false}
       />
     </div>
   )

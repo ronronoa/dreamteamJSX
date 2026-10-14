@@ -68,7 +68,8 @@ function normalizePatientReport(value: unknown): PatientLogData {
       },
     },
     waiverForm: { images: [] },
-    inventory: Array.isArray(report.inventory) ? report.inventory : [],
+    // inventory: Array.isArray(report.inventory) ? report.inventory : [],
+    inventory:[],
   }
 }
 import { ROUTES } from "../../routes"

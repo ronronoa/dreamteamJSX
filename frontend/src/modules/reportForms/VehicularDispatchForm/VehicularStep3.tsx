@@ -41,8 +41,8 @@ export default function VehicularStep3({ formData, vehicleLabel, responderLabels
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
-            <SummaryField label="Vehicle" value={dispatch.vehicle === "other" ? dispatch.vehicleOther : vehicleLabel} />
-            <SummaryField label="Driver" value={dispatch.driver} />
+            <SummaryField label="Vehicle" value={dispatch.vehicle === "none" ? "None" : dispatch.vehicle === "other" ? dispatch.vehicleOther : vehicleLabel} />
+            <SummaryField label="Driver" value={dispatch.vehicle === "none" ? "—" : dispatch.driver} />
             <SummaryField label="Depart" value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`} />
             <SummaryField label="Arrival" value={dispatch.arrivalTime && `${dispatch.arrivalTime} ${dispatch.arrivalPeriod}`} />
             <SummaryField label="Odometer In" value={dispatch.odometerIn && `${dispatch.odometerIn} km`} />

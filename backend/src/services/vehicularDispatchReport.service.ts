@@ -205,7 +205,7 @@ export const vehicularDispatchReportService = {
 
   async create(form: VehicularDispatchReportInput) {
     const [vehicle, responders] = await Promise.all([
-      form.dispatch.vehicle === "other"
+      form.dispatch.vehicle === "other" || form.dispatch.vehicle === "none"
         ? Promise.resolve(null)
         : prisma.vehicle.findFirst({
           where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
@@ -216,7 +216,7 @@ export const vehicularDispatchReportService = {
         select: { user_id: true },
       }),
     ])
-    if (form.dispatch.vehicle !== "other" && !vehicle) {
+    if (form.dispatch.vehicle !== "other" && form.dispatch.vehicle !== "none" && !vehicle) {
       throw new NotFoundError("Available vehicle", form.dispatch.vehicle)
     }
     if (responders.length !== form.details.responders.length) {
@@ -230,7 +230,7 @@ export const vehicularDispatchReportService = {
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1)
 
     return prisma.$transaction(async (transaction) => {
-      if (vehicle) {
+      if (vehicle && typeof form.dispatch.odometerIn === "number" && typeof form.dispatch.odometerOut === "number") {
         await saveVehicleOdometerFromDispatch(
           transaction,
           vehicle.vehicle_id,
@@ -248,14 +248,14 @@ export const vehicularDispatchReportService = {
         status: "PENDING",
         submitted_by: null,
         vehicle_id: vehicle?.vehicle_id ?? null,
-        vehicle_name: vehicle ? null : form.dispatch.vehicleOther?.trim() ?? null,
-        driver_name: form.dispatch.driver,
+        vehicle_name: form.dispatch.vehicle === "other" ? form.dispatch.vehicleOther?.trim() ?? null : null,
+        driver_name: form.dispatch.vehicle === "none" ? null : form.dispatch.driver || null,
         from_location: form.dispatch.from,
         to_location: form.dispatch.to,
         depart_time: departure,
         arrival_time: arrival,
-        odometer_in: form.dispatch.odometerIn,
-        odometer_out: form.dispatch.odometerOut,
+        odometer_in: typeof form.dispatch.odometerIn === "number" ? form.dispatch.odometerIn : null,
+        odometer_out: typeof form.dispatch.odometerOut === "number" ? form.dispatch.odometerOut : null,
         responders: {
           create: form.details.responders.map((userId) => ({ user_id: userId })),
         },

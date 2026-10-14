@@ -87,7 +87,6 @@ export const reportFormsController = {
 
   async getLatestOperationReport(req: Request, res: Response, next: NextFunction) {
     try {
-      await pinService.verifyReportFormPin(getPin(req));
       const report = await reportFormsService.getLatestOperationReport();
       res.status(200).json({ report });
     } catch (error) {

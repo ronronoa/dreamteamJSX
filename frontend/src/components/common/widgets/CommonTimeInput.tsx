@@ -85,7 +85,15 @@ export default function CommonTimeInput({
   const lastEmitted = useRef(time)
 
   useEffect(() => {
-    if (time === lastEmitted.current) return
+    if (time === lastEmitted.current) {
+      // Restored form data can match the parent's value while this input
+      // still has its initial empty digit state.
+      setDigits((current) => {
+        const restoredDigits = toDigits(time)
+        return current.join("") === restoredDigits.join("") ? current : restoredDigits
+      })
+      return
+    }
     lastEmitted.current = time
     setDigits(toDigits(time))
   }, [time])

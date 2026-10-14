@@ -49,12 +49,11 @@ export const isStep1Complete = (formData: PatientLogData) => {
     responderDetails.responders.length > 0 &&
     dispatch.from.trim() !== "" &&
     dispatch.to.trim() !== "" &&
-    dispatch.vehicle.trim() !== "" &&
-    dispatch.driver.trim() !== "" &&
+    (dispatch.vehicle.trim() !== "" ? dispatch.vehicle === "none" || dispatch.driver.trim() !== "" : false) &&
+    (dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim())) &&
     dispatch.departTime.trim() !== "" &&
     dispatch.arrivalTime.trim() !== "" &&
-    dispatch.odometerIn.trim() !== "" &&
-    dispatch.odometerOut.trim() !== ""
+    (dispatch.vehicle === "none" || (dispatch.odometerIn.trim() !== "" && dispatch.odometerOut.trim() !== ""))
   )
 }
 

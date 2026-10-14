@@ -3,9 +3,17 @@ import { z } from "zod";
 import { ChangePasswordSchema, RefreshTokenSchema, SignInSchema, SignUpSchema } from "@/schemas/auth.schema";
 import { ValidationError, UnauthorizedError } from "@/shared/errors/app-error";
 import { authService } from "@/services/auth.service";
+import { env } from "@/config/env";
 
 const REFRESH_COOKIE = "refreshToken";
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const isProduction = env.NODE_ENV === "production";
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: isProduction ? "none" as const : "lax" as const,
+  secure: isProduction,
+  partitioned: isProduction,
+};
 
 const CookieSchema = z.object({
   [REFRESH_COOKIE]: z.string().optional(),
@@ -19,19 +27,29 @@ function getRefreshCookie(req: Request): string | undefined {
 
 function setRefreshCookie(res: Response, token: string) {
   // Clear the old narrower path so clients do not send duplicate cookies after upgrading.
-  res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
+  // Deletion cookies need the same cross-site attributes as the cookie being replaced.
+  res.clearCookie(REFRESH_COOKIE, {
+    ...REFRESH_COOKIE_OPTIONS,
+    path: "/api/auth",
+  });
   res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env["NODE_ENV"] === "production",
+    // The frontend and API use different sites. Partitioned cookies must be Secure
+    // and use SameSite=None to work in that cross-site context.
+    ...REFRESH_COOKIE_OPTIONS,
     path: "/api",
     maxAge: REFRESH_MAX_AGE_MS,
   });
 }
 
 function clearRefreshCookie(res: Response) {
-  res.clearCookie(REFRESH_COOKIE, { path: "/api" });
-  res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
+  res.clearCookie(REFRESH_COOKIE, {
+    ...REFRESH_COOKIE_OPTIONS,
+    path: "/api",
+  });
+  res.clearCookie(REFRESH_COOKIE, {
+    ...REFRESH_COOKIE_OPTIONS,
+    path: "/api/auth",
+  });
 }
 
 function getFirstZodIssue(error: z.ZodError): z.ZodIssue {
@@ -115,8 +133,6 @@ export const authController = {
       res.locals["activityActorId"] = result.user.id;
 
       setRefreshCookie(res, result.refreshToken);
-
-      console.log("Login success")
 
       res.status(200).json({
         user: result.user,

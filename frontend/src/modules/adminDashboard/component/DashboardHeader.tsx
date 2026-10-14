@@ -182,7 +182,7 @@ function NotificationsDropdown({
   onSelect,
 }: NotificationsDropdownProps) {
   return (
-    <div className="absolute right-0 z-50 mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl">
+    <div className="fixed left-3 right-3 top-20 z-50 mt-2 max-h-[calc(100dvh-6rem)] overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl md:absolute md:left-auto md:right-0 md:top-full md:mt-3 md:max-h-none md:w-[min(24rem,calc(100vw-2rem))]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">

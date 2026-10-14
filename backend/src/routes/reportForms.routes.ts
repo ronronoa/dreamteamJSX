@@ -64,7 +64,7 @@ reportFormsRoutes.get("/report-forms/operations/options", reportFormsController.
 reportFormsRoutes.get("/report-forms/:formType/suggestions", reportFormsController.getReportFormSuggestions);
 reportFormsRoutes.get("/report-forms/patients/options", reportFormsController.getPatientOptions);
 reportFormsRoutes.get("/report-forms/inventory/last-selection", reportFormsController.getLastInventorySelection);
-reportFormsRoutes.post("/report-forms/operations/latest", reportFormPinLimiter, reportFormsController.getLatestOperationReport);
+reportFormsRoutes.get("/report-forms/operations/latest", reportFormsController.getLatestOperationReport);
 reportFormsRoutes.get("/report-forms/patients/latest", reportFormsController.getLatestPatientReport);
 reportFormsRoutes.post("/report-forms/operations", reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
 reportFormsRoutes.post("/report-forms/patients", reportFormPinLimiter, parseImages, reportFormsController.submitPatient);

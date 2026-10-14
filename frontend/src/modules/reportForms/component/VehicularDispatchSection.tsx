@@ -8,6 +8,7 @@ import type { FormErrors } from "../OperationLogForm/formValidation"
 import type { VehicularDispatch } from "../../../types/operationLog"
 
 const OTHER_VEHICLE_VALUE = "other"
+const NO_VEHICLE_VALUE = "none"
 
 const DEFAULT_VEHICLE_OPTIONS = [
   { label: "Vehicle 1", value: "vehicle-1" },
@@ -35,17 +36,19 @@ export default function VehicularDispatchSection({
   title = "VEHICULAR DISPATCH",
   allowOther = true,
 }: VehicularDispatchSectionProps) {
-  // Always append "Other" — skip if caller already supplied it.
-  const optionsWithOther = !allowOther || vehicleOptions.some(
-    (opt) => opt.value === OTHER_VEHICLE_VALUE
-  )
-    ? vehicleOptions
-    : [...vehicleOptions, { label: "Other", value: OTHER_VEHICLE_VALUE }]
+  const optionsWithOther = [
+    ...vehicleOptions,
+    ...(vehicleOptions.some((option) => option.value === OTHER_VEHICLE_VALUE) || !allowOther
+      ? []
+      : [{ label: "Other", value: OTHER_VEHICLE_VALUE }]),
+    { label: "None", value: NO_VEHICLE_VALUE },
+  ]
 
   const isOtherVehicle = dispatch.vehicle === OTHER_VEHICLE_VALUE
+  const hasNoVehicle = dispatch.vehicle === NO_VEHICLE_VALUE
 
   return (
-    <CommonFormSection title={title}>
+    <CommonFormSection title={title} standardHeight={false}>
       <div className="space-y-4">
         <ReportAutocompleteInput
           formType={formType}
@@ -78,6 +81,9 @@ export default function VehicularDispatchSection({
             const odometer = selectedVehicle?.currentOdometer
             onDispatchChange({
               vehicle: e.target.value,
+              ...(e.target.value === NO_VEHICLE_VALUE
+                ? { driver: "", odometerIn: "", odometerOut: "" }
+                : {}),
               odometerIn: odometer === undefined ? "" : String(odometer),
               odometerOut: odometer === undefined ? "" : String(odometer),
             })
@@ -102,7 +108,7 @@ export default function VehicularDispatchSection({
           </>
         )}
 
-        <ReportAutocompleteInput
+        {!hasNoVehicle && <ReportAutocompleteInput
           formType={formType}
           variant="compact"
           label="Driver"
@@ -110,9 +116,9 @@ export default function VehicularDispatchSection({
           value={dispatch.driver}
           onChange={(e) => onDispatchChange({ driver: e.target.value })}
           errorMessage={errors["dispatch.driver"]}
-        />
+        />}
 
-        <div className="grid grid-cols-2 gap-5">
+        {!hasNoVehicle && <div className="grid grid-cols-2 gap-5">
           <div>
             <CommonTimeInput
               label="Depart"
@@ -133,9 +139,9 @@ export default function VehicularDispatchSection({
               errorMessage={errors["dispatch.arrivalTime"]}
             />
           </div>
-        </div>
+        </div>}
 
-        <div className="grid grid-cols-2 gap-5">
+        {!hasNoVehicle && <div className="grid grid-cols-2 gap-5">
           <div>
             <CommonInput
               variant="compact"
@@ -162,7 +168,7 @@ export default function VehicularDispatchSection({
               errorMessage={errors["dispatch.odometerOut"]}
             />
           </div>
-        </div>
+        </div>}
       </div>
     </CommonFormSection>
   )

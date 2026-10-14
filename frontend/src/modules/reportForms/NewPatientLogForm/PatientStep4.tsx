@@ -68,11 +68,13 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
             <SummaryField label="To" value={dispatch.to} />
             <SummaryField
               label="Vehicle"
-              value={selectedVehicle
+              value={dispatch.vehicle === "none" ? "None"
+                : dispatch.vehicle === "other" ? dispatch.vehicleOther ?? "Other"
+                : selectedVehicle
                 ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})`
                 : dispatch.vehicle ? "Vehicle unavailable" : ""}
             />
-            <SummaryField label="Driver" value={dispatch.driver} />
+            <SummaryField label="Driver" value={dispatch.vehicle === "none" ? "—" : dispatch.driver} />
             <SummaryField
               label="Depart"
               value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`}
@@ -83,11 +85,11 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
             />
             <SummaryField
               label="Odometer In"
-              value={dispatch.odometerIn && `${dispatch.odometerIn} km`}
+              value={dispatch.vehicle !== "none" && dispatch.odometerIn ? `${dispatch.odometerIn} km` : "—"}
             />
             <SummaryField
               label="Odometer Out"
-              value={dispatch.odometerOut && `${dispatch.odometerOut} km`}
+              value={dispatch.vehicle !== "none" && dispatch.odometerOut ? `${dispatch.odometerOut} km` : "—"}
             />
           </div>
         </CommonFormSection>

@@ -100,7 +100,7 @@ function getTimeInputValue(date: Date | null | undefined) {
   if (!date) return { time: "", period: "AM" as const };
   const hour = date.getHours();
   return {
-    time: `${hour % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")}`,
+    time: `${String(hour % 12 || 12).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
     period: hour >= 12 ? "PM" as const : "AM" as const,
   };
 }
@@ -495,11 +495,15 @@ export const reportFormsService = {
       });
     }
 
-    const vehicle = await prisma.vehicle.findFirst({
-      where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
-      select: { vehicle_id: true },
-    });
-    if (!vehicle) throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
+    const vehicle = form.dispatch.vehicle !== "none" && form.dispatch.vehicle !== "other"
+      ? await prisma.vehicle.findFirst({
+          where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
+          select: { vehicle_id: true },
+        })
+      : null;
+    if (form.dispatch.vehicle !== "none" && form.dispatch.vehicle !== "other" && !vehicle) {
+      throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
+    }
 
     const imageRecords = files.map((file) => ({
       image_url: imageUrl(file),
@@ -519,12 +523,9 @@ export const reportFormsService = {
     if (arrivalTime < departTime) arrivalTime.setDate(arrivalTime.getDate() + 1);
 
     return prisma.$transaction(async (transaction) => {
-      await saveVehicleOdometerFromDispatch(
-        transaction,
-        vehicle.vehicle_id,
-        form.dispatch.odometerIn,
-        form.dispatch.odometerOut,
-      );
+      if (vehicle && typeof form.dispatch.odometerIn === "number" && typeof form.dispatch.odometerOut === "number") {
+        await saveVehicleOdometerFromDispatch(transaction, vehicle.vehicle_id, form.dispatch.odometerIn, form.dispatch.odometerOut);
+      }
       const operation = await transaction.operationLog.create({
         data: {
           team_id: teamId,
@@ -565,14 +566,15 @@ export const reportFormsService = {
             create: {
               dispatch_date: new Date(`${form.operationDetails.date}T00:00:00`),
               submitted_by: null,
-              vehicle_id: vehicle.vehicle_id,
-              driver_name: form.dispatch.driver,
+              vehicle_id: vehicle?.vehicle_id ?? null,
+              vehicle_name: form.dispatch.vehicle === "other" ? form.dispatch.vehicleOther?.trim() ?? null : null,
+              driver_name: form.dispatch.vehicle === "none" ? null : form.dispatch.driver || null,
               from_location: form.dispatch.from,
               to_location: form.dispatch.to,
               depart_time: departTime,
               arrival_time: arrivalTime,
-              odometer_in: form.dispatch.odometerIn,
-              odometer_out: form.dispatch.odometerOut,
+              odometer_in: typeof form.dispatch.odometerIn === "number" ? form.dispatch.odometerIn : null,
+              odometer_out: typeof form.dispatch.odometerOut === "number" ? form.dispatch.odometerOut : null,
             },
           },
           ...(imageRecords.length > 0 ? { images: { create: imageRecords } } : {}),
@@ -601,15 +603,19 @@ export const reportFormsService = {
         },
         select: { user_id: true },
       }),
-      prisma.vehicle.findFirst({
-        where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
-        select: { vehicle_id: true },
-      }),
+      form.dispatch.vehicle !== "none" && form.dispatch.vehicle !== "other"
+        ? prisma.vehicle.findFirst({
+            where: { vehicle_id: form.dispatch.vehicle, status: "AVAILABLE" },
+            select: { vehicle_id: true },
+          })
+        : Promise.resolve(null),
     ]);
     if (responders.length !== new Set(form.responderDetails.responders).size) {
       throw new ValidationError("One or more selected responders are unavailable.", { responders: ["Refresh and select active responders."] });
     }
-    if (!vehicle) throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
+    if (form.dispatch.vehicle !== "none" && form.dispatch.vehicle !== "other" && !vehicle) {
+      throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
+    }
 
     const { patientDetails, responderDetails, firstAidHospital, dispatch } = form;
     const patientFullName = formatPersonName(patientDetails.name);
@@ -628,12 +634,9 @@ export const reportFormsService = {
     } as Prisma.InputJsonValue;
 
     const record = await prisma.$transaction(async (transaction) => {
-      await saveVehicleOdometerFromDispatch(
-        transaction,
-        vehicle.vehicle_id,
-        dispatch.odometerIn,
-        dispatch.odometerOut,
-      );
+       if (vehicle && typeof dispatch.odometerIn === "number" && typeof dispatch.odometerOut === "number") {
+         await saveVehicleOdometerFromDispatch(transaction, vehicle.vehicle_id, dispatch.odometerIn, dispatch.odometerOut);
+       }
       return transaction.patient.create({
       data: {
         full_name: patientFullName,
@@ -668,14 +671,15 @@ export const reportFormsService = {
             dispatches: {
               create: {
                 dispatch_date: new Date(`${reportDate}T00:00:00`),
-                vehicle_id: vehicle.vehicle_id,
-                driver_name: dispatch.driver,
+                 vehicle_id: vehicle?.vehicle_id ?? null,
+                 vehicle_name: dispatch.vehicle === "other" ? dispatch.vehicleOther?.trim() ?? null : null,
+                 driver_name: dispatch.vehicle === "none" ? null : dispatch.driver || null,
                 from_location: dispatch.from,
                 to_location: dispatch.to,
                 depart_time: departure,
                 arrival_time: arrival,
-                odometer_in: dispatch.odometerIn,
-                odometer_out: dispatch.odometerOut,
+                 odometer_in: typeof dispatch.odometerIn === "number" ? dispatch.odometerIn : null,
+                 odometer_out: typeof dispatch.odometerOut === "number" ? dispatch.odometerOut : null,
                 dispatch_type: responderDetails.typeOfRequest === "PICK_UP" ? "PICK_UP" : "DROP_OFF",
               },
             },
