@@ -14,6 +14,9 @@ export const UpdateVehicleAvailabilitySchema = z.object({
   available: z.boolean(),
 });
 
+export const UpdateVehicleDetailsSchema = CreateVehicleSchema;
+
 export type CreateVehicleInput = z.infer<typeof CreateVehicleSchema>;
 export type UpdateVehicleOdometerInput = z.infer<typeof UpdateVehicleOdometerSchema>;
 export type UpdateVehicleAvailabilityInput = z.infer<typeof UpdateVehicleAvailabilitySchema>;
+export type UpdateVehicleDetailsInput = z.infer<typeof UpdateVehicleDetailsSchema>;

@@ -50,6 +50,17 @@ export function updateFleetVehicleOdometer(
   });
 }
 
+export function updateFleetVehicleDetails(
+  accessToken: string,
+  vehicleId: string,
+  input: { vehicleName: string; plateNumber: string },
+) {
+  return request<{ vehicle: FleetVehicle }>(`/vehicles/fleet/${vehicleId}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
 export function updateFleetVehicleAvailability(
   accessToken: string,
   vehicleId: string,

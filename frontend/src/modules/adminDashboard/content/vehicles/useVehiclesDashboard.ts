@@ -4,6 +4,7 @@ import {
   createFleetVehicle,
   fetchFleetVehicles,
   updateFleetVehicleAvailability,
+  updateFleetVehicleDetails,
   updateFleetVehicleOdometer,
   type FleetVehicle,
 } from "@/api/vehicles";
@@ -25,6 +26,7 @@ export function useVehiclesDashboard() {
   const [fleetLoading, setFleetLoading] = useState(true);
   const [savingVehicle, setSavingVehicle] = useState(false);
   const [savingOdometerId, setSavingOdometerId] = useState<string | null>(null);
+  const [savingDetailsId, setSavingDetailsId] = useState<string | null>(null);
   const [updatingAvailabilityId, setUpdatingAvailabilityId] = useState<string | null>(null);
   const [fleetError, setFleetError] = useState("");
   const [fleetMessage, setFleetMessage] = useState("");
@@ -247,6 +249,27 @@ export function useVehiclesDashboard() {
     }
   }
 
+  async function saveVehicleDetails(vehicleId: string, nextVehicleName: string, nextPlateNumber: string): Promise<boolean> {
+    if (!accessToken || savingDetailsId) return false;
+    setSavingDetailsId(vehicleId);
+    setFleetError("");
+    setFleetMessage("");
+    try {
+      await updateFleetVehicleDetails(accessToken, vehicleId, {
+        vehicleName: nextVehicleName,
+        plateNumber: nextPlateNumber,
+      });
+      setFleetMessage("Vehicle details updated.");
+      await loadFleet();
+      return true;
+    } catch (error) {
+      setFleetError(error instanceof Error ? error.message : "Could not update vehicle details.");
+      return false;
+    } finally {
+      setSavingDetailsId(null);
+    }
+  }
+
   async function toggleVehicleAvailability(vehicle: FleetVehicle) {
     if (!accessToken || updatingAvailabilityId) return;
     setUpdatingAvailabilityId(vehicle.vehicle_id);
@@ -266,7 +289,7 @@ export function useVehiclesDashboard() {
 
   return {
     fleetVehicles, vehicleName, setVehicleName, plateNumber, setPlateNumber,
-    fleetLoading, savingVehicle, savingOdometerId, updatingAvailabilityId, fleetError, fleetMessage, canManageFleet,
+    fleetLoading, savingVehicle, savingOdometerId, savingDetailsId, updatingAvailabilityId, fleetError, fleetMessage, canManageFleet,
     dispatchRecords, dispatchLoading, dispatchError, loadDispatchRecords, handleAddVehicle,
     role, busy, search, statusFilter, filterOpen, pendingPage, reviewedPage,
     selectedRecord, reviewTarget, pinError, successMessage, pendingRows, reviewedRows,
@@ -279,6 +302,7 @@ export function useVehiclesDashboard() {
     updateSearch, updateStatusFilter, openReview, handleReview, openDetails, toggleSelection,
     printSelectedRecords, archiveSelectedRecords,
     saveVehicleOdometer,
+    saveVehicleDetails,
     toggleVehicleAvailability,
   };
 }

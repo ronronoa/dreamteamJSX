@@ -1,3 +1,5 @@
+import { getCurrentDateInputValue } from "../utils/dateTime"
+
 export type Sex = "Male" | "Female" | ""
 
 export type PersonName = {
@@ -39,7 +41,7 @@ export type VehicularDispatch = {
 
 export const createEmptyResponderDetails = (): ResponderDetails => ({
   submitterName: "",
-  date: "",
+  date: getCurrentDateInputValue(),
   typeOfRequest: "",
   caller: createEmptyPersonName(),
   teamAssigned: [],

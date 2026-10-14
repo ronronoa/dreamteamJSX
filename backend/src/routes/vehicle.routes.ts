@@ -12,6 +12,12 @@ vehicleRoutes.post(
   vehicleController.create,
 );
 vehicleRoutes.patch(
+  "/vehicles/fleet/:id",
+  requireAuth,
+  requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"),
+  vehicleController.updateDetails,
+);
+vehicleRoutes.patch(
   "/vehicles/fleet/:id/odometer",
   requireAuth,
   requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"),

@@ -6,6 +6,7 @@ const IGNORED_PATHS = [
   "/activity-logs/archive",
   "/auth/logout",
   "/report-forms/operations/latest",
+  "/notifications/read "
 ];
 const INVENTORY_TRANSACTION_PATHS = ["/inventory/stock-in", "/inventory/adjust"];
 

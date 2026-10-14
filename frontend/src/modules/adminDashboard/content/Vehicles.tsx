@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Check, ChevronRight, Filter, RefreshCw, X } from "lucide-react"
+import { Check, ChevronRight, Filter, Pencil, RefreshCw, X } from "lucide-react"
 import DataTable from "@/components/common/DataTable"
 import Modal from "@/components/common/modals/Modal"
 import AreYouSureModal from "@/components/common/modals/AreYouSure"
@@ -25,23 +25,32 @@ const STATUS_FILTERS = [
   { value: "REJECTED", label: "Rejected" },
 ]
 
-function FleetVehicleRow({ vehicle, canEdit, saving, availabilitySaving, onSave, onAvailabilityChange }: {
+function FleetVehicleRow({ vehicle, canEdit, saving, detailsSaving, availabilitySaving, onSave, onSaveDetails, onAvailabilityChange }: {
   vehicle: FleetVehicle
   canEdit: boolean
   saving: boolean
+  detailsSaving: boolean
   availabilitySaving: boolean
   onSave: (vehicleId: string, currentOdometer: number) => void
+  onSaveDetails: (vehicleId: string, vehicleName: string, plateNumber: string) => Promise<boolean>
   onAvailabilityChange: (vehicle: FleetVehicle) => void
 }) {
   const [odometer, setOdometer] = useState(String(vehicle.current_odometer ?? 0))
+  const [editingDetails, setEditingDetails] = useState(false)
+  const [vehicleName, setVehicleName] = useState(vehicle.vehicle_name)
+  const [plateNumber, setPlateNumber] = useState(vehicle.plate_number)
   const parsedOdometer = Number(odometer)
   const isValidOdometer = /^\d+$/.test(odometer) && Number.isSafeInteger(parsedOdometer)
   const hasChanged = odometer !== String(vehicle.current_odometer ?? 0)
 
   return (
     <tr className="border-b border-gray-50 last:border-0">
-      <td className="py-3 font-medium text-gray-800">{vehicle.vehicle_name}</td>
-      <td className="py-3 text-gray-600">{vehicle.plate_number}</td>
+      <td className="py-3 font-medium text-gray-800">{editingDetails ? (
+        <input aria-label={`Vehicle name for ${vehicle.vehicle_name}`} maxLength={100} value={vehicleName} onChange={(event) => setVehicleName(event.target.value)} className="h-8 w-40 rounded-md border border-gray-200 px-2 text-sm" />
+      ) : vehicle.vehicle_name}</td>
+      <td className="py-3 text-gray-600">{editingDetails ? (
+        <input aria-label={`Plate number for ${vehicle.vehicle_name}`} maxLength={20} value={plateNumber} onChange={(event) => setPlateNumber(event.target.value)} className="h-8 w-32 rounded-md border border-gray-200 px-2 text-sm uppercase" />
+      ) : vehicle.plate_number}</td>
       <td className="py-3">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-semibold ${vehicle.status === "AVAILABLE" ? "text-emerald-700" : "text-amber-700"}`}>
@@ -83,6 +92,13 @@ function FleetVehicleRow({ vehicle, canEdit, saving, availabilitySaving, onSave,
       </td>
       {canEdit && (
         <td className="py-3 text-right">
+          <div className="flex justify-end gap-2">
+          {editingDetails ? <>
+            <CommonButton compact disabled={detailsSaving || !vehicleName.trim() || !plateNumber.trim()} onClick={() => { void onSaveDetails(vehicle.vehicle_id, vehicleName, plateNumber).then((saved) => { if (saved) setEditingDetails(false) }) }}>
+              {detailsSaving ? "Saving…" : "Save details"}
+            </CommonButton>
+            <button type="button" aria-label={`Cancel editing ${vehicle.vehicle_name}`} onClick={() => { setVehicleName(vehicle.vehicle_name); setPlateNumber(vehicle.plate_number); setEditingDetails(false) }} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X size={16} /></button>
+          </> : <button type="button" aria-label={`Edit ${vehicle.vehicle_name}`} onClick={() => setEditingDetails(true)} className="rounded-md p-1 text-purple-700 hover:bg-purple-50"><Pencil size={16} /></button>}
           <CommonButton
             compact
             disabled={saving || !hasChanged || !isValidOdometer}
@@ -90,6 +106,7 @@ function FleetVehicleRow({ vehicle, canEdit, saving, availabilitySaving, onSave,
           >
             {saving ? "Saving…" : "Save"}
           </CommonButton>
+          </div>
         </td>
       )}
     </tr>
@@ -282,8 +299,10 @@ export default function Vehicles() {
                       vehicle={vehicle}
                       canEdit={dashboard.canManageFleet}
                       saving={dashboard.savingOdometerId === vehicle.vehicle_id}
+                      detailsSaving={dashboard.savingDetailsId === vehicle.vehicle_id}
                       availabilitySaving={dashboard.updatingAvailabilityId === vehicle.vehicle_id}
                       onSave={dashboard.saveVehicleOdometer}
+                      onSaveDetails={dashboard.saveVehicleDetails}
                       onAvailabilityChange={dashboard.toggleVehicleAvailability}
                     />
                   ))}

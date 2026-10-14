@@ -5,6 +5,7 @@ import type {
   CreateVehicleInput,
   UpdateVehicleAvailabilityInput,
   UpdateVehicleOdometerInput,
+  UpdateVehicleDetailsInput,
 } from "@/schemas/vehicle.schema";
 
 export const vehicleService = {
@@ -35,6 +36,22 @@ export const vehicleService = {
     });
     if (result.count === 0) throw new NotFoundError("Vehicle", vehicleId);
     return prisma.vehicle.findUniqueOrThrow({ where: { vehicle_id: vehicleId } });
+  },
+
+  async updateDetails(vehicleId: string, data: UpdateVehicleDetailsInput) {
+    try {
+      const result = await prisma.vehicle.updateMany({
+        where: { vehicle_id: vehicleId },
+        data: { vehicle_name: data.vehicleName, plate_number: data.plateNumber },
+      });
+      if (result.count === 0) throw new NotFoundError("Vehicle", vehicleId);
+      return await prisma.vehicle.findUniqueOrThrow({ where: { vehicle_id: vehicleId } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictError("A vehicle with this plate number already exists.");
+      }
+      throw error;
+    }
   },
 
   async updateAvailability(vehicleId: string, data: UpdateVehicleAvailabilityInput) {

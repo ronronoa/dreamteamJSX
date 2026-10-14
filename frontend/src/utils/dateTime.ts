@@ -16,6 +16,10 @@ export function formatDate(value: DateTimeValue, pattern = "MMM D, YYYY") {
   return formatDateTimeValue(value, pattern);
 }
 
+export function getCurrentDateInputValue() {
+  return dayjs().format("YYYY-MM-DD");
+}
+
 export function formatTime(value: DateTimeValue, pattern = "h:mm A") {
   return formatDateTimeValue(value, pattern);
 }
