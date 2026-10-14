@@ -60,6 +60,7 @@ function parseImages(req: Request, res: Response, next: NextFunction) {
   });
 }
 
+// no requireAuth for this, any member/non signed-in users can submit
 reportFormsRoutes.get("/report-forms/operations/options", reportFormsController.getOperationOptions);
 reportFormsRoutes.get("/report-forms/:formType/suggestions", reportFormsController.getReportFormSuggestions);
 reportFormsRoutes.get("/report-forms/patients/options", reportFormsController.getPatientOptions);
