@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { PackagePlus, Trash, X } from "lucide-react"
 
 import {
@@ -59,7 +59,7 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
   const [selectedStockItemId, setSelectedStockItemId] = useState("")
   const [quantity, setQuantity] = useState("")
   const [addError, setAddError] = useState("")
-  const didAutoFillRef = useRef(false)
+  // const didAutoFillRef = useRef(false)
 
   useEffect(() => {
     let isCurrentRequest = true

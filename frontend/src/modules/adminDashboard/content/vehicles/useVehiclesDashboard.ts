@@ -48,7 +48,7 @@ export function useVehiclesDashboard() {
   const role = session?.user.role;
   const canManageFleet = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(role ?? "");
   const canReview = role !== undefined && role !== "MEMBER";
-  const canReject = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReject = role === "TEAM_LEADER" || role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 
   const loadFleet = useCallback(async () => {
@@ -111,7 +111,7 @@ export function useVehiclesDashboard() {
   }
 
   function openReview(record: VehicleDispatchRecord, action: "approve" | "reject") {
-    const resolvedAction = action === "reject" ? "reject" : role === "TEAM_LEADER" ? "authorize" : "validate";
+    const resolvedAction = action === "reject" ? "reject" : "validate";
     setPinError("");
     setReviewTarget({ record, action: resolvedAction });
   }

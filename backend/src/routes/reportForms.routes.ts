@@ -30,8 +30,8 @@ reportFormsRoutes.delete("/operations/:id", requireAuth, requireRole("SUPER_ADMI
 
 reportFormsRoutes.post("/operations/:id/submit", requireAuth, operationController.submit);
 reportFormsRoutes.post("/operations/:id/authorize", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), operationController.authorize);
-reportFormsRoutes.post("/operations/:id/validate", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.validate);
-reportFormsRoutes.post("/operations/:id/reject", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject);
+reportFormsRoutes.post("/operations/:id/validate", requireAuth, requireRole("TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.validate);
+reportFormsRoutes.post("/operations/:id/reject", requireAuth, requireRole("TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject);
 
 reportFormsRoutes.post("/operations/:id/persons", requireAuth, operationController.addPerson);
 reportFormsRoutes.delete("/operations/:id/persons/:personId", requireAuth, operationController.removePerson);
@@ -44,8 +44,8 @@ reportFormsRoutes.get("/patient-logs", requireAuth, patientLogController.list);
 reportFormsRoutes.get("/patient-logs/:id", requireAuth, patientLogController.getById);
 reportFormsRoutes.post("/patient-logs/:id/authorize", requireAuth, requireRole("TEAM_LEADER"), patientLogController.review);
 reportFormsRoutes.post("/patient-logs/:id/authenticate", requireAuth, patientLogController.review);
-reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
-reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
 
 function parseImages(req: Request, res: Response, next: NextFunction) {
   parseReportImages(req, res, (error: unknown) => {

@@ -25,7 +25,6 @@ const STATUS_FILTERS = [
 
 export default function Operations() {
   const {
-    role,
     loading,
     busy,
     pageError,
@@ -141,9 +140,8 @@ export default function Operations() {
                       {canReview && (
                         <button
                           type="button"
-                          aria-label={role === "TEAM_LEADER" ? `Send ${row.id} for review` : `Approve ${row.id}`}
-                          title={row.status === "TO_REVIEW" && role === "TEAM_LEADER" ? "Waiting for administrator review" : role === "TEAM_LEADER" ? "Send to administrator review" : "Approve report"}
-                          disabled={row.status === "TO_REVIEW" && role === "TEAM_LEADER"}
+                          aria-label={`Approve ${row.id}`}
+                          title="Approve report"
                           onClick={() => openReview(row, "approve")}
                           className="text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >

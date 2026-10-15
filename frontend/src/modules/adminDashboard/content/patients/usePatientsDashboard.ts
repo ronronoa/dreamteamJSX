@@ -85,7 +85,7 @@ export function usePatientsDashboard() {
   ];
 
   const canReview = role !== undefined && role !== "MEMBER";
-  const canReject = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReject = role === "TEAM_LEADER" || role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 
   function updateSearch(value: string) {
@@ -104,7 +104,7 @@ export function usePatientsDashboard() {
   }
 
   function openReview(row: PatientRow, action: "approve" | "reject") {
-    const resolvedAction = action === "reject" ? "reject" : role === "TEAM_LEADER" ? "authorize" : "validate";
+    const resolvedAction = action === "reject" ? "reject" : "validate";
     setPinError("");
     setReviewTarget({ row, action: resolvedAction });
   }

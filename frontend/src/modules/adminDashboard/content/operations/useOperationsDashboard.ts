@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   archiveOperation,
-  authorizeOperation,
   fetchOperations,
   rejectOperation,
   validateOperation,
@@ -97,7 +96,7 @@ export function useOperationsDashboard() {
   ];
 
   const canReview = role !== undefined && role !== "MEMBER";
-  const canReject = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReject = role === "TEAM_LEADER" || role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 
   function updateSearch(value: string) {
@@ -131,9 +130,6 @@ export function useOperationsDashboard() {
       if (reviewTarget.action === "reject") {
         await rejectOperation(accessToken, reviewTarget.row.operationId, pin);
         setSuccessMessage(`${reviewTarget.row.id} was rejected.`);
-      } else if (role === "TEAM_LEADER") {
-        await authorizeOperation(accessToken, reviewTarget.row.operationId, pin);
-        setSuccessMessage(`${reviewTarget.row.id} was sent for administrator review.`);
       } else {
         await validateOperation(accessToken, reviewTarget.row.operationId, pin);
         setSuccessMessage(`${reviewTarget.row.id} was approved.`);

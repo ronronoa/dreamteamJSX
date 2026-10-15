@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@/generated/prisma/client"
 import type { Role } from "@/generated/prisma/enums"
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors"
+import { NotFoundError, ValidationError } from "@/shared/errors"
 import type { VehicularDispatchReportInput } from "@/schemas/vehicularDispatchReport.schema"
-import { pinService } from "./pin.service"
+import { prepareReportReview, type ReportReviewAction } from "@/services/reportReviewWorkflow"
 import { saveVehicleOdometerFromDispatch } from "./vehicleOdometer.service"
 
 const dispatchRecordInclude = {
@@ -102,31 +102,15 @@ export const vehicularDispatchReportService = {
     return findDispatchRecordById(id)
   },
 
-  async review(id: string, actor: { userId: string; role: Role }, pin: string, action: "authorize" | "validate" | "reject") {
-    if (action === "authorize") {
-      if (actor.role !== "TEAM_LEADER") throw new ForbiddenError("Only team leaders can send reports for review.")
-    } else if (actor.role !== "SUPER_ADMIN" && actor.role !== "DEPARTMENT_HEAD" && actor.role !== "DEPUTY") {
-      throw new ForbiddenError("Insufficient permissions.")
-    }
-
+  async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction) {
     const dispatch = await prisma.vehicularDispatch.findFirst({
       where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
     })
     if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
-    await pinService.verifyPin(actor.userId, { pin })
-
-    if (action === "authorize") {
-      if (dispatch.status !== "PENDING") throw new ConflictError(`Cannot authorize from ${dispatch.status}.`)
-      await prisma.vehicularDispatch.update({ where: { dispatch_id: id }, data: { status: "TO_REVIEW" } })
-      return findDispatchRecordById(id)
-    }
-
-    if (dispatch.status !== "PENDING" && dispatch.status !== "TO_REVIEW") {
-      throw new ConflictError(`Cannot ${action} from ${dispatch.status}.`)
-    }
+    const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: dispatch.status })
     await prisma.vehicularDispatch.update({
       where: { dispatch_id: id },
-      data: { status: action === "validate" ? "VALIDATED" : "REJECTED" },
+      data: { status: nextStatus },
     })
     return findDispatchRecordById(id)
   },

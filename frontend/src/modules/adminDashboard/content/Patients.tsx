@@ -99,9 +99,9 @@ export default function Patients() {
                       {dashboard.canReview && (
                         <button
                           type="button"
-                          aria-label={dashboard.role === "TEAM_LEADER" ? `Send ${row.id} for review` : `Approve ${row.id}`}
-                          title={dashboard.role === "TEAM_LEADER" ? "Send to administrator review" : "Approve report"}
-                          disabled={dashboard.busy || (dashboard.role === "TEAM_LEADER" && row.status === "TO_REVIEW")}
+                          aria-label={`Approve ${row.id}`}
+                          title="Approve report"
+                          disabled={dashboard.busy}
                           onClick={() => dashboard.openReview(row, "approve")}
                           className="text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                         ><Check size={16} strokeWidth={2.5} /></button>
