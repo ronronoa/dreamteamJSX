@@ -76,7 +76,6 @@ model User {
   refreshTokens         RefreshToken[]
   submittedOperations   OperationLog[]               @relation("SubmittedBy")
   validatedOperations   OperationLog[]               @relation("ValidatedBy")
-  drivenDispatches      VehicularDispatch[]          @relation("DispatchDriver")
   submittedDispatches   VehicularDispatch[]          @relation("DispatchSubmitter")
   operationResponders   OperationResponder[]
   patientResponders     PatientResponder[]
@@ -151,7 +150,6 @@ model OperationLog {
   responders       OperationResponder[]
   teamAssignments  OperationTeamAssignment[]
   personsInvolved  PersonsInvolved[]
-  inventoryItems   OperationInventory[]
   inventoryEntries OperationInventoryEntry[]
   edits            OperationLogEdit[]
   archive          OperationLogArchive?
@@ -225,12 +223,11 @@ model InventoryItem {
   stock_quantity   Int       @default(0)
   minimum_quantity Int       @default(0)
   expiry_date      DateTime?
-  stock_type       String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   transactions   InventoryTransaction[]
-  operationItems OperationInventory[]
+  operationEntries OperationInventoryEntry[]
   archive        InventoryArchive?
 
   @@index([category])
@@ -291,7 +288,6 @@ model UserPreference {
   lowStockAlerts          Boolean  @default(false)
   approvalNotifications   Boolean  @default(false)
   sessionTimeout          String   @default("30-min")
-  notificationReadAt      DateTime?
   updatedAt               DateTime @updatedAt
 
   user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
@@ -314,27 +310,19 @@ model Notification {
   @@index([user_id, createdAt])
 }
 
-model OperationInventory {
-  operation_id String
-  item_id      String
-  quantity     Int
-
-  operation OperationLog  @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
-  item      InventoryItem @relation(fields: [item_id], references: [item_id])
-
-  @@id([operation_id, item_id])
-}
-
 model OperationInventoryEntry {
   entry_id     String  @id @default(uuid())
   operation_id String
+  item_id      String?
   item_name    String
   quantity     Int
   unit         String?
 
-  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  operation OperationLog  @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  item      InventoryItem? @relation(fields: [item_id], references: [item_id], onDelete: SetNull)
 
   @@index([operation_id])
+  @@index([item_id])
 }
 
 model OperationLogEdit {
@@ -444,12 +432,9 @@ model VehicularDispatch {
   submitted_by   String?
   vehicle_id     String?
   vehicle_name   String?
-  driver_id      String?
   driver_name    String?
   depart_time    DateTime?
   arrival_time   DateTime?
-  brgy_in_time   DateTime?
-  brgy_out_time  DateTime?
   dispatch_type  DispatchType?
   from_location  String?
   to_location    String?
@@ -461,7 +446,6 @@ model VehicularDispatch {
   operation  OperationLog?                @relation(fields: [operation_id], references: [operation_id])
   patientLog PatientLog?                  @relation(fields: [patient_log_id], references: [patient_log_id])
   vehicle    Vehicle?                     @relation(fields: [vehicle_id], references: [vehicle_id])
-  driver     User?                        @relation("DispatchDriver", fields: [driver_id], references: [user_id])
   submitter  User?                        @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id], onDelete: SetNull)
   responders VehicularDispatchResponder[]
   passengers CivilianPassenger[]

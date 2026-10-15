@@ -234,8 +234,9 @@ export const reportFormsService = {
         teamAssignments: true,
         responders: true,
         personsInvolved: true,
-        inventoryEntries: true,
-        inventoryItems: { include: { item: { select: { item_id: true, item_name: true, unit: true } } } },
+        inventoryEntries: {
+          include: { item: { select: { item_id: true, item_name: true, unit: true } } },
+        },
         dispatches: { orderBy: { dispatch_date: "desc" }, take: 1 },
         images: true,
       },
@@ -245,28 +246,16 @@ export const reportFormsService = {
     const dispatch = operation.dispatches[0];
     const depart = getTimeInputValue(dispatch?.depart_time);
     const arrival = getTimeInputValue(dispatch?.arrival_time);
-    const inventoryFromEntries = await Promise.all(operation.inventoryEntries.map(async (entry) => {
-      const stockItem = await prisma.inventoryItem.findFirst({
-        where: { item_name: entry.item_name },
-        orderBy: { createdAt: "desc" },
-        select: { item_id: true, unit: true },
-      });
+    const inventory = operation.inventoryEntries.map((entry) => {
+      const unit = entry.unit ?? entry.item?.unit ?? null;
       return {
         id: entry.entry_id,
         itemName: entry.item_name,
-        quantity: entry.unit ? `${entry.quantity} ${entry.unit}` : String(entry.quantity),
-        ...(stockItem ? { inventoryItemId: stockItem.item_id, unit: stockItem.unit } : {}),
+        quantity: unit ? `${entry.quantity} ${unit}` : String(entry.quantity),
+        ...(entry.item_id ? { inventoryItemId: entry.item_id } : {}),
+        ...(unit ? { unit } : {}),
       };
-    }));
-    const inventory = inventoryFromEntries.length > 0
-      ? inventoryFromEntries
-      : operation.inventoryItems.map((entry) => ({
-        id: `${operation.operation_id}-${entry.item_id}`,
-        itemName: entry.item.item_name,
-        quantity: entry.item.unit ? `${entry.quantity} ${entry.item.unit}` : String(entry.quantity),
-        inventoryItemId: entry.item.item_id,
-        unit: entry.item.unit,
-      }));
+    });
 
     return {
       pinNumber: null,
@@ -330,24 +319,15 @@ export const reportFormsService = {
   async getLastReportFormInventorySelection() {
     const [latestOperation, recentPatientLogs] = await Promise.all([
       prisma.operationLog.findFirst({
-        where: {
-          OR: [
-            { inventoryItems: { some: {} } },
-            { inventoryEntries: { some: {} } },
-          ],
-        },
+        where: { inventoryEntries: { some: { item_id: { not: null } } } },
         orderBy: { createdAt: "desc" },
         select: {
           createdAt: true,
-          inventoryItems: {
-            orderBy: { item_id: "desc" },
-            take: 1,
-            select: { item_id: true, quantity: true },
-          },
           inventoryEntries: {
             orderBy: { entry_id: "desc" },
             take: 1,
-            select: { item_name: true, quantity: true },
+            where: { item_id: { not: null } },
+            select: { item_id: true, quantity: true },
           },
         },
       }),
@@ -358,31 +338,14 @@ export const reportFormsService = {
       }),
     ]);
 
-    let operationSelection: { inventoryItemId: string; quantity: string; createdAt: Date } | null = null;
-    const linkedInventoryItem = latestOperation?.inventoryItems[0];
-    if (linkedInventoryItem && latestOperation) {
-      operationSelection = {
-        inventoryItemId: linkedInventoryItem.item_id,
-        quantity: String(linkedInventoryItem.quantity),
-        createdAt: latestOperation.createdAt,
-      };
-    }
-
-    const operationEntry = latestOperation?.inventoryEntries[0];
-    if (!operationSelection && operationEntry && latestOperation) {
-      const stockItem = await prisma.inventoryItem.findFirst({
-        where: { item_name: operationEntry.item_name },
-        orderBy: { createdAt: "desc" },
-        select: { item_id: true },
-      });
-      if (stockItem) {
-        operationSelection = {
-          inventoryItemId: stockItem.item_id,
-          quantity: String(operationEntry.quantity),
+    const latestOperationEntry = latestOperation?.inventoryEntries[0];
+    const operationSelection = latestOperationEntry?.item_id && latestOperation
+      ? {
+          inventoryItemId: latestOperationEntry.item_id,
+          quantity: String(latestOperationEntry.quantity),
           createdAt: latestOperation.createdAt,
-        };
-      }
-    }
+        }
+      : null;
 
     let patientSelection: { inventoryItemId: string; quantity: string; createdAt: Date } | null = null;
     for (const patientLog of recentPatientLogs) {
@@ -454,7 +417,8 @@ export const reportFormsService = {
 
   async createOperation(form: OperationReportInput, files: UploadedFile[]) {
     const teamIds = form.operationDetails.teamAssigned;
-    const [teams, responders, operationNature] = await Promise.all([
+    const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
+    const [teams, responders, operationNature, linkedInventoryItems] = await Promise.all([
       prisma.responseTeam.findMany({
         where: { team_id: { in: teamIds } },
         select: { team_id: true },
@@ -471,6 +435,13 @@ export const reportFormsService = {
         where: { name: form.operationDetails.natureOfOperation, isActive: true },
         select: { name: true },
       }),
+      prisma.inventoryItem.findMany({
+        where: {
+          item_id: { in: inventoryItemIds },
+          archive: null,
+        },
+        select: { item_id: true },
+      }),
     ]);
     if (teams.length !== new Set(teamIds).size) {
       throw new ValidationError("One or more selected teams are no longer available.", {
@@ -485,6 +456,11 @@ export const reportFormsService = {
     if (!operationNature) {
       throw new ValidationError("Choose an available operation type.", {
         natureOfOperation: ["Refresh the form and choose an available operation type."],
+      });
+    }
+    if (linkedInventoryItems.length !== inventoryItemIds.length) {
+      throw new ValidationError("One or more selected inventory items are no longer available.", {
+        inventory: ["Refresh the inventory list and select available items."],
       });
     }
 
@@ -557,6 +533,7 @@ export const reportFormsService = {
           },
           inventoryEntries: {
             create: form.inventory.map((entry) => ({
+              ...(entry.inventoryItemId ? { item: { connect: { item_id: entry.inventoryItemId } } } : {}),
               item_name: entry.itemName,
               quantity: entry.quantity.amount,
               unit: entry.quantity.unit,

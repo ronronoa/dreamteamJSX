@@ -68,8 +68,7 @@ function normalizeOperationReport(value: unknown): OperationLogData {
       ...report.operationDescription,
       images: [],
     },
-    // inventory: Array.isArray(report.inventory) ? report.inventory : [],
-    inventory:[],
+    inventory: [],
   }
 }
 

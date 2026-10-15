@@ -77,6 +77,7 @@ export const OperationReportSchema = z.object({
   inventory: z.array(z.object({
     itemName: z.string().trim().min(1).max(120),
     quantity: inventoryQuantity,
+    inventoryItemId: z.uuid().optional(),
   })).max(100),
 });
 

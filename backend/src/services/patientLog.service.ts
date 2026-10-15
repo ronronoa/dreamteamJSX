@@ -7,7 +7,7 @@ const patientLogIncludes = {
   patient: { include: { images: true } },
   submitter: { select: { user_id: true, name: true, username: true } },
   responders: { include: { user: { select: { user_id: true, name: true } } } },
-  dispatches: { include: { vehicle: true, driver: { select: { user_id: true, name: true } } } },
+  dispatches: { include: { vehicle: true } },
   archive: true,
 } as const;
 

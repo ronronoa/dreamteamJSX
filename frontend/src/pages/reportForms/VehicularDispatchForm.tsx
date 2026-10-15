@@ -11,6 +11,7 @@ import VehicularStep3 from "@/modules/reportForms/VehicularDispatchForm/Vehicula
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
 import {
   fetchLatestVehicularDispatchReport,
   fetchVehicularDispatchFormOptions,
@@ -80,7 +81,7 @@ function normalizeReport(value: unknown): VehicularDispatchReportData {
   return {
     details: {
       submitterName: storedString(details.submitterName),
-      date: storedString(details.date),
+      date: getCurrentDateInputValue(),
       responders: Array.isArray(details.responders)
         ? details.responders.filter((responder): responder is string => typeof responder === "string")
         : [],
@@ -173,15 +174,27 @@ export default function VehicularDispatchForm() {
   }, [optionsRequestId])
 
   useEffect(() => {
-    if (hasStoredReport(DRAFT_STORAGE_KEY, LATEST_STORAGE_KEY)) return
+    const hasLocalReport = hasStoredReport(DRAFT_STORAGE_KEY, LATEST_STORAGE_KEY)
     let isCurrentRequest = true
     async function loadLatestReport() {
       try {
         const report = await fetchLatestVehicularDispatchReport()
         if (!isCurrentRequest || !report) return
         const normalizedReport = normalizeReport(report)
-        setFormData(normalizedReport)
-        saveStoredReport(LATEST_STORAGE_KEY, normalizedReport)
+        if (!hasLocalReport) {
+          setFormData(normalizedReport)
+          saveStoredReport(LATEST_STORAGE_KEY, normalizedReport)
+          return
+        }
+
+        setFormData((current) => ({
+          ...current,
+          dispatch: {
+            ...current.dispatch,
+            from: current.dispatch.from || normalizedReport.dispatch.from,
+            to: current.dispatch.to || normalizedReport.dispatch.to,
+          },
+        }))
       } catch (error) {
         console.error("Could not load the latest vehicular dispatch report:", error)
       }

@@ -98,7 +98,14 @@ export default function SettingsPage() {
       </SettingsSection>
 
       <SettingsSection icon={Bell} title="Alerts & notifications" description="Choose which operational changes require attention.">
-        <Row label="Low stock alerts" hint="Notify when supplies are low or expired."><Toggle label="Low stock alerts" checked={settings.preferences.lowStockAlerts} disabled={saving} onChange={(checked) => void savePreferences({ lowStockAlerts: checked })} /></Row>
+        <Row label="Low stock alerts" hint="Notify when supplies are low or expired.">
+          <Toggle 
+            label="Low stock alerts"
+            checked={settings.preferences.lowStockAlerts}
+            disabled={saving}
+            onChange={(checked) => void savePreferences({ lowStockAlerts: checked })}
+          />
+        </Row>
         <Row label="Approval notifications" hint="Notify when new reports are submitted." isLast><Toggle label="Approval notifications" checked={settings.preferences.approvalNotifications} disabled={saving} onChange={(checked) => void savePreferences({ approvalNotifications: checked })} /></Row>
       </SettingsSection>
 

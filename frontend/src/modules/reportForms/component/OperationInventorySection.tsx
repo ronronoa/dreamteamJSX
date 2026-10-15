@@ -59,8 +59,6 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
   const [selectedStockItemId, setSelectedStockItemId] = useState("")
   const [quantity, setQuantity] = useState("")
   const [addError, setAddError] = useState("")
-  // const didAutoFillRef = useRef(false)
-
   useEffect(() => {
     let isCurrentRequest = true
 
@@ -89,6 +87,8 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
     }
   }, [])
 
+  // const didAutoFillRef = useRef(false)
+
   // useEffect(() => {
   //   if (didAutoFillRef.current || itemsLoading) return
   //   if (inventory.length > 0) {
@@ -100,9 +100,7 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
   //   const localItem = localSelection
   //     ? stockItems.find((item) => item.itemId === localSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
   //     : undefined
-  //   const savedSelection = localItem
-  //     ? localSelection
-  //     : databaseSelection
+  //   const savedSelection = localItem ? localSelection : databaseSelection
   //   const savedItem = savedSelection
   //     ? stockItems.find((item) => item.itemId === savedSelection.inventoryItemId && item.quantity > 0 && item.status !== "Expired")
   //     : undefined

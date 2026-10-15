@@ -28,6 +28,7 @@ import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
 
 const PATIENT_DRAFT_KEY = "reportForms.patient.draft"
 const PATIENT_LATEST_KEY = "reportForms.patient.latest"
@@ -43,12 +44,14 @@ function normalizePatientReport(value: unknown): PatientLogData {
         .map((transfer) => transfer === "drop-off" ? "Drop-Off" : transfer === "pick-up" ? "Pick-Up" : "")
         .filter((transfer): transfer is "Drop-Off" | "Pick-Up" => transfer !== "")
     : []
+
   return {
     ...emptyReport,
     ...report,
     responderDetails: {
       ...emptyReport.responderDetails,
       ...report.responderDetails,
+      date: getCurrentDateInputValue(),
       teamAssigned: savedTransfers,
     },
     dispatch: { ...emptyReport.dispatch, ...report.dispatch },
@@ -68,8 +71,7 @@ function normalizePatientReport(value: unknown): PatientLogData {
       },
     },
     waiverForm: { images: [] },
-    // inventory: Array.isArray(report.inventory) ? report.inventory : [],
-    inventory:[],
+    inventory: [],
   }
 }
 import { ROUTES } from "../../routes"

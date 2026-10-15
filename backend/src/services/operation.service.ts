@@ -82,7 +82,7 @@ export const operationService = {
                 responders: { include: { user: { select: { user_id: true, name: true }}}},
                 personsInvolved: true,
                 inventoryEntries: true,
-                dispatches: { include: { vehicle: true, driver: { select: { user_id: true, name: true } } } },
+                dispatches: { include: { vehicle: true } },
                 images: true
             },
             orderBy: { createdAt: "desc"}
@@ -100,7 +100,7 @@ export const operationService = {
                 personsInvolved: true,
                 teamAssignments: { include: { team: true } },
                 inventoryEntries: true,
-                dispatches: { include: { vehicle: true, driver: { select: { user_id: true, name: true } } } },
+                dispatches: { include: { vehicle: true } },
                 images: true,
                 edits: { include: { admin: { select: { user_id: true, name: true}}}}
             },
