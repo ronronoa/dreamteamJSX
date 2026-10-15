@@ -83,8 +83,9 @@ export function useVehiclesDashboard() {
       ].some((value) => value.toLowerCase().includes(term));
     });
   }, [allRows, search, statusFilter]);
+
   const pendingRows = useMemo(
-    () => matchingRows.filter((record) => record.status === "PENDING" || record.status === "TO_REVIEW"),
+    () => matchingRows.filter((record) => ( record.status === "PENDING" || record.status === "TO_REVIEW" ) && ( !record.operation_id || !record.patient_log_id ) ),
     [matchingRows],
   );
   const reviewedRows = useMemo(
@@ -288,19 +289,76 @@ export function useVehiclesDashboard() {
   }
 
   return {
-    fleetVehicles, vehicleName, setVehicleName, plateNumber, setPlateNumber,
-    fleetLoading, savingVehicle, savingOdometerId, savingDetailsId, updatingAvailabilityId, fleetError, fleetMessage, canManageFleet,
-    dispatchRecords, dispatchLoading, dispatchError, loadDispatchRecords, handleAddVehicle,
-    role, busy, search, statusFilter, filterOpen, pendingPage, reviewedPage,
-    selectedRecord, reviewTarget, pinError, successMessage, pendingRows, reviewedRows,
-    visiblePendingRows, visibleReviewedRows, selectedIds, selectedRows, canReview, canReject, canArchive,
-    pdfConfirmationOpen, archiveConfirmationOpen,
+    fleetVehicles,
+    vehicleName,
+    setVehicleName,
+    plateNumber,
+    setPlateNumber,
+
+    fleetLoading,
+    savingVehicle,
+    savingOdometerId,
+    savingDetailsId,
+    updatingAvailabilityId,
+    fleetError,
+    fleetMessage,
+    canManageFleet,
+
+    dispatchRecords,
+    dispatchLoading,
+    dispatchError,
+    loadDispatchRecords,
+    handleAddVehicle,
+
+    role,
+    busy,
+    search,
+    statusFilter,
+    filterOpen,
+    pendingPage,
+    reviewedPage,
+
+    selectedRecord,
+    reviewTarget,
+    pinError,
+    successMessage,
+    pendingRows,
+    reviewedRows,
+
+    visiblePendingRows,
+    visibleReviewedRows,
+    selectedIds,
+    selectedRows,
+    canReview,
+    canReject,
+    canArchive,
+
+    pdfConfirmationOpen,
+    archiveConfirmationOpen,
+
     pendingPageCount: getPageCount(pendingRows.length, VEHICLE_PAGE_SIZE),
     reviewedPageCount: getPageCount(reviewedRows.length, VEHICLE_PAGE_SIZE),
-    setFilterOpen, setPendingPage, setReviewedPage, setSelectedIds, setSelectedRecord, setReviewTarget, setPinError,
-    setPdfConfirmationOpen, setArchiveConfirmationOpen,
-    updateSearch, updateStatusFilter, openReview, handleReview, openDetails, toggleSelection,
-    printSelectedRecords, archiveSelectedRecords,
+    setFilterOpen,
+    setPendingPage,
+    setReviewedPage,
+    setSelectedIds,
+    setSelectedRecord,
+    setReviewTarget,
+    setPinError,
+
+    setPdfConfirmationOpen,
+    setArchiveConfirmationOpen,
+
+    updateSearch,
+    updateStatusFilter,
+    openReview,
+    handleReview,
+    openDetails,
+    toggleSelection,
+
+    printSelectedRecords,
+    archiveSelectedRecords,
+
     saveVehicleOdometer,
     saveVehicleDetails,
     toggleVehicleAvailability,

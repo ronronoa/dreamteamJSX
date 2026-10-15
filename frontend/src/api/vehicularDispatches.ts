@@ -5,6 +5,8 @@ export type VehicleLogStatus = "PENDING" | "TO_REVIEW" | "VALIDATED" | "REJECTED
 
 export interface VehicleDispatchRecord {
   id: string
+  operation_id?: string
+  patient_log_id?: string
   dispatchId: string
   date: Date
   vehicle: string

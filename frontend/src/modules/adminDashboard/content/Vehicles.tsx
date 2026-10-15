@@ -363,7 +363,14 @@ function getVehicleRecordColumns(actions: {
             <button
               type="button"
               aria-label={actions.role === "TEAM_LEADER" ? `Send ${record.id} for review` : `Approve ${record.id}`}
-              title={record.status === "TO_REVIEW" && actions.role === "TEAM_LEADER" ? "Waiting for administrator review" : actions.role === "TEAM_LEADER" ? "Send to administrator review" : "Approve report"}
+              title={
+                record.status ===
+                  "TO_REVIEW" && actions.role === "TEAM_LEADER" 
+                  ? "Waiting for administrator review" 
+                  : actions.role === "TEAM_LEADER"
+                    ? "Send to administrator review"
+                    : "Approve report"
+                }
               disabled={actions.busy || (record.status === "TO_REVIEW" && actions.role === "TEAM_LEADER")}
               onClick={() => actions.onApprove?.(record)}
               className="text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"

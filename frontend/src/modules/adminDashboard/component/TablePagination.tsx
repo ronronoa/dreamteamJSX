@@ -10,7 +10,7 @@ export default function TablePagination({ currentPage, pageCount, onPageChange }
     const pages = Array.from({ length: safePageCount }, (_, index) => index + 1);
 
     return (
-      <nav aria-label="Table pagination" className="flex items-center gap-1">
+      <nav aria-label="Table pagination" className="flex max-w-full flex-wrap items-center gap-1">
         <button
           type="button"
           disabled={currentPage <= 1}

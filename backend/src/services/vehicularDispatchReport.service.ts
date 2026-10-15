@@ -17,6 +17,8 @@ type DispatchRecord = Prisma.VehicularDispatchGetPayload<{ include: typeof dispa
 function toDispatchRecord(dispatch: DispatchRecord) {
   return {
     dispatch_id: dispatch.dispatch_id,
+    operation_id: dispatch.operation_id,
+    patient_id: dispatch.patient_log_id,
     dispatch_date: dispatch.dispatch_date,
     createdAt: dispatch.createdAt,
     submitter_name: dispatch.submitter_name,
@@ -38,7 +40,8 @@ function toDispatchRecord(dispatch: DispatchRecord) {
 
 async function findDispatchRecordById(id: string) {
   const dispatch = await prisma.vehicularDispatch.findFirst({
-    where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+    // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+    where: { archive: null },
     include: dispatchRecordInclude,
   })
   if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
@@ -90,7 +93,8 @@ function formatPassengerAddress(person: VehicularDispatchReportInput["passengers
 export const vehicularDispatchReportService = {
   async list() {
     const dispatches = await prisma.vehicularDispatch.findMany({
-      where: { operation_id: null, patient_log_id: null, archive: null },
+      // where: { operation_id: null, patient_log_id: null, archive: null },
+      where: { archive: null },
       orderBy: [{ dispatch_date: "desc" }, { createdAt: "desc" }],
       include: dispatchRecordInclude,
     })
@@ -104,7 +108,8 @@ export const vehicularDispatchReportService = {
 
   async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction) {
     const dispatch = await prisma.vehicularDispatch.findFirst({
-      where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+      // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
+      where: { archive: null },
     })
     if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: dispatch.status })

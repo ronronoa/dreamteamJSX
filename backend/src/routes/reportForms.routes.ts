@@ -72,6 +72,7 @@ reportFormsRoutes.post("/report-forms/patients", reportFormPinLimiter, parseImag
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/options", vehicularDispatchReportController.getOptions);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/latest", vehicularDispatchReportController.getLatest);
 reportFormsRoutes.post("/report-forms/vehicular-dispatches", reportFormPinLimiter, vehicularDispatchReportController.submit);
+
 reportFormsRoutes.get("/vehicular-dispatches/:id", requireAuth, vehicularDispatchReportController.getById);
 reportFormsRoutes.post("/vehicular-dispatches/:id/:action", requireAuth, vehicularDispatchReportController.review);
 reportFormsRoutes.get("/vehicular-dispatches", requireAuth, vehicularDispatchReportController.list);
