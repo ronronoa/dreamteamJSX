@@ -81,6 +81,7 @@ function normalizePatientReport(value: unknown): PatientLogData {
   }
 }
 import { ROUTES } from "../../routes"
+import { useTitle } from "@/hooks/useTitle"
 
 const PATIENT_LOG_SUCCESS_STEP = 5
 const SUCCESS_REDIRECT_DELAY_MS = 5000
@@ -104,6 +105,7 @@ export default function PatientLogForm() {
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate()
+  useTitle("Patient Form")
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100

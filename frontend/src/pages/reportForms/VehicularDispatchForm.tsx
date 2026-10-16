@@ -28,6 +28,7 @@ import {
 } from "../../types/vehicularDispatchReport"
 import { validateReport, validateStep, type VehicularDispatchErrors } from "../../modules/reportForms/VehicularDispatchForm/formValidation"
 import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { useTitle } from "@/hooks/useTitle"
 
 const DRAFT_STORAGE_KEY = "reportForms.vehicularDispatch.draft"
 const LATEST_STORAGE_KEY = "reportForms.vehicularDispatch.latest"
@@ -127,7 +128,6 @@ function VehicularDispatchSuccess() {
 }
 
 export default function VehicularDispatchForm() {
-  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [pinModalShow, setPinModalShow] = useState(false)
@@ -145,6 +145,10 @@ export default function VehicularDispatchForm() {
   ))
   const [validationErrors, setValidationErrors] = useState<VehicularDispatchErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
+
+
+  const navigate = useNavigate()
+  useTitle("Dispatch Form")
 
   const progress = (Math.min(step, FORM_STEPS) / FORM_STEPS) * 100
   const allErrors = validateReport(formData)

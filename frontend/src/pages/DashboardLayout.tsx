@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import AreYouSureModal from "../components/common/modals/AreYouSure";
 import { getNavLabel } from "@/modules/adminDashboard/DashboardNav";
 import { fetchSettings } from "@/api/settings";
+import { useTitle } from "@/hooks/useTitle";
 
 const SESSION_TIMEOUT_MS: Record<string, number> = {
   "15-min": 15 * 60 * 1000,
@@ -22,6 +23,7 @@ export default function DashboardLayout() {
   const { session, logout } = useAuth();
   const { pathname } = useLocation();
   const [sessionTimeout, setSessionTimeout] = useState("30-min");
+  useTitle("Dashboard")
 
   useEffect(() => {
     if (!session?.accessToken) return;

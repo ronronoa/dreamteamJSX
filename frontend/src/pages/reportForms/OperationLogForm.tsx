@@ -26,6 +26,7 @@ import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmMod
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
 import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { useTitle } from "@/hooks/useTitle"
 
 const OPERATION_DRAFT_KEY = "reportForms.operation.draft"
 const OPERATION_LATEST_KEY = "reportForms.operation.latest"
@@ -97,6 +98,7 @@ export default function OperationLogForm() {
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();
+  useTitle("Operation Form")
 
   useEffect(() => {
     let isCurrentRequest = true

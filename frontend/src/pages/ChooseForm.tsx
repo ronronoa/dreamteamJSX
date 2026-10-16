@@ -3,10 +3,12 @@ import CommonButton from "../components/common/widgets/CommonButton";
 import CommonBackground from "../components/common/background/CommonBackground";
 import { useNavigate } from "react-router";
 import { ROUTES } from "../routes";
+import { useTitle } from "@/hooks/useTitle";
 
 export default function ChooseForm() {
   const navigate = useNavigate()
 
+  useTitle("Create Form")
   return (
     <CommonBackground className="min-h-screen p-4 ">
 
