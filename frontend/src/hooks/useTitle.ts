@@ -2,6 +2,6 @@ import { useEffect } from "react"
 
 export function useTitle(title: string) {
   useEffect(() => {
-    if (title) document.title = `BDDRMO: ${title}`
+    if (title) document.title = `BDRRMO: ${title}`
   })
 }
