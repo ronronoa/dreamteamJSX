@@ -137,7 +137,7 @@ export default function CommonSearchSelect({
       />
 
       {isOpen && (
-        <ul className={`absolute z-30 w-full ${dropdown}`}>
+        <ul className={`absolute z-999 w-full ${dropdown}`}>
           {filtered.length === 0 ? (
             <li className={`${optionClass} text-gray-400`}>{emptyMessage}</li>
           ) : (

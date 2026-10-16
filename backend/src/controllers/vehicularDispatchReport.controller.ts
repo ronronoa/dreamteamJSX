@@ -48,7 +48,7 @@ export const vehicularDispatchReportController = {
 
   async review(req: Request, res: Response, next: NextFunction) {
     try {
-      let requestedAction = req.params.action
+      let requestedAction = req.params["action"]
       if (requestedAction === "authenticate") {
         requestedAction = req.user?.role === "TEAM_LEADER" ? "authorize" : "validate"
       }

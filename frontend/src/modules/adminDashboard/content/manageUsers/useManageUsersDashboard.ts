@@ -50,7 +50,9 @@ export function useManageUsersDashboard() {
         fetchTeams(accessToken),
       ]);
       setUsers(loadedUsers);
-      setTeams(loadedTeams);
+      setTeams([...loadedTeams].sort((first, second) =>
+        first.team_name.localeCompare(second.team_name, undefined, { sensitivity: "base" }),
+      ));
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Could not load user accounts.");
     } finally {
@@ -159,7 +161,9 @@ export function useManageUsersDashboard() {
         const updatedTeams = teamToEdit
           ? currentTeams.map((currentTeam) => currentTeam.team_id === team.team_id ? team : currentTeam)
           : [...currentTeams, team];
-        return updatedTeams.sort((first, second) => first.team_name.localeCompare(second.team_name));
+        return updatedTeams.sort((first, second) =>
+          first.team_name.localeCompare(second.team_name, undefined, { sensitivity: "base" }),
+        );
       });
       setTeamModalOpen(false);
       setTeamToEdit(null);

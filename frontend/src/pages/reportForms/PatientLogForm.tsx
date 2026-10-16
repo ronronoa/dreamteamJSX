@@ -9,7 +9,13 @@ import PatientStep2 from "../../modules/reportForms/NewPatientLogForm/PatientSte
 import PatientStep3 from "../../modules/reportForms/NewPatientLogForm/PatientStep3"
 import PatientStep4 from "../../modules/reportForms/NewPatientLogForm/PatientStep4"
 import PatientLogLastStep from "../../modules/reportForms/NewPatientLogForm/PatientLogLastStep"
-import { isFormComplete, isFormEmpty } from "../../modules/reportForms/NewPatientLogForm/formValidation"
+import {
+  isFormComplete,
+  isFormEmpty,
+  isStep1Complete,
+  isStep2Complete,
+  isStep3Complete,
+} from "../../modules/reportForms/NewPatientLogForm/formValidation"
 
 import {
   createEmptyPatientLogData,
@@ -101,6 +107,11 @@ export default function PatientLogForm() {
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
+  const validationMessages = [
+    ...(!isStep1Complete(formData) ? ["Complete the responder details and dispatch information."] : []),
+    ...(!isStep2Complete(formData) ? ["Complete the patient and hospital details."] : []),
+    ...(!isStep3Complete(formData) ? ["Complete or remove each incomplete inventory item."] : []),
+  ]
 
   const VARIANTS = {
     enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -208,6 +219,7 @@ export default function PatientLogForm() {
   }
 
   const openPinModal = () => {
+    if (!isFormComplete(formData)) return
     setPinError(undefined)
     setPinModalShow(true)
   }
@@ -327,6 +339,15 @@ export default function PatientLogForm() {
               </AnimatePresence>
             </div>
 
+            {step === totalSteps && validationMessages.length > 0 && (
+              <div role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <p className="font-semibold">Please fix these issues before completing the form:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {validationMessages.map((message) => <li key={message}>{message}</li>)}
+                </ul>
+              </div>
+            )}
+
             {optionsError && (
               <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                 <p role="alert">{optionsError}</p>
@@ -346,6 +367,7 @@ export default function PatientLogForm() {
                 <CommonButton
                   onClick={() => setConfirmCancelModalShow(true)}
                   variant="gray"
+                  className="min-w-[130px]"
                 >
                   Cancel
                 </CommonButton>

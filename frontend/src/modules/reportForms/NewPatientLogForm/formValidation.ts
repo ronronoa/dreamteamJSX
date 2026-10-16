@@ -38,6 +38,17 @@ export function isFormEmpty(formData: PatientLogData): boolean {
 
 export const isStep1Complete = (formData: PatientLogData) => {
   const { responderDetails, dispatch } = formData
+  const dispatchIsOptional = !dispatch.vehicle || dispatch.vehicle === "none"
+  const dispatchIsComplete = dispatchIsOptional || (
+    dispatch.from.trim() !== "" &&
+    dispatch.to.trim() !== "" &&
+    dispatch.driver.trim() !== "" &&
+    dispatch.departTime.trim() !== "" &&
+    dispatch.arrivalTime.trim() !== "" &&
+    (dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim())) &&
+    dispatch.odometerIn.trim() !== "" &&
+    dispatch.odometerOut.trim() !== ""
+  )
 
   return (
     responderDetails.submitterName.trim() !== "" &&
@@ -47,13 +58,7 @@ export const isStep1Complete = (formData: PatientLogData) => {
     responderDetails.caller.firstName.trim() !== "" &&
     responderDetails.teamAssigned.some((transfer) => transfer === "Drop-Off" || transfer === "Pick-Up") &&
     responderDetails.responders.length > 0 &&
-    dispatch.from.trim() !== "" &&
-    dispatch.to.trim() !== "" &&
-    (dispatch.vehicle.trim() !== "" ? dispatch.vehicle === "none" || dispatch.driver.trim() !== "" : false) &&
-    (dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim())) &&
-    dispatch.departTime.trim() !== "" &&
-    dispatch.arrivalTime.trim() !== "" &&
-    (dispatch.vehicle === "none" || (dispatch.odometerIn.trim() !== "" && dispatch.odometerOut.trim() !== ""))
+    dispatchIsComplete
   )
 }
 

@@ -351,20 +351,20 @@ export const reportFormsService = {
     for (const patientLog of recentPatientLogs) {
       const reportData = patientLog.report_data;
       if (typeof reportData !== "object" || reportData === null || Array.isArray(reportData)) continue;
-      const inventory = (reportData as Record<string, unknown>).inventory;
+      const inventory = (reportData as Record<string, unknown>)["inventory"];
       if (!Array.isArray(inventory)) continue;
 
       const latestEntry = [...inventory].reverse().find((entry) => {
         if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return false;
         const item = entry as Record<string, unknown>;
-        return typeof item.inventoryItemId === "string" && typeof item.quantity === "string";
+        return typeof item["inventoryItemId"] === "string" && typeof item["quantity"] === "string";
       }) as Record<string, unknown> | undefined;
       if (!latestEntry) continue;
 
-      const amount = String(latestEntry.quantity).match(/^\s*(\d+)/)?.[1];
+      const amount = String(latestEntry["quantity"]).match(/^\s*(\d+)/)?.[1];
       if (!amount) continue;
       patientSelection = {
-        inventoryItemId: latestEntry.inventoryItemId as string,
+        inventoryItemId: latestEntry["inventoryItemId"] as string,
         quantity: amount,
         createdAt: patientLog.createdAt,
       };
@@ -418,7 +418,7 @@ export const reportFormsService = {
   async createOperation(form: OperationReportInput, files: UploadedFile[]) {
     const teamIds = form.operationDetails.teamAssigned;
     const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
-    const [teams, responders, operationNature, linkedInventoryItems] = await Promise.all([
+    const [teams, responders, linkedInventoryItems] = await Promise.all([
       prisma.responseTeam.findMany({
         where: { team_id: { in: teamIds } },
         select: { team_id: true },
@@ -430,10 +430,6 @@ export const reportFormsService = {
           team_id: { in: teamIds },
         },
         select: { user_id: true },
-      }),
-      prisma.operationNature.findFirst({
-        where: { name: form.operationDetails.natureOfOperation, isActive: true },
-        select: { name: true },
       }),
       prisma.inventoryItem.findMany({
         where: {
@@ -453,22 +449,18 @@ export const reportFormsService = {
         responders: ["Refresh the form and select active responders."],
       });
     }
-    if (!operationNature) {
-      throw new ValidationError("Choose an available operation type.", {
-        natureOfOperation: ["Refresh the form and choose an available operation type."],
-      });
-    }
     if (linkedInventoryItems.length !== inventoryItemIds.length) {
       throw new ValidationError("One or more selected inventory items are no longer available.", {
         inventory: ["Refresh the inventory list and select available items."],
       });
     }
 
-    const teamId = teamIds[0];
+    const fallbackTeam = teamIds.length === 0
+      ? await prisma.responseTeam.findFirst({ orderBy: { team_name: "asc" }, select: { team_id: true } })
+      : null;
+    const teamId = teamIds[0] ?? fallbackTeam?.team_id;
     if (!teamId) {
-      throw new ValidationError("Select at least one response team.", {
-        teamAssigned: ["Select at least one response team."],
-      });
+      throw new NotFoundError("Response team", "No teams are configured");
     }
 
     const vehicle = form.dispatch.vehicle !== "none" && form.dispatch.vehicle !== "other"

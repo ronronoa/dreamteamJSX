@@ -38,30 +38,24 @@ const optionalOdometer = z.union([odometerString, z.literal("")]);
 export const OperationReportSchema = z.object({
   operationDetails: z.object({
     submitterName: z.string().trim().max(120),
-    date: z.iso.date(),
-    natureOfOperation: z.string().trim().min(1).max(100),
+    date: z.preprocess((value) => value === "" ? new Date().toISOString().slice(0, 10) : value, z.iso.date()),
+    natureOfOperation: z.string().trim().max(100),
     nameOfCaller: personNameSchema,
-    teamAssigned: z.array(z.uuid()).min(1).max(10),
+    teamAssigned: z.array(z.uuid()).max(10),
     responders: z.array(z.uuid()).max(50),
   }),
   dispatch: z.object({
     from: z.string().trim().max(200),
     to: z.string().trim().max(200),
-    vehicle: z.union([z.uuid(), z.literal("other"), z.literal("none")]),
+    vehicle: z.preprocess((value) => value === "" ? "none" : value, z.union([z.uuid(), z.literal("other"), z.literal("none")])),
     vehicleOther: z.string().trim().max(120).optional(),
     driver: z.string().trim().max(120),
-    departTime: z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/),
+    departTime: z.preprocess((value) => value === "" ? "12:00" : value, z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/)),
     departPeriod: z.enum(["AM", "PM"]),
-    arrivalTime: z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/),
+    arrivalTime: z.preprocess((value) => value === "" ? "12:00" : value, z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/)),
     arrivalPeriod: z.enum(["AM", "PM"]),
     odometerIn: optionalOdometer,
     odometerOut: optionalOdometer,
-  }).refine((dispatch) => dispatch.vehicle === "none" || (typeof dispatch.odometerIn === "number" && typeof dispatch.odometerOut === "number"), {
-    path: ["odometerIn"], message: "Enter odometer readings when a vehicle is selected.",
-  }).refine((dispatch) => dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim()), {
-    path: ["vehicleOther"], message: "Specify the vehicle.",
-  }).refine((dispatch) => dispatch.vehicle === "none" || dispatch.odometerOut === "" || dispatch.odometerIn === "" || dispatch.odometerOut >= dispatch.odometerIn, {
-    path: ["odometerOut"], message: "Odometer out must be greater than or equal to odometer in.",
   }),
   people: z.array(z.object({
     name: personNameSchema,

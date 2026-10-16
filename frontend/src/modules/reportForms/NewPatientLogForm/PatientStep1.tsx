@@ -33,15 +33,9 @@ export default function PatientStep1({
   options,
   optionsLoading,
 }: PatientStep1Props) {
-  const toggleTransfer = (transfer: "Drop-Off" | "Pick-Up") => {
-    const selectedTransfers = responderDetails.teamAssigned.filter((value) =>
-      value === "Drop-Off" || value === "Pick-Up",
-    )
-    const isSelected = selectedTransfers.includes(transfer)
+  const selectTransfer = (transfer: "Drop-Off" | "Pick-Up") => {
     onResponderDetailsChange({
-      teamAssigned: isSelected
-        ? selectedTransfers.filter((value) => value !== transfer)
-        : [...selectedTransfers, transfer],
+      teamAssigned: [transfer],
     })
   }
 
@@ -144,12 +138,12 @@ export default function PatientStep1({
               <CommonCheckbox
                 label="Drop-Off"
                 checked={responderDetails.teamAssigned.includes("Drop-Off")}
-                onChange={() => toggleTransfer("Drop-Off")}
+                onChange={() => selectTransfer("Drop-Off")}
               />
               <CommonCheckbox
                 label="Pick-Up"
                 checked={responderDetails.teamAssigned.includes("Pick-Up")}
-                onChange={() => toggleTransfer("Pick-Up")}
+                onChange={() => selectTransfer("Pick-Up")}
               />
             </div>
           </div>

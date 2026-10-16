@@ -9,7 +9,7 @@ import OperationStep2 from "../../modules/reportForms/OperationLogForm/Operation
 import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
 import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
 import OperationLogLastStep from "../../modules/reportForms/OperationLogForm/OperationLogLastStep"
-import { isFormComplete, isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
+import { isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
 
 import {
   createEmptyOperationLogData,
@@ -154,9 +154,10 @@ export default function OperationLogForm() {
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
-  const submitErrors = [1, 2, 3].flatMap((formStep) =>
-    Object.values(validateStep(formStep, formData, formOptions)),
-  )
+  const reportValidationErrors = [1, 2, 3].reduce<FormErrors>((allErrors, formStep) => ({
+    ...allErrors,
+    ...validateStep(formStep, formData, formOptions),
+  }), {})
 
   const VARIANTS = {
     enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -167,7 +168,6 @@ export default function OperationLogForm() {
 const nextStep = () => {
   if (step >= totalSteps) return
 
-  // Surface errors for the current step, but never block navigation.
   const errors = validateStep(step, formData, formOptions)
   setValidationErrors((current) => ({ ...current, ...errors }))
 
@@ -214,6 +214,9 @@ const nextStep = () => {
   }
 
   const openPinModal = () => {
+    setValidationErrors(reportValidationErrors)
+    if (Object.keys(reportValidationErrors).length > 0) return
+
     setPinError(undefined)
     setPinModalShow(true)
   }
@@ -340,11 +343,11 @@ const nextStep = () => {
               </AnimatePresence>
             </div>
 
-            {step === totalSteps && submitErrors.length > 0 && (
+            {step === totalSteps && Object.keys(reportValidationErrors).length > 0 && (
               <div role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
-                <p className="font-semibold">Please fix these issues before submitting:</p>
+                <p className="font-semibold">Please fix these issues before completing the form:</p>
                 <ul className="mt-1 list-inside list-disc">
-                  {[...new Set(submitErrors)].map((message) => <li key={message}>{message}</li>)}
+                  {[...new Set(Object.values(reportValidationErrors))].map((message) => <li key={message}>{message}</li>)}
                 </ul>
               </div>
             )}
@@ -371,6 +374,7 @@ const nextStep = () => {
                       setConfirmCancelModalShow(true);
                     }}
                   variant="gray" 
+                  className="min-w-[130px]"
                   //className="min-w-[130px] bg-red-700 hover:bg-red-900 text-white"
                 >
                   Cancel
@@ -389,8 +393,8 @@ const nextStep = () => {
 
               {step === totalSteps ? (
                 <CommonButton
-                  variant={isFormComplete(formData, formOptions) ? "purple" : "gray"}
-                  disabled={!isFormComplete(formData, formOptions) || optionsLoading || Boolean(optionsError)}
+                  variant={Object.keys(reportValidationErrors).length === 0 ? "purple" : "gray"}
+                  disabled={Object.keys(reportValidationErrors).length > 0 || optionsLoading || Boolean(optionsError)}
                   className="min-w-[130px]"
                   onClick={openPinModal}
                 >

@@ -69,10 +69,15 @@ export const settingsService = {
   },
 
   async updatePreferences(userId: string, input: UserPreferencesInput) {
+    const preferenceData = {
+      ...(input.lowStockAlerts !== undefined ? { lowStockAlerts: input.lowStockAlerts } : {}),
+      ...(input.approvalNotifications !== undefined ? { approvalNotifications: input.approvalNotifications } : {}),
+      ...(input.sessionTimeout !== undefined ? { sessionTimeout: input.sessionTimeout } : {}),
+    }
     await prisma.userPreference.upsert({
       where: { user_id: userId },
-      create: { user_id: userId, ...input },
-      update: input,
+      create: { user_id: userId, ...preferenceData },
+      update: preferenceData,
     })
     if (input.lowStockAlerts === true) {
       await notificationsService.syncLowStockNotifications()

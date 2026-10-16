@@ -143,7 +143,7 @@ export default function OperationStep1({
               {errors["operationDetails.teamAssigned"] && <span role="alert" className="text-xs font-medium text-red-700">{errors["operationDetails.teamAssigned"]}</span>}
             </label>
 
-            <div className="flex gap-8">
+            <div className="flex gap-8 flex-wrap">
               {options.teams.map((team) => (
                 <CommonCheckbox
                   key={team.team_id}

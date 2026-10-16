@@ -38,7 +38,8 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   const errors: FormErrors = {};
 
   const submitterName = operationDetails.submitterName.trim();
-  if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
+  if (!submitterName) errors["operationDetails.submitterName"] = "Enter the submitter's name.";
+  else if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
   if (!operationDetails.date || operationDetails.date > formatDate(new Date(), "YYYY-MM-DD")) {
     errors["operationDetails.date"] = "Choose a valid date that is not in the future.";
   }
@@ -49,7 +50,6 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   validateOptionalNamePart(operationDetails.nameOfCaller.firstName, 80, "First name must be 80 characters or fewer.", "operationDetails.nameOfCaller.firstName", errors);
   if (operationDetails.nameOfCaller.middleInitial.trim().length > 10) errors["operationDetails.nameOfCaller.middleInitial"] = "Middle initial must be 10 characters or fewer.";
   if (operationDetails.nameOfCaller.suffix.trim().length > 20) errors["operationDetails.nameOfCaller.suffix"] = "Suffix must be 20 characters or fewer.";
-  if (operationDetails.teamAssigned.length === 0) errors["operationDetails.teamAssigned"] = "Select at least one team.";
   if (operationDetails.teamAssigned.some((teamId) => !options.teams.some((team) => team.team_id === teamId))) {
     errors["operationDetails.teamAssigned"] = "Refresh the form and select an available team.";
   }
@@ -59,27 +59,28 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
     errors["operationDetails.responders"] = "Refresh the form and select an available responder.";
   }
 
-  validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
-  validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
   const hasNoVehicle = dispatch.vehicle === "none"
   const isOtherVehicle = dispatch.vehicle === "other"
-  if (!hasNoVehicle && !isOtherVehicle && !options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
+  const hasSelectedVehicle = Boolean(dispatch.vehicle) && !hasNoVehicle && !isOtherVehicle
+
+  validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
+  validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
+  if (hasSelectedVehicle && !options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
     errors["dispatch.vehicle"] = "Select an available vehicle, Other, or None.";
   }
   if (isOtherVehicle && !dispatch.vehicleOther?.trim()) errors["dispatch.vehicleOther"] = "Specify the vehicle.";
-  if (!hasNoVehicle) {
+  if (hasSelectedVehicle) {
     validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
-  }
-  if (!OPERATION_TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time.";
-  if (!OPERATION_TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time.";
+    if (!OPERATION_TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time.";
+    if (!OPERATION_TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time.";
 
-  if (hasNoVehicle) return errors;
-  const odometerIn = parseOdometer(dispatch.odometerIn);
-  const odometerOut = parseOdometer(dispatch.odometerOut);
-  if (odometerIn === null) errors["dispatch.odometerIn"] = "Enter a non-negative whole number.";
-  if (odometerOut === null) errors["dispatch.odometerOut"] = "Enter a non-negative whole number.";
-  if (odometerIn !== null && odometerOut !== null && odometerOut < odometerIn) {
-    errors["dispatch.odometerOut"] = "Odometer out must be at least odometer in.";
+    const odometerIn = parseOdometer(dispatch.odometerIn);
+    const odometerOut = parseOdometer(dispatch.odometerOut);
+    if (odometerIn === null) errors["dispatch.odometerIn"] = "Enter a non-negative whole number.";
+    if (odometerOut === null) errors["dispatch.odometerOut"] = "Enter a non-negative whole number.";
+    if (odometerIn !== null && odometerOut !== null && odometerOut < odometerIn) {
+      errors["dispatch.odometerOut"] = "Odometer out must be at least odometer in.";
+    }
   }
 
   return errors;

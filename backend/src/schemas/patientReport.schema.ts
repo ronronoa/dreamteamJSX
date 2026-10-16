@@ -15,6 +15,7 @@ const addressSchema = z.object({
 });
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);
+const dispatchTimeSchema = z.preprocess((value) => value === "" ? "12:00" : value, timeSchema);
 const odometerSchema = z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().nonnegative());
 const optionalOdometerSchema = z.union([odometerSchema, z.literal("")]);
 const transferSelectionSchema = z
@@ -42,14 +43,14 @@ export const PatientReportSchema = z.object({
     responders: z.array(z.uuid()).min(1).max(50),
   }),
   dispatch: z.object({
-    from: z.string().trim().min(1).max(200),
-    to: z.string().trim().min(1).max(200),
-    vehicle: z.union([z.uuid(), z.literal("other"), z.literal("none")]),
+    from: z.string().trim().max(200),
+    to: z.string().trim().max(200),
+    vehicle: z.preprocess((value) => value === "" ? "none" : value, z.union([z.uuid(), z.literal("other"), z.literal("none")])),
     vehicleOther: z.string().trim().max(120).optional(),
     driver: z.string().trim().max(120),
-    departTime: timeSchema,
+    departTime: dispatchTimeSchema,
     departPeriod: z.enum(["AM", "PM"]),
-    arrivalTime: timeSchema,
+    arrivalTime: dispatchTimeSchema,
     arrivalPeriod: z.enum(["AM", "PM"]),
     odometerIn: optionalOdometerSchema,
     odometerOut: optionalOdometerSchema,

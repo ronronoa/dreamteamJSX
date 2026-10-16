@@ -45,7 +45,8 @@ export default function VehicularDispatchSection({
   ]
 
   const isOtherVehicle = dispatch.vehicle === OTHER_VEHICLE_VALUE
-  const hasNoVehicle = dispatch.vehicle === NO_VEHICLE_VALUE
+  const hasNoVehicle = dispatch.vehicle === NO_VEHICLE_VALUE || dispatch.vehicle === ""
+  const hasSelectedDatabaseVehicle = vehicleOptions.some((option) => option.value === dispatch.vehicle)
 
   return (
     <CommonFormSection title={title} standardHeight={false}>
@@ -81,11 +82,9 @@ export default function VehicularDispatchSection({
             const odometer = selectedVehicle?.currentOdometer
             onDispatchChange({
               vehicle: e.target.value,
-              ...(e.target.value === NO_VEHICLE_VALUE
-                ? { driver: "", odometerIn: "", odometerOut: "" }
-                : {}),
               odometerIn: odometer === undefined ? "" : String(odometer),
-              odometerOut: odometer === undefined ? "" : String(odometer),
+              odometerOut: "",
+              ...(e.target.value === NO_VEHICLE_VALUE ? { driver: "" } : {}),
             })
           }}
           disabled={optionsLoading}
@@ -118,57 +117,60 @@ export default function VehicularDispatchSection({
           errorMessage={errors["dispatch.driver"]}
         />}
 
-        {!hasNoVehicle && <div className="grid grid-cols-2 gap-5">
-          <div>
-            <CommonTimeInput
-              label="Depart"
-              time={dispatch.departTime}
-              period={dispatch.departPeriod}
-              onTimeChange={(value) => onDispatchChange({ departTime: value })}
-              onPeriodChange={(value) => onDispatchChange({ departPeriod: value })}
-              errorMessage={errors["dispatch.departTime"]}
-            />
-          </div>
-          <div>
-            <CommonTimeInput
-              label="Arrival"
-              time={dispatch.arrivalTime}
-              period={dispatch.arrivalPeriod}
-              onTimeChange={(value) => onDispatchChange({ arrivalTime: value })}
-              onPeriodChange={(value) => onDispatchChange({ arrivalPeriod: value })}
-              errorMessage={errors["dispatch.arrivalTime"]}
-            />
-          </div>
-        </div>}
+        {!hasNoVehicle &&
+          <div className="grid sm:grid-cols-2 gap-5">
+            <div>
+              <CommonTimeInput
+                label="Depart"
+                time={dispatch.departTime}
+                period={dispatch.departPeriod}
+                onTimeChange={(value) => onDispatchChange({ departTime: value })}
+                onPeriodChange={(value) => onDispatchChange({ departPeriod: value })}
+                errorMessage={errors["dispatch.departTime"]}
+              />
+            </div>
+            <div>
+              <CommonTimeInput
+                label="Arrival"
+                time={dispatch.arrivalTime}
+                period={dispatch.arrivalPeriod}
+                onTimeChange={(value) => onDispatchChange({ arrivalTime: value })}
+                onPeriodChange={(value) => onDispatchChange({ arrivalPeriod: value })}
+                errorMessage={errors["dispatch.arrivalTime"]}
+              />
+            </div>
+          </div>}
 
-        {!hasNoVehicle && <div className="grid grid-cols-2 gap-5">
-          <div>
-            <CommonInput
-              variant="compact"
-              type="number"
-              min={0}
-              step={1}
-              label="Odometer In"
-              placeholder="123456"
-              value={dispatch.odometerIn}
-              onChange={(e) => onDispatchChange({ odometerIn: e.target.value })}
-              errorMessage={errors["dispatch.odometerIn"]}
-            />
-          </div>
-          <div>
-            <CommonInput
-              variant="compact"
-              type="number"
-              min={0}
-              step={1}
-              label="Odometer Out"
-              placeholder="123456"
-              value={dispatch.odometerOut}
-              onChange={(e) => onDispatchChange({ odometerOut: e.target.value })}
-              errorMessage={errors["dispatch.odometerOut"]}
-            />
-          </div>
-        </div>}
+        {!hasNoVehicle &&
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <CommonInput
+                variant="compact"
+                type="number"
+                min={0}
+                step={1}
+                label="Odometer In"
+                placeholder="123456"
+                value={dispatch.odometerIn}
+                disabled={hasSelectedDatabaseVehicle}
+                onChange={(e) => onDispatchChange({ odometerIn: e.target.value })}
+                errorMessage={errors["dispatch.odometerIn"]}
+              />
+            </div>
+            <div>
+              <CommonInput
+                variant="compact"
+                type="number"
+                min={0}
+                step={1}
+                label="Odometer Out"
+                placeholder="123456"
+                value={dispatch.odometerOut}
+                onChange={(e) => onDispatchChange({ odometerOut: e.target.value })}
+                errorMessage={errors["dispatch.odometerOut"]}
+              />
+            </div>
+          </div>}
       </div>
     </CommonFormSection>
   )
