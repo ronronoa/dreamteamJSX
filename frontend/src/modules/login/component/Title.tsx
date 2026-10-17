@@ -26,6 +26,7 @@ export default function Title(){
       <CommonButton
         variant="someKindOfUniquePurpleToOrange"
         className="text-xl"
+        disabled
       >
         Create Report with AI
       </CommonButton>

@@ -6,7 +6,10 @@
   "scripts": {
     "test": "vitest",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "prisma migrate dev",
+    "generate": "prisma generate",
+    "build": "npm run generate && tsc",
     "start": "node dist/server.js"
   },
   "prisma": {

@@ -2,6 +2,7 @@
 // got no idea how this works
 
 import { Fragment, useEffect, useRef, useState } from "react"
+import { InputBase } from "@/components/base/input/input"
 
 interface CommonTimeInputProps {
   label: string
@@ -9,6 +10,7 @@ interface CommonTimeInputProps {
   period: "AM" | "PM"
   onTimeChange: (value: string) => void
   onPeriodChange: (value: "AM" | "PM") => void
+  errorMessage?: string
 }
 
 type Digits = [string, string, string, string]
@@ -73,6 +75,7 @@ export default function CommonTimeInput({
   period,
   onTimeChange,
   onPeriodChange,
+  errorMessage,
 }: CommonTimeInputProps) {
   const [digits, setDigits] = useState<Digits>(() => toDigits(time))
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
@@ -82,7 +85,15 @@ export default function CommonTimeInput({
   const lastEmitted = useRef(time)
 
   useEffect(() => {
-    if (time === lastEmitted.current) return
+    if (time === lastEmitted.current) {
+      // Restored form data can match the parent's value while this input
+      // still has its initial empty digit state.
+      setDigits((current) => {
+        const restoredDigits = toDigits(time)
+        return current.join("") === restoredDigits.join("") ? current : restoredDigits
+      })
+      return
+    }
     lastEmitted.current = time
     setDigits(toDigits(time))
   }, [time])
@@ -155,8 +166,9 @@ export default function CommonTimeInput({
 
   return (
     <div>
-      <label className="mb-1 block text-lg font-medium text-slate-900">
-        {label}
+      <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+        <span>{label}</span>
+        {errorMessage && <span role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
       </label>
 
       <div className="flex" onBlur={handleBlur}>
@@ -169,7 +181,7 @@ export default function CommonTimeInput({
                 </span>
               )}
 
-              <input
+              <InputBase
                 ref={(el) => {
                   inputRefs.current[index] = el
                 }}
@@ -183,16 +195,8 @@ export default function CommonTimeInput({
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onFocus={(e) => e.target.select()}
                 onClick={(e) => e.currentTarget.select()}
-                className="
-                border border-gray-300
-                h-8 w-12 md:w-8
-                rounded-full md:rounded
-                mx-1 md:mx-0.5
-                bg-transparent
-                text-center text-lg text-slate-900
-                outline-none
-                focus:bg-white focus:ring-1 focus:ring-orange-500
-                "
+                wrapperClassName="mx-1 h-8 w-12 rounded-full border border-gray-300 bg-transparent shadow-none ring-0 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-500 md:mx-0.5 md:w-8 md:rounded"
+                inputClassName="h-full w-full rounded-[inherit] p-0 text-center text-lg text-slate-900 outline-none"
               />
             </Fragment>
           ))}

@@ -67,7 +67,7 @@ export default function PinModal({
           disabled={loading}
         />
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className="whitespace-pre-line text-sm text-red-600">{error}</p>}
 
         <CommonButton
           type="submit"

@@ -19,7 +19,7 @@ export default function CommonFormSection({
 }: CommonFormSectionProps) {
   return (
     <section
-      className={`flex w-full flex-col overflow-x-auto rounded-md bg-[#fffdfb] shadow-md ${
+      className={`flex w-full flex-col  rounded-md bg-[#fffdfb] shadow-md ${
         standardHeight ? "lg:min-h-[650px]" : ""
       } ${padded ? "p-6" : ""} ${className}`}
     >

@@ -1,3 +1,5 @@
+import { getCurrentDateInputValue } from "../utils/dateTime"
+
 export interface PendingOperationRequest {
   id: string;
   date: Date;
@@ -45,6 +47,7 @@ export type VehicularDispatch = {
 
   to: string
   vehicle: string
+  vehicleOther?: string;
   driver: string
   departTime: string
   departPeriod: "AM" | "PM"
@@ -56,7 +59,7 @@ export type VehicularDispatch = {
 
 export const createEmptyOperationDetails = (): OperationDetails => ({
   submitterName: "",
-  date: "",
+  date: getCurrentDateInputValue(),
   natureOfOperation: "",
   nameOfCaller: createEmptyPersonName(),
   teamAssigned: [],
@@ -106,23 +109,7 @@ export const createEmptyPerson = (): Person => ({
   address: { phase: "", package: "", block: "", lot: "" },
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-
-  const birthDate = new Date(birthdate)
-  if (Number.isNaN(birthDate.getTime())) return ""
-
-  const today = new Date()
-  let age = today.getFullYear() - birthDate.getFullYear()
-
-  const hasHadBirthdayThisYear =
-    today.getMonth() > birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
-
-  if (!hasHadBirthdayThisYear) age -= 1
-
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 operationDesc & inventory
@@ -136,6 +123,8 @@ export type InventoryItem = {
   id: string
   itemName: string
   quantity: string
+  inventoryItemId?: string
+  unit?: string
 }
 
 export const createEmptyOperationDescription = (): OperationDescription => ({

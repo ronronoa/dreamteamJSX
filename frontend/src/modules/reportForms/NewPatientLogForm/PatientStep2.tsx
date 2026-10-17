@@ -1,4 +1,5 @@
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
+import ReportAutocompleteTextarea from "../component/ReportAutocompleteTextarea"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
 import CommonVitalField from "@/components/common/widgets/CommonVitalField"
@@ -9,6 +10,8 @@ import {
   type PatientDetails,
   type FirstAidHospitalDetails,
 } from "@/types/patientLog"
+
+const CommonInput = createFormAutocomplete("patients")
 
 type PatientStep2Props = {
   patientDetails: PatientDetails
@@ -269,7 +272,10 @@ export default function PatientStep2({
             <label className="mb-1 block text-lg font-medium text-slate-900">
               Medical Assessment
             </label>
-            <textarea
+            <ReportAutocompleteTextarea
+              formType="patients"
+              suggestionField="firstAidHospital.medicalAssessment"
+              variant="compact"
               rows={3}
               placeholder="Provide a medical assessment of the patient"
               value={firstAidHospital.medicalAssessment}
@@ -281,7 +287,10 @@ export default function PatientStep2({
           {/* first aid */}
           <div>
             <label className="mb-1 block text-lg font-medium text-slate-900">First Aid</label>
-            <textarea
+            <ReportAutocompleteTextarea
+              formType="patients"
+              suggestionField="firstAidHospital.firstAidGiven"
+              variant="compact"
               rows={2}
               placeholder="Place holder"
               value={firstAidHospital.firstAidGiven}

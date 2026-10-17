@@ -1,16 +1,19 @@
 import { createContext, useContext, useEffect, useState} from "react";
 import type { ReactNode } from "react";
-import { refresh as apiRefresh,login as apiLogin, logout as apiLogout} from "../api/auth";
+import { changePassword as apiChangePassword, refresh as apiRefresh, login as apiLogin, logout as apiLogout } from "../api/auth";
 import type { UserSession } from "../types/auth";
+import type { UserProfileData } from "@/api/profile";
 
 
 /** Authentication state and actions shared throughout the app. */
 interface AuthContextType {
   session: UserSession | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  updateProfileSession: (profile: UserProfileData) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,25 +30,45 @@ export function AuthProvider({children}: {children: ReactNode}){
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function login(username: string, password: string) {
-    const data = await apiLogin(username, password);
+  async function login(identifier: string, password: string) {
+    const data = await apiLogin(identifier, password);
     if (!data) return false;
     setSession(data);
     return true;
   }
 
   async function refresh(){
-    const data = await apiRefresh();
+    const data = await apiRefresh(session?.accessToken);
     if (!data) return;
     setSession(data);
   }
 
   useEffect(() => {
-    (async () => {
-      await refresh();
-      setLoading(false);
-    })();
+    let isMounted = true;
+
+    void apiRefresh().then((data) => {
+      if (isMounted && data) setSession(data);
+    }).finally(() => {
+      if (isMounted) setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [])
+
+  useEffect(() => {
+    function handleAccessTokenRefreshed(event: Event) {
+      const accessToken = (event as CustomEvent<{ accessToken?: string }>).detail?.accessToken;
+      if (!accessToken) return;
+      setSession((currentSession) => currentSession
+        ? { ...currentSession, accessToken }
+        : currentSession);
+    }
+
+    window.addEventListener("auth:access-token-refreshed", handleAccessTokenRefreshed);
+    return () => window.removeEventListener("auth:access-token-refreshed", handleAccessTokenRefreshed);
+  }, []);
 
   async function logout(){
     setLoading(true);
@@ -54,8 +77,32 @@ export function AuthProvider({children}: {children: ReactNode}){
     setLoading(false);
   }
 
+  function updateProfileSession(profile: UserProfileData) {
+    setSession((currentSession) => {
+      if (!currentSession) return currentSession;
+      return {
+        ...currentSession,
+        user: {
+          ...currentSession.user,
+          name: profile.name,
+          username: profile.username,
+          email: profile.email,
+          profileImageUrl: profile.profileImageUrl,
+        },
+      };
+    });
+  }
+
+  async function changePassword(currentPassword: string, newPassword: string) {
+    if (!session) throw new Error("You must be signed in to change your password.");
+    const accessToken = await apiChangePassword(session.accessToken, currentPassword, newPassword);
+    setSession((currentSession) => currentSession
+      ? { ...currentSession, accessToken }
+      : currentSession);
+  }
+
   return (
-    <AuthContext.Provider value={{session, loading, login, refresh, logout}}>
+    <AuthContext.Provider value={{session, loading, login, refresh, logout, updateProfileSession, changePassword}}>
       {children}
     </AuthContext.Provider>
 

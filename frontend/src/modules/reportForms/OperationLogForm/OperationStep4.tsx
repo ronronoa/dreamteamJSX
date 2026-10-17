@@ -5,10 +5,12 @@ import SummaryField from "../component/SummaryField"
 import ImagePreviewModal from "../modal/ImagePreviewModal"
 
 import type { OperationLogData, Person, PersonName } from "../../../types/operationLog"
+import type { OperationFormOptions } from "@/api/operationForm"
 import { useState } from "react"
 
 type OperationStep4Props = {
   formData: OperationLogData
+  options: OperationFormOptions
 }
 
 const formatPersonName = (name: PersonName) => {
@@ -21,9 +23,16 @@ const formatPersonAddress = (person: Person) => {
   return `P${phase} PK${pkg} B${block} L${lot}`
 }
 
-export default function OperationStep4({ formData }: OperationStep4Props) {
+export default function OperationStep4({ formData, options }: OperationStep4Props) {
   const { operationDetails, dispatch, people, operationDescription, inventory } = formData
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const teamNames = operationDetails.teamAssigned.map((teamId) =>
+    options.teams.find((team) => team.team_id === teamId)?.team_name ?? "Team unavailable",
+  )
+  const responderNames = operationDetails.responders.map((responderId) =>
+    options.responders.find((responder) => responder.user_id === responderId)?.name ?? "Responder unavailable",
+  )
+  const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
   const previewFile =
     previewIndex !== null
@@ -40,8 +49,8 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
             <SummaryField label="Date" value={operationDetails.date} />
             <SummaryField label="Nature of Operation" value={operationDetails.natureOfOperation} />
             <SummaryField label="Caller" value={formatPersonName(operationDetails.nameOfCaller)} />
-            <SummaryField label="Team Assigned" value={operationDetails.teamAssigned.join(", ")} />
-            <SummaryField label="Responders" value={operationDetails.responders.join(", ")} />
+            <SummaryField label="Team Assigned" value={teamNames.join(", ")} />
+            <SummaryField label="Responders" value={responderNames.join(", ")} />
           </div>
         </CommonFormSection>
 
@@ -49,8 +58,15 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
-            <SummaryField label="Vehicle" value={dispatch.vehicle} />
-            <SummaryField label="Driver" value={dispatch.driver} />
+            <SummaryField
+              label="Vehicle"
+              value={dispatch.vehicle === "none" ? "None"
+                : dispatch.vehicle === "other" ? dispatch.vehicleOther ?? "Other"
+                : selectedVehicle
+                ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})`
+                : dispatch.vehicle ? "Vehicle unavailable" : ""}
+            />
+            <SummaryField label="Driver" value={dispatch.vehicle === "none" ? "—" : dispatch.driver} />
             <SummaryField
               label="Depart"
               value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`}
@@ -59,8 +75,8 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
               label="Arrival"
               value={dispatch.arrivalTime && `${dispatch.arrivalTime} ${dispatch.arrivalPeriod}`}
             />
-            <SummaryField label="Odometer In" value={dispatch.odometerIn && `${dispatch.odometerIn} km`} />
-            <SummaryField label="Odometer Out" value={dispatch.odometerOut && `${dispatch.odometerOut} km`} />
+            <SummaryField label="Odometer In" value={dispatch.vehicle !== "none" && dispatch.odometerIn ? `${dispatch.odometerIn} km` : "—"} />
+            <SummaryField label="Odometer Out" value={dispatch.vehicle !== "none" && dispatch.odometerOut ? `${dispatch.odometerOut} km` : "—"} />
           </div>
         </CommonFormSection>
       </section>

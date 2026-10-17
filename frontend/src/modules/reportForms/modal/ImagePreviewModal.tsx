@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import { Maximize2, X } from "lucide-react"
 
 import Modal from "../../../components/common/modals/Modal"
@@ -8,22 +9,24 @@ interface ImagePreviewModalProps {
   open: boolean
   onClose: () => void
   file: File | null
+  image?: { name: string; url: string } | null
 }
 
 export default function ImagePreviewModal({
   open,
   onClose,
   file,
+  image = null,
 }: ImagePreviewModalProps) {
   const [isMaximized, setIsMaximized] = useState(false)
 
   const imageUrl = useMemo(() => {
-    if (!file) return ""
+    if (!file) return image?.url ?? ""
 
     const objectUrl = URL.createObjectURL(file)
 
     return objectUrl
-  }, [file])
+  }, [file, image?.url])
 
   useEffect(() => {
     return () => {
@@ -54,18 +57,19 @@ useEffect(() => {
   }
 }, [open, isMaximized])
 
-  if (!file || !imageUrl) return null
+  const imageName = file?.name ?? image?.name
+  if (!imageName || !imageUrl) return null
 
   return (
     <>
       <Modal
-        open={open}
+        open={open && !isMaximized}
         onClose={handleClose}
         className="max-w-2xl bg-white"
       >
         <div className="flex flex-row items-center justify-between">
           <h2 className="truncate text-lg font-bold text-slate-900">
-            {file.name}
+            {imageName}
           </h2>
 
           <CommonButton
@@ -85,7 +89,7 @@ useEffect(() => {
         >
           <img
             src={imageUrl}
-            alt={file.name}
+            alt={imageName}
             className="max-h-[70vh] w-full rounded-md object-contain"
           />
 
@@ -101,32 +105,42 @@ useEffect(() => {
         </div>
       </Modal>
 
-      {open && isMaximized && (
-        <div 
+      {open && isMaximized && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Maximized preview: ${imageName}`}
           onClick={() => setIsMaximized(false)}
-          className="fixed inset-4 z-50 flex flex-col rounded-md bg-black/90">
-          <div className="flex items-center justify-between p-3">
-            <span className="truncate text-sm font-medium text-white">
-              {file.name}
-            </span>
-
+          className="fixed inset-0 z-[100] flex flex-col bg-black/95"
+        >
+          <div
+            className="flex items-center justify-between p-3"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className="truncate text-sm font-medium text-white">{imageName}</span>
             <CommonButton
+              type="button"
               onClick={() => setIsMaximized(false)}
               variant="none"
               className="m-0! bg-white/10 p-2! text-white hover:bg-white/20"
+              aria-label="Close maximized image preview"
             >
               <X size={18} />
             </CommonButton>
           </div>
 
-          <div className="flex flex-1 items-center justify-center overflow-auto p-4">
+          <div
+            className="flex flex-1 items-center justify-center overflow-auto p-4"
+            onClick={(event) => event.stopPropagation()}
+          >
             <img
               src={imageUrl}
-              alt={file.name}
+              alt={imageName}
               className="max-h-full max-w-full object-contain"
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

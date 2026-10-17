@@ -38,6 +38,17 @@ export function isFormEmpty(formData: PatientLogData): boolean {
 
 export const isStep1Complete = (formData: PatientLogData) => {
   const { responderDetails, dispatch } = formData
+  const dispatchIsOptional = !dispatch.vehicle || dispatch.vehicle === "none"
+  const dispatchIsComplete = dispatchIsOptional || (
+    dispatch.from.trim() !== "" &&
+    dispatch.to.trim() !== "" &&
+    dispatch.driver.trim() !== "" &&
+    dispatch.departTime.trim() !== "" &&
+    dispatch.arrivalTime.trim() !== "" &&
+    (dispatch.vehicle !== "other" || Boolean(dispatch.vehicleOther?.trim())) &&
+    dispatch.odometerIn.trim() !== "" &&
+    dispatch.odometerOut.trim() !== ""
+  )
 
   return (
     responderDetails.submitterName.trim() !== "" &&
@@ -45,16 +56,9 @@ export const isStep1Complete = (formData: PatientLogData) => {
     responderDetails.typeOfRequest.trim() !== "" &&
     responderDetails.caller.surname.trim() !== "" &&
     responderDetails.caller.firstName.trim() !== "" &&
-    responderDetails.teamAssigned.length > 0 &&
+    responderDetails.teamAssigned.some((transfer) => transfer === "Drop-Off" || transfer === "Pick-Up") &&
     responderDetails.responders.length > 0 &&
-    dispatch.from.trim() !== "" &&
-    dispatch.to.trim() !== "" &&
-    dispatch.vehicle.trim() !== "" &&
-    dispatch.driver.trim() !== "" &&
-    dispatch.departTime.trim() !== "" &&
-    dispatch.arrivalTime.trim() !== "" &&
-    dispatch.odometerIn.trim() !== "" &&
-    dispatch.odometerOut.trim() !== ""
+    dispatchIsComplete
   )
 }
 
@@ -84,10 +88,9 @@ export const isStep2Complete = (formData: PatientLogData) => {
 }
 
 export const isStep3Complete = (formData: PatientLogData) => {
-  const { waiverForm, inventory } = formData
+  const { inventory } = formData
 
   return (
-    waiverForm.images.length > 0 &&
     inventory.every(
       (item) =>
         item.itemName.trim() !== "" &&

@@ -1,462 +1,211 @@
+import dayjs from "dayjs"
+import { AlertTriangle, ClipboardList, HeartPulse, RefreshCw, Truck } from "lucide-react"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { formatDateTime } from "@/utils/dateTime"
+import { useDashboardData } from "./dashboard/useDashboardData"
 import {
-  AlertTriangle,
-  ArrowUpRight,
-  ClipboardList,
-  HeartPulse,
-  ShieldCheck,
-  Truck,
-} from "lucide-react";
-import type { ReactNode } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+  areaConfig,
+  barConfig,
+  getHourlyReportCounts,
+  getMonthlyReportCounts,
+  getPatientStatusCounts,
+  getRecentDashboardActivity,
+  getTodayReportsCount,
+  pieConfig,
+} from "./dashboard/dashboardData"
+import { Card, LegendDot, ProgressRow, StatCard } from "./dashboard/DashboardPrimitives"
 
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import type {
-  HourlyActivity,
-  MonthlyOperationCount,
-  PatientInterventionCount,
-} from "@/types/dashboard";
-
-// --- Data & Config ---
-
-const barData: MonthlyOperationCount[] = [
-  { month: "Jan", value: 30 },
-  { month: "Feb", value: 48 },
-  { month: "Mar", value: 28 },
-  { month: "Apr", value: 68 },
-  { month: "May", value: 52 },
-  { month: "Jun", value: 72 },
-  { month: "Jul", value: 60 },
-];
-
-const pieData: PatientInterventionCount[] = [
-  { name: "Minor", value: 35, color: "#8b5cf6" },
-  { name: "Medical", value: 40, color: "#10b981" },
-  { name: "Referral", value: 25, color: "#f59e0b" },
-];
-
-const areaData: HourlyActivity[] = [
-  { time: "08:00", activity: 45 },
-  { time: "10:00", activity: 55 },
-  { time: "12:00", activity: 70 },
-  { time: "14:00", activity: 40 },
-  { time: "16:00", activity: 65 },
-  { time: "18:00", activity: 45 },
-  { time: "20:00", activity: 75 },
-];
-
-const barConfig = {
-  value: {
-    label: "Records",
-    color: "hsl(var(--chart-1))",
-  },
-};
-
-const pieConfig = {
-  value: { label: "Cases" },
-  Minor: { label: "Minor", color: "#8b5cf6" },
-  Medical: { label: "Medical", color: "#10b981" },
-  Referral: { label: "Referral", color: "#f59e0b" },
-};
-
-const areaConfig = {
-  activity: {
-    label: "Activity Level",
-    color: "#8b5cf6",
-  },
-};
-
-// --- Component ---
+const BAR_COLORS = ["#7c3aed", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe"]
 
 export default function Dashboard() {
+  const dashboard = useDashboardData()
+  const now = dayjs()
+  const reportDates = [
+    ...dashboard.operations.map((record) => record.createdAt),
+    ...dashboard.patients.map((record) => record.createdAt),
+    ...dashboard.dispatches.map((record) => record.record.createdAt ?? record.record.dispatch_date),
+  ]
+  const monthlyReportCounts = getMonthlyReportCounts(dashboard.operations, dashboard.patients, dashboard.dispatches, now)
+  const patientStatusCounts = getPatientStatusCounts(dashboard.patients)
+  const hourlyReportCounts = getHourlyReportCounts(reportDates.map((createdAt) => ({ createdAt })), now)
+  const recentActivity = getRecentDashboardActivity(dashboard.operations, dashboard.patients, dashboard.dispatches)
+  const todayReportCount = getTodayReportsCount(reportDates.map((createdAt) => ({ createdAt })), now)
+  const patientPendingCount = dashboard.patients.filter((record) => record.status === "PENDING" || record.status === "TO_REVIEW").length
+  const dispatchPendingCount = dashboard.dispatches.filter((record) => record.status === "PENDING" || record.status === "TO_REVIEW").length
+  const activeInventoryWarnings = dashboard.inventory?.items.filter((item) => item.status !== "Available") ?? []
+  const availableVehicleCount = dashboard.vehicles.filter((vehicle) => vehicle.status === "AVAILABLE").length
+  const vehicleAvailability = dashboard.vehicles.length === 0
+    ? 0
+    : Math.round((availableVehicleCount / dashboard.vehicles.length) * 100)
+  const inventoryWarningPercent = dashboard.inventory?.items.length
+    ? Math.round((activeInventoryWarnings.length / dashboard.inventory.items.length) * 100)
+    : 0
+  const stats = [
+    {
+      label: "Operation logs",
+      value: dashboard.operations.length.toLocaleString(),
+      icon: <ClipboardList size={16} />,
+      tone: "purple" as const,
+      footer: <><strong className="font-semibold text-purple-700">{monthlyReportCounts[monthlyReportCounts.length - 1]?.value ?? 0}</strong> submitted this month</>,
+    },
+    {
+      label: "Patient logs",
+      value: dashboard.patients.length.toLocaleString(),
+      icon: <HeartPulse size={16} />,
+      tone: "green" as const,
+      footer: <><strong className="font-semibold text-amber-700">{patientPendingCount}</strong> awaiting review</>,
+    },
+    {
+      label: "Vehicle dispatches",
+      value: dashboard.dispatches.length.toLocaleString(),
+      icon: <Truck size={16} />,
+      tone: "blue" as const,
+      footer: <><strong className="font-semibold text-blue-700">{dispatchPendingCount}</strong> awaiting review</>,
+    },
+    {
+      label: "Items needing attention",
+      value: dashboard.inventory ? activeInventoryWarnings.length.toLocaleString() : "—",
+      icon: <AlertTriangle size={16} />,
+      tone: "red" as const,
+      footer: dashboard.inventory
+        ? <>{activeInventoryWarnings.slice(0, 2).map((item) => item.item).join(", ") || "All stock is within limits"}</>
+        : <>Inventory data unavailable</>,
+    },
+  ]
+
   return (
     <div className="space-y-5">
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Operation logs"
-          value="24"
-          icon={<ClipboardList size={16} />}
-          tone="purple"
-          footer={
-            <>
-              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                <ArrowUpRight size={12} /> +12.5%
-              </span>{" "}
-              <span className="text-gray-500">vs last month</span>
-              <p className="mt-1 text-gray-500">6 new reports since last week</p>
-            </>
-          }
-        />
-
-        <StatCard
-          label="Patient logs"
-          value="5"
-          icon={<HeartPulse size={16} />}
-          tone="green"
-          footer={
-            <>
-              <span className="font-semibold text-emerald-600">• 1 resolved case</span>
-              <p className="mt-1 text-gray-500">4 cases currently monitored</p>
-            </>
-          }
-        />
-
-        <StatCard
-          label="Vehicle dispatches"
-          value="3"
-          icon={<Truck size={16} />}
-          tone="blue"
-          footer={
-            <>
-              <span className="font-semibold text-blue-600">• 2 active dispatches</span>
-              <p className="mt-1 text-gray-500">Avg. response time: 14 min</p>
-            </>
-          }
-        />
-
-        <StatCard
-          label="Low stock items"
-          value="2"
-          icon={<AlertTriangle size={16} />}
-          tone="red"
-          footer={
-            <>
-              <span className="font-semibold text-red-600">• Urgent attention needed</span>
-              <p className="mt-1 text-gray-500">N95 masks &amp; First-aid below limits</p>
-            </>
-          }
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Dashboard overview</h2>
+          <p className="text-xs text-gray-500">Current records and operational readiness</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-gray-600">{now.format("MMM D, YYYY")}</span>
+          <button type="button" aria-label="Refresh dashboard" title="Refresh dashboard" disabled={dashboard.loading} onClick={() => void dashboard.refreshDashboard()} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+            <RefreshCw size={14} className={dashboard.loading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
 
-      {/* Row 2 */}
+      {dashboard.error && <p role="alert" className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{dashboard.error}</p>}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => <StatCard key={stat.label} {...stat} footer={stat.footer} />)}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
-          <div className="mb-6 flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Operations over time</h3>
-              <p className="mt-0.5 text-xs text-gray-500">
-                Monthly activity volume and submitted records
-              </p>
-            </div>
-            <button className="text-xs font-semibold text-purple-600 hover:text-purple-700">
-              View logs →
-            </button>
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-gray-900">Reports by month</h3>
+            <p className="mt-0.5 text-xs text-gray-500">Operation, patient, and vehicle reports over the last six months</p>
           </div>
-          <ChartContainer config={barConfig} className="h-44 w-full">
-            <BarChart data={barData}>
+          <ChartContainer config={barConfig} className="h-52 w-full">
+            <BarChart data={monthlyReportCounts}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                fontSize={10}
-              />
-              <YAxis hide />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Bar
-                dataKey="value"
-                fill="url(#barGradient)"
-                radius={[4, 4, 0, 0]}
-              />
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" />
-                  <stop offset="55%" stopColor="#7c3aed" />
-                  <stop offset="100%" stopColor="#3b0764" />
-                </linearGradient>
-              </defs>
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} />
+              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} fontSize={10} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+              <Bar dataKey="value" name="Reports" radius={[4, 4, 0, 0]}>
+                {monthlyReportCounts.map((entry, index) => <Cell key={entry.month} fill={BAR_COLORS[index]} />)}
+              </Bar>
             </BarChart>
           </ChartContainer>
         </Card>
 
         <Card className="lg:col-span-2">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Patient intervention</h3>
-              <p className="mt-0.5 text-xs text-gray-500">Current case distribution</p>
-            </div>
-            <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
-              84 cases
-            </span>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Patient log status</h3>
+            <p className="mt-0.5 text-xs text-gray-500">Current patient records by review status</p>
           </div>
-
-          <div className="flex items-center justify-center py-3">
+          <div className="flex items-center justify-center py-2">
             <ChartContainer config={pieConfig} className="h-40 w-40">
               <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={45}
-                  outerRadius={70}
-                  paddingAngle={2}
-                  strokeWidth={0}
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                <Pie data={patientStatusCounts.filter((entry) => entry.value > 0)} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2} strokeWidth={0}>
+                  {patientStatusCounts.filter((entry) => entry.value > 0).map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                 </Pie>
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="fill-gray-900 text-xl font-bold"
-                >
-                  84
-                </text>
-                <text
-                  x="50%"
-                  y="50%"
-                  dy={16}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="fill-gray-500 text-[10px] font-semibold"
-                >
-                  ACTIVE
-                </text>
+                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-900 text-xl font-bold">{dashboard.patients.length}</text>
+                <text x="50%" y="50%" dy={16} textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 text-[10px] font-semibold">RECORDS</text>
               </PieChart>
             </ChartContainer>
           </div>
-
-          <div className="mt-4 flex items-center justify-between text-[11px]">
-            <LegendDot color="#8b5cf6" label="Minor" value="35%" />
-            <LegendDot color="#10b981" label="Medical" value="40%" />
-            <LegendDot color="#f59e0b" label="Referral" value="25%" />
+          <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
+            {patientStatusCounts.filter((entry) => entry.value > 0).map((entry) => <LegendDot key={entry.name} color={entry.color} label={entry.name.replaceAll("_", " ")} value={String(entry.value)} />)}
+            {patientStatusCounts.every((entry) => entry.value === 0) && <p className="col-span-2 text-center text-gray-500">No patient records available.</p>}
           </div>
         </Card>
       </div>
 
-      {/* Row 3 */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Response activity today</h3>
-              <p className="mt-0.5 text-xs text-gray-500">
-                Incoming reports and dispatch activity by hour
-              </p>
-            </div>
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-700">
-              <span className="h-2 w-2 rounded-full bg-purple-600" />
-              Activity level
-            </span>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Reports submitted today</h3>
+            <p className="mt-0.5 text-xs text-gray-500">{todayReportCount} reports submitted by time of day</p>
           </div>
-          <ChartContainer config={areaConfig} className="h-32 w-full">
-            <AreaChart data={areaData}>
+          <ChartContainer config={areaConfig} className="h-40 w-full">
+            <AreaChart data={hourlyReportCounts}>
               <defs>
-                <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="dashboardActivityFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.25} />
                   <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                fontSize={10}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Area
-                type="monotone"
-                dataKey="activity"
-                stroke="#8b5cf6"
-                strokeWidth={2}
-                fill="url(#areaFill)"
-              />
+              <XAxis dataKey="time" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} />
+              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} fontSize={10} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+              <Area type="monotone" dataKey="activity" name="Reports" stroke="#8b5cf6" strokeWidth={2} fill="url(#dashboardActivityFill)" />
             </AreaChart>
           </ChartContainer>
         </Card>
 
-        <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-5 lg:col-span-2">
-          <div className="mb-4 flex items-start justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-700">
-              Response readiness
-            </p>
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-600 text-white">
-              <ShieldCheck size={14} />
-            </div>
+        <Card className="lg:col-span-2">
+          <h3 className="mb-1 text-sm font-bold text-gray-900">Operational readiness</h3>
+          <p className="mb-5 text-xs text-gray-500">Based on registered fleet and current inventory</p>
+          <div className="space-y-5">
+            <ProgressRow
+              label="Available vehicles"
+              value={dashboard.vehicles.length === 0 ? "No vehicles" : `${availableVehicleCount} / ${dashboard.vehicles.length}`}
+              percent={vehicleAvailability}
+              tone="blue"
+            />
+            <ProgressRow
+              label="Stock requiring attention"
+              value={dashboard.inventory ? `${activeInventoryWarnings.length} items` : "Unavailable"}
+              percent={inventoryWarningPercent}
+              tone="red"
+            />
           </div>
-
-          <div className="flex items-center gap-4">
-            <ReadinessRing value={82} />
-            <div>
-              <p className="text-xl font-bold text-gray-900">82% prepared</p>
-              <p className="text-[11px] text-gray-600">
-                Ready response posture in shift A
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            <ProgressRow label="Available vehicles" value="3 / 4" percent={75} tone="blue" />
-            <ProgressRow label="Critical supplies" value="2 alerts" percent={35} tone="red" />
-          </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Row 4 */}
       <Card>
-        <div className="mb-4 flex items-start justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-bold text-gray-900">Today's summary</h3>
-            <p className="mt-0.5 text-xs text-gray-500">
-              Live response activity and latest updates
-            </p>
+            <h3 className="text-sm font-bold text-gray-900">Recent reports</h3>
+            <p className="mt-0.5 text-xs text-gray-500">Latest submitted operation, patient, and vehicle reports</p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
-            <span className="text-orange-500">📅</span>
-            25 Aug 2026
-          </div>
+          <span className="text-xs text-gray-500">Today: {todayReportCount}</span>
         </div>
-
-        <div className="flex items-start gap-3 border-t border-gray-100 pt-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-            <Truck size={14} />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-gray-900">
-              Ambulance dispatched to Brgy. 176
-            </p>
-            <p className="mt-0.5 text-[11px] text-gray-500">
-              Unit A-02 assigned to medical assistance call
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              EN ROUTE
-            </span>
-            <span className="text-[10px] text-gray-500">08:30</span>
-          </div>
+        <div className="divide-y divide-gray-100 border-t border-gray-100">
+          {recentActivity.map((activity) => (
+            <div key={`${activity.type}-${activity.id}`} className="flex items-start gap-3 py-3">
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${activity.type === "operation" ? "bg-purple-50 text-purple-600" : activity.type === "patient" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}>
+                {activity.type === "operation" ? <ClipboardList size={14} /> : activity.type === "patient" ? <HeartPulse size={14} /> : <Truck size={14} />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-gray-900">{activity.title}</p>
+                <p className="mt-0.5 truncate text-[11px] text-gray-500">{activity.description}</p>
+              </div>
+              <time className="shrink-0 text-[10px] text-gray-500" dateTime={activity.createdAt}>{formatDateTime(activity.createdAt)}</time>
+            </div>
+          ))}
+          {!dashboard.loading && recentActivity.length === 0 && <p className="py-5 text-center text-sm text-gray-500">No reports have been submitted yet.</p>}
+          {dashboard.loading && <p className="py-5 text-center text-sm text-gray-500">Loading recent reports…</p>}
         </div>
       </Card>
     </div>
-  );
-}
-
-/* ── Primitives ───────────────────────────────────────────── */
-
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl border border-gray-200 bg-white p-5 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-const toneMap = {
-  purple: { bg: "bg-purple-50", fg: "text-purple-600" },
-  green:  { bg: "bg-emerald-50", fg: "text-emerald-600" },
-  blue:   { bg: "bg-blue-50",   fg: "text-blue-600" },
-  red:    { bg: "bg-red-50",    fg: "text-red-600" },
-} as const;
-
-function StatCard({
-  label, value, icon, tone, footer,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-  tone: keyof typeof toneMap;
-  footer: ReactNode;
-}) {
-  const t = toneMap[tone];
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <div className="flex items-start justify-between">
-        <p className="text-xs text-gray-500">{label}</p>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${t.bg} ${t.fg}`}>
-          {icon}
-        </span>
-      </div>
-      <div className="mt-2">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-      </div>
-      <div className="mt-3 text-[11px]">{footer}</div>
-    </div>
-  );
-}
-
-function LegendDot({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <span className="flex items-center gap-1.5 text-gray-600">
-      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-      <span className="text-gray-700">{label}</span>
-      <span className="font-semibold text-gray-900">{value}</span>
-    </span>
-  );
-}
-
-function ReadinessRing({ value }: { value: number }) {
-  const r = 24;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative">
-      <svg width="64" height="64" viewBox="0 0 60 60" className="-rotate-90">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="#e9d5ff" strokeWidth="6" />
-        <circle
-          cx="30" cy="30" r={r}
-          fill="none"
-          stroke="#7c3aed"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${(value / 100) * c} ${c}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-purple-700">
-        {value}%
-      </div>
-    </div>
-  );
-}
-
-function ProgressRow({
-  label, value, percent, tone,
-}: {
-  label: string;
-  value: string;
-  percent: number;
-  tone: "blue" | "red";
-}) {
-  const bar = tone === "blue" ? "bg-blue-500" : "bg-red-500";
-  const txt = tone === "blue" ? "text-blue-600" : "text-red-600";
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[11px]">
-        <span className="font-semibold text-gray-800">{label}</span>
-        <span className={`font-semibold ${txt}`}>{value}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-purple-200/60">
-        <div className={`h-full rounded-full ${bar}`} style={{ width: `${percent}%` }} />
-      </div>
-    </div>
-  );
+  )
 }

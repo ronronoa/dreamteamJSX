@@ -6,54 +6,50 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   compact?: boolean;
 }
 
-  const colors = {
-    none: "",
-    purple: "bg-[#6d02cd] hover:bg-[#480b7f] text-white",
-    orange: "bg-[#f0752a] hover:bg-[#bc4608] text-white",
-    orangeLinear: "bg-linear-to-b from-[#f0752a] to-[#be4809] hover:from-[#c14a0b] text-white",
-    someKindOfUniquePurpleToOrange: "bg-linear-to-r from-purple-700 to-orange-500 hover:brightness-105 transition rounded-xl px-8 py-3 text-white font-semibold shadow-lg",
-    gray: "bg-gray-200 hover:bg-gray-300 text-gray-500",
-  };
-
+const colors = {
+  none: "",
+  purple: "bg-[#6d02cd] hover:bg-[#480b7f] text-white",
+  orange: "bg-[#f0752a] hover:bg-[#bc4608] text-white",
+  orangeLinear: "bg-linear-to-b from-[#f0752a] to-[#be4809] hover:from-[#c14a0b] text-white",
+  someKindOfUniquePurpleToOrange: "bg-linear-to-r from-purple-700 to-orange-500 hover:brightness-105 transition rounded-xl px-8 py-3 text-white font-semibold shadow-lg",
+  gray: "bg-gray-200 hover:bg-gray-300 text-gray-500",
+};
 
 /**
  * Reusable application button with a unified design.
  *
- * Keeps button styling consistent across the application while allowing
- * the color variant and additional Tailwind classes to be customized.
- *
- * Centralizing the default styles also makes it easy to change the
- * application's button design in one place.
- *
  * @example
  * ```tsx
- * <CommonButton>
- *   Purple Button
- * </CommonButton>
+ * <CommonButton>Purple Button</CommonButton>
  *
- * <CommonButton variant="orange">
- *   Create Report
- * </CommonButton>
+ * <CommonButton variant="orange">Create Report</CommonButton>
  *
- * <CommonButton variant="gray">
- *   Cancel
- * </CommonButton>
+ * <CommonButton variant="gray">Cancel</CommonButton>
  *
- * <CommonButton
- *   variant="orange"
- *   className="w-full"
- *   type="submit"
- * >
+ * <CommonButton variant="orange" className="w-full" type="submit">
  *   Sign In
+ * </CommonButton>
+ *
+ * <CommonButton variant="purple" compact>
+ *   <Plus size={14} />
+ *   Add Item
  * </CommonButton>
  * ```
  */
-export default function CommonButton({ children, variant = "purple", className = "", compact = false, ...props }: ButtonProps) {
-
+export default function CommonButton({
+  children,
+  variant = "purple",
+  className = "",
+  compact = false,
+  ...props
+}: ButtonProps) {
   return (
     <button
       {...props}
       className={`
+        inline-flex items-center justify-center
+        ${compact ? "gap-1" : "gap-2"}
+
         ${colors[variant]}
 
         ${compact ? "rounded-md px-3.5 py-1.5 text-[11px]" : "rounded-2xl px-6 py-3"}

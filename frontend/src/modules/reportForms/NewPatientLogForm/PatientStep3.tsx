@@ -1,8 +1,7 @@
 import CommonFormSection from "../component/CommonFormSection"
-import InventorySection from "../component/InventorySection"
+import OperationInventorySection from "../component/OperationInventorySection"
 
 import type { InventoryItem, WaiverForm } from "@/types/patientLog"
-import { createEmptyInventoryItem } from "@/types/patientLog"
 import ImageUpload, { addImageFiles, useImageDrag } from "../component/ImageUpload"
 
 type PatientStep3Props = {
@@ -52,10 +51,9 @@ export default function PatientStep3({
         </div>
       </CommonFormSection>
 
-      <InventorySection
+      <OperationInventorySection
         inventory={inventory}
         onInventoryChange={onInventoryChange}
-        createEmptyItem={createEmptyInventoryItem}
       />
     </div>
   )

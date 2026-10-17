@@ -13,7 +13,7 @@ export class ValidationError extends AppError {
   readonly code = "VALIDATION_ERROR";
   readonly statusCode = 400;
 
-  constructor(message: string, public readonly fields: Record<string, string[]>) {
+  constructor(message: string, public readonly fields: Record<string, string[]> = {}) {
     super(message);
   }
 }

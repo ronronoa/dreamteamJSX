@@ -5,8 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 import { dashboardSectionsByRole } from "@/modules/adminDashboard/DashboardNav";
 
 export default function RoleGuard({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const { pathname } = useLocation();
+
+
+  if (loading) return null;
 
   const role = session?.user?.role ?? "MEMBER";
 

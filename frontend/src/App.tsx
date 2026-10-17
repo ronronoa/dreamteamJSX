@@ -29,6 +29,8 @@ import Reports from "./modules/adminDashboard/content/Reports"
 import SettingsPage from "./modules/adminDashboard/content/SettingsPage"
 import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
 import RoleGuard from "./components/RoleGuard"
+import VehicularDispatchForm from "./pages/reportForms/VehicularDispatchForm"
+import BackendStatusBanner from "./components/BackendStatusBanner"
 
 
 function App() {
@@ -52,6 +54,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <BackendStatusBanner/>
       {loading && <LoadingScreen />}
       <Routes>
 
@@ -71,7 +74,7 @@ function App() {
 
         <Route path={ROUTES.OPERATIONLOG_FORM} element={<OperationLogForm/>}/>
         <Route path={ROUTES.PATIENTLOG_FORM} element={<PatientLogForm/>}/>
-        <Route path={ROUTES.VEHICULARDISPATCH_FORM} />
+        <Route path={ROUTES.VEHICULARDISPATCH_FORM} element={<VehicularDispatchForm/>} />
 
 
         <Route

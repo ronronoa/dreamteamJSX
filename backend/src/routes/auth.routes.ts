@@ -5,7 +5,7 @@ import { requireAuth } from "@/middleware/auth.middleware";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: 999,
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
@@ -14,5 +14,8 @@ export const authRoutes = Router();
 
 authRoutes.post("/auth/signup", authLimiter, authController.signUp);
 authRoutes.post("/auth/signin", authLimiter, authController.signIn);
+authRoutes.get("/checksession", authLimiter, authController.checkSession);
+authRoutes.get("/auth/checksession", authLimiter, authController.checkSession);
 authRoutes.post("/auth/refresh", authLimiter, authController.refresh);
-authRoutes.post("/auth/logout", requireAuth ,authController.logout);
+authRoutes.post("/auth/logout", requireAuth, authController.logout);
+authRoutes.post("/auth/change-password", requireAuth, authController.changePassword);

@@ -7,11 +7,16 @@
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
 | `POST` | `/api/auth/signup` | Public (rate limited) | Register new user |
-| `POST` | `/api/auth/signin` | Public (rate limited) | Login, returns JWT tokens |
+| `POST` | `/api/auth/signin` | Public (rate limited) | Login with email or username, returns JWT tokens |
+| `GET` | `/api/checksession` | Public (refresh cookie optional) | Validate the Bearer access token or rotate a valid refresh cookie; returns the basic user profile and access token |
+| `GET` | `/api/auth/checksession` | Alias for `/api/checksession` | Compatibility route for clients upgrading from the previous refresh-cookie path |
 | `POST` | `/api/auth/refresh` | Public (rate limited) | Refresh access token |
 | `POST` | `/api/auth/logout` | Any authenticated | Revoke refresh token |
-| `POST` | `/api/auth/set-pin` | Any authenticated | Set or change PIN (4-6 digits) |
+| `POST` | `/api/auth/set-pin` | Non-MEMBER authenticated | Set or change report PIN (4-6 digits) |
 | `POST` | `/api/auth/verify-pin` | Any authenticated | Verify PIN for report authorization |
+| `POST` | `/api/report-forms/operations` | Public (PIN required, rate limited) | Submit operation report form (multipart); created as pending verification |
+| `GET` | `/api/report-forms/operations/options` | Public | Load operation types, active teams and responders, and available vehicles for the operation form |
+| `POST` | `/api/report-forms/patients` | Public (PIN required, rate limited) | Submit patient report form (multipart); created as pending verification |
 
 ---
 
@@ -27,24 +32,70 @@
 | `DELETE` | `/api/users/:id` | SUPER_ADMIN | Delete user account |
 | `POST` | `/api/users/:id/reset-password` | SUPER_ADMIN | Reset password to default |
 
+Authenticated users can also manage their own profile and password:
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/users/me` | Any authenticated | Read own profile and assigned team |
+| `PATCH` | `/api/users/me` | Any authenticated | Update own name, username, email, and phone |
+| `POST` | `/api/users/me/avatar` | Any authenticated | Upload own JPG/PNG profile photo (5 MB limit) |
+| `POST` | `/api/auth/change-password` | Any authenticated | Change password after verifying the current password |
+
+## Activity Logs
+
+> Super Admin and Department Head. Mutating API requests are recorded automatically; request bodies are never stored. Inventory stock transactions are also added with the item, quantity, unit, and reason, including existing transactions when the backfill migration runs.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/activity-logs?page=1&pageSize=10` | SUPER_ADMIN, DEPARTMENT_HEAD | Read the paginated audit ledger and activity statistics |
+| `GET` | `/api/activity-logs/export` | SUPER_ADMIN, DEPARTMENT_HEAD | Download active audit entries as CSV |
+| `POST` | `/api/activity-logs/archive` | SUPER_ADMIN, DEPARTMENT_HEAD | Archive all active entries while retaining them in the database |
+
+## Archived Records
+
+> Super Admin and Department Head.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/api/archives?page=1&pageSize=10&search=&sourceType=all` | SUPER_ADMIN, DEPARTMENT_HEAD | List archived operation, patient, vehicle, inventory, and activity records |
+| `POST` | `/api/archives/:type/:id` | SUPER_ADMIN, DEPARTMENT_HEAD | Archive an existing record (`operation`, `patient`, `vehicle`, `inventory`, or `activity`) |
+| `POST` | `/api/archives/:type/:id/restore` | SUPER_ADMIN, DEPARTMENT_HEAD | Restore an archived record |
+
 **Request/Response shapes:**
 
 ```typescript
 // POST /api/users
-// Body: { name: string, username: string, password: string, role: Role }
+// Body: { name: string, username: string, email: string, password: string, role?: Role, phone?: string, team_id?: string, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // PATCH /api/users/:id
-// Body: { name?: string, role?: Role }
+// Body: { name?: string, username?: string, email?: string, role?: Role, phone?: string | null, team_id?: string | null, isActive?: boolean }
 // Returns: { user: SafeUser }
 
 // POST /api/users/:id/reset-password
-// Returns: { message: string, defaultPassword: string }
+// Body: { newPassword: string }
+// Returns: { success: true }
+
+// PATCH /api/users/me
+// Body: { name: string, username: string, email: string, phone: string | null }
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/users/me/avatar
+// Multipart form field: image (JPG or PNG, maximum 5 MB)
+// Returns: { user: SafeUser & { team_name: string | null } }
+
+// POST /api/auth/change-password
+// Body: { currentPassword: string, newPassword: string }
+// Returns: { accessToken: string } and rotates the refresh-token cookie
 ```
 
 ---
 
-## 3. Operation Log — Phase 3-4 (not built)
+## 3. Operation Log — **BUILT** ✅
+
+Operation reports are submitted without signing in as `multipart/form-data`. Send the report sections in the `formData` JSON field, the 4–6 digit `pinNumber` field at submission, and one or more JPG, PNG, or WebP files under `images`. The PIN is checked against an active non-MEMBER account. The report is saved with `PENDING` status and the submitter name entered in the form, then follows the team leader and administrator verification workflow.
+
+PINs are set by authenticated non-MEMBER users in Settings. Members submit the PIN assigned by their team leadership.
 
 ### 3.1 CRUD Operations
 
@@ -308,30 +359,37 @@ ADMIN rejects     → REJECTED
 
 ---
 
-## 8. Inventory — Phase 6 (not built)
+## 8. Inventory — core workflows implemented
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
-| `GET` | `/api/inventory` | Any authenticated | List inventory items |
-| `POST` | `/api/inventory` | DEPARTMENT_HEAD+ | Create inventory item |
-| `PATCH` | `/api/inventory/:id` | DEPARTMENT_HEAD+ | Update inventory item |
-| `POST` | `/api/inventory/stock-in` | DEPARTMENT_HEAD+ | Add stock (STOCK_IN) |
-| `POST` | `/api/inventory/adjust` | SUPER_ADMIN | Manual stock adjustment |
-| `GET` | `/api/inventory/:id/transactions` | Any authenticated | View transaction history |
+| `GET` | `/api/inventory` | Any authenticated | List active inventory and stock/expiry summary |
+| `POST` | `/api/inventory` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Create an item and record its initial stock |
+| `PATCH` | `/api/inventory/:id` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Update item details and minimum quantity |
+| `POST` | `/api/inventory/stock-in` | SUPER_ADMIN, DEPARTMENT_HEAD, DEPUTY | Add stock (STOCK_IN) |
+| `POST` | `/api/inventory/adjust` | SUPER_ADMIN | Apply a signed, reasoned stock adjustment |
+| `GET` | `/api/inventory/:id/transactions` | Any authenticated | View paginated transaction history |
 
 **Request/Response shapes:**
 
 ```typescript
 // POST /api/inventory
-// Body: { itemName: string, category: string, unit: string, stockQuantity: number, stockType?: string }
+// Body: { itemName: string, category: string, unit?: string, stockQuantity: number, minimumQuantity: number, expiryDate?: string | null }
+// Returns: { item: InventoryItem }
+
+// GET /api/inventory
+// Returns: { items: InventoryItem[], nextItemCode: string, stats: InventoryOverview }
+
+// PATCH /api/inventory/:id
+// Body: { itemName?: string, category?: string, unit?: string, minimumQuantity?: number, expiryDate?: string | null }
 // Returns: { item: InventoryItem }
 
 // POST /api/inventory/stock-in
-// Body: { itemId: string, quantity: number }
+// Body: { itemId: string, quantity: number, reason?: string }
 // Returns: { transaction: InventoryTransaction, newStock: number }
 
 // POST /api/inventory/adjust
-// Body: { itemId: string, quantity: number, reason: string }
+// Body: { itemId: string, quantity: number, reason: string } // quantity is a signed stock delta
 // Returns: { transaction: InventoryTransaction, newStock: number }
 
 // GET /api/inventory/:id/transactions

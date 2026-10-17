@@ -1,19 +1,4 @@
-export interface PendingPatientRecord {
-  id: string;
-  date: Date;
-  nameOfPatient: string;
-  age: string;
-  address: string;
-  assessment: string;
-  submittedBy: string;
-}
-
-export interface PatientLogRecord extends PendingPatientRecord {
-  time: string;
-}
-
-// --------------------------------------------------------------
-// step1 responderDetails
+import { getCurrentDateInputValue } from "../utils/dateTime"
 
 export type Sex = "Male" | "Female" | ""
 
@@ -44,6 +29,7 @@ export type VehicularDispatch = {
   from: string
   to: string
   vehicle: string
+  vehicleOther?: string
   driver: string
   departTime: string
   departPeriod: "AM" | "PM"
@@ -55,7 +41,7 @@ export type VehicularDispatch = {
 
 export const createEmptyResponderDetails = (): ResponderDetails => ({
   submitterName: "",
-  date: "",
+  date: getCurrentDateInputValue(),
   typeOfRequest: "",
   caller: createEmptyPersonName(),
   teamAssigned: [],
@@ -143,18 +129,7 @@ export const createEmptyFirstAidHospital = (): FirstAidHospitalDetails => ({
   hospitalOutPeriod: "AM",
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-  const birth = new Date(birthdate)
-  if (Number.isNaN(birth.getTime())) return ""
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const hadBirthday =
-    today.getMonth() > birth.getMonth() ||
-    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate())
-  if (!hadBirthday) age -= 1
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 waiver form & inventory
@@ -171,6 +146,8 @@ export type InventoryItem = {
   id: string
   itemName: string
   quantity: string
+  inventoryItemId?: string
+  unit?: string
 }
 
 export const createEmptyInventoryItem = (): InventoryItem => ({
