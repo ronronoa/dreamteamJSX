@@ -10,6 +10,7 @@ export interface PatientLogRecord {
   submitted_by: string | null;
   submitter_name: string | null;
   status: PatientLogStatus;
+  rejected_reason: string | null;
   name_of_caller: string | null;
   bp: string | null;
   pr: string | null;
@@ -67,11 +68,12 @@ export async function reviewPatientLog(
   patientLogId: string,
   action: "authorize" | "validate" | "reject",
   pin: string,
+  rejectedReason?: string,
 ) {
   const response = await apiFetch(`/patient-logs/${patientLogId}/${action}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ pin, ...(rejectedReason && { rejected_reason: rejectedReason }) }),
   });
   return parseResponse<{ patientLog: PatientLogRecord }>(response);
 }

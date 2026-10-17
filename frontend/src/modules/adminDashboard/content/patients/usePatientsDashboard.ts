@@ -109,14 +109,14 @@ export function usePatientsDashboard() {
     setReviewTarget({ row, action: resolvedAction });
   }
 
-  async function handleReview(pin: string) {
+  async function handleReview(pin: string, rejectedReason = "") {
     if (!accessToken || !reviewTarget || busy) return;
     setBusy(true);
     setPinError("");
     setPageError("");
     setSuccessMessage("");
     try {
-      await reviewPatientLog(accessToken, reviewTarget.row.patientLogId, reviewTarget.action, pin);
+      await reviewPatientLog(accessToken, reviewTarget.row.patientLogId, reviewTarget.action, pin, rejectedReason);
       const actionMessage = reviewTarget.action === "authorize" ? "sent for administrator review" : reviewTarget.action === "validate" ? "approved" : "rejected";
       setSuccessMessage(`${reviewTarget.row.id} was ${actionMessage}.`);
       setReviewTarget(null);

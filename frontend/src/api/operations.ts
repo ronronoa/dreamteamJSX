@@ -12,6 +12,7 @@ export interface OperationRecord {
   submitter_name: string | null;
   validated_by: string | null;
   status: OperationStatus;
+  rejected_reason: string | null;
   team: { team_id: string; team_name: string };
   teamAssignments: Array<{ team: { team_id: string; team_name: string } }>;
   submitter: { user_id: string; name: string; username: string } | null;
@@ -71,8 +72,8 @@ export async function validateOperation(accessToken: string, operationId: string
   return updateOperationStatus(accessToken, operationId, "validate", pin);
 }
 
-export async function rejectOperation(accessToken: string, operationId: string, pin: string) {
-  return updateOperationStatus(accessToken, operationId, "reject", pin);
+export async function rejectOperation(accessToken: string, operationId: string, pin: string, rejectedReason: string) {
+  return updateOperationStatus(accessToken, operationId, "reject", pin, rejectedReason);
 }
 
 export async function archiveOperation(accessToken: string, operationId: string) {
@@ -88,6 +89,7 @@ async function updateOperationStatus(
   operationId: string,
   action: "authorize" | "validate" | "reject",
   pin: string,
+  rejectedReason?: string,
 ) {
   const response = await apiFetch(`/operations/${operationId}/${action}`, {
     method: "POST",
@@ -95,7 +97,7 @@ async function updateOperationStatus(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ pin, ...(rejectedReason && { rejected_reason: rejectedReason }) }),
   });
   return parseResponse<{ operation: OperationRecord }>(response);
 }

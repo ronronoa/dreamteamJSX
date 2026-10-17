@@ -46,6 +46,7 @@ export interface VehicleDispatchDetailRecord {
     address: string | null
   }>
   status: VehicleLogStatus
+  rejected_reason: string | null
 }
 
 export async function fetchVehicularDispatchRecords(accessToken: string): Promise<VehicleDispatchRecord[]> {
@@ -90,6 +91,7 @@ export async function reviewVehicularDispatch(
   dispatchId: string,
   action: "authorize" | "validate" | "reject",
   pin: string,
+  rejectedReason?: string,
 ) {
   const response = await apiFetch(`/vehicular-dispatches/${dispatchId}/${action}`, {
     method: "POST",
@@ -97,7 +99,7 @@ export async function reviewVehicularDispatch(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ pin, ...(rejectedReason && { rejected_reason: rejectedReason }) }),
   })
   const result = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(result.message ?? `Request failed (${response.status})`)

@@ -140,6 +140,7 @@ model OperationLog {
   submitted_by        String?
   submitter_name      String?
   validated_by        String?
+  rejected_reason     String?
   status              OperationStatus @default(PENDING)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -386,6 +387,7 @@ model PatientLog {
   submitted_by            String?
   submitter_name          String?
   status                  OperationStatus      @default(PENDING)
+  rejected_reason         String?
   name_of_caller          String?
   bp                      String?
   pr                      String?
@@ -429,6 +431,7 @@ model VehicularDispatch {
   nature_of_operation String?
   transfers      DispatchType[] @default([])
   status         OperationStatus @default(PENDING)
+  rejected_reason String?
   submitted_by   String?
   vehicle_id     String?
   vehicle_name   String?

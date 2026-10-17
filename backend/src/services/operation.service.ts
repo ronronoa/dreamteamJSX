@@ -8,11 +8,12 @@ async function fuckSake(
     tx: Prisma.TransactionClient,
     operationId: string,
     status: string,
+    rejectedReason: string | null = null,
 ) {
     if (status !== "VALIDATED" && status !== "REJECTED") return
     await tx.vehicularDispatch.updateMany({
         where: { operation_id: operationId, archive: null },
-        data: { status },
+        data: { status, rejected_reason: rejectedReason },
     })
 }
 
@@ -218,7 +219,7 @@ export const operationService = {
         await decrementOperationInventory(tx, operationId, actor.userId)
       }
 
-      await fuckSake(tx, operationId, nextStatus)
+      await fuckSake(tx, operationId, nextStatus, null)
 
       const updated = await tx.operationLog.findUniqueOrThrow({ where: { operation_id: operationId } })
 
@@ -246,10 +247,10 @@ export const operationService = {
     return prisma.$transaction(async (tx) => {
       const updatedCount = await tx.operationLog.updateMany({
         where: { operation_id: operationId, status: op.status },
-        data: { status: nextStatus, validated_by: actor.userId},
+        data: { status: nextStatus, validated_by: actor.userId, rejected_reason: null},
       });
 
-      await fuckSake(tx, operationId, nextStatus)
+      await fuckSake(tx, operationId, nextStatus, null)
 
       if (updatedCount.count === 0) throw new ConflictError("This operation was already reviewed.");
 
@@ -262,16 +263,16 @@ export const operationService = {
     })
   },
 
-  async reject(operationId: string, actor: { userId: string; role: Role }, pin: string) {
+  async reject(operationId: string, actor: { userId: string; role: Role }, pin: string, rejectedReason: string) {
     const op = await this.findById(operationId);
     const nextStatus = await prepareReportReview({ actor, pin, action: "reject", currentStatus: op.status });
     return prisma.$transaction(async (tx) => {
       const updated = await tx.operationLog.update({
         where: { operation_id: operationId },
-        data: { status: nextStatus, validated_by: actor.userId },
+        data: { status: nextStatus, validated_by: actor.userId, rejected_reason: rejectedReason },
       });
 
-      await fuckSake(tx, operationId, nextStatus)
+      await fuckSake(tx, operationId, nextStatus, rejectedReason)
 
       await tx.operationLogEdit.create({
         data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Rejected from ${op.status}` },

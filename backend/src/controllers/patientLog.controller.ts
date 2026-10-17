@@ -38,8 +38,8 @@ export const patientLogController = {
       } else {
         action = requestedAction;
       }
-      const { pin } = validateOrThrow(PatientLogReviewSchema.safeParse(req.body));
-      const patientLog = await patientLogService.review(id, req.user!, pin, action);
+      const { pin, rejected_reason } = validateOrThrow(PatientLogReviewSchema.safeParse(req.body));
+      const patientLog = await patientLogService.review(id, req.user!, pin, action, rejected_reason);
       res.status(200).json({ patientLog });
     } catch (error) {
       next(error);

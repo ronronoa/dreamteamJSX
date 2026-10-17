@@ -137,8 +137,8 @@ export const operationController = {
     async reject(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params));
-            const { pin } = validateOrThrow(RejectOperationSchema.safeParse(req.body));
-            const operation = await operationService.reject(id, req.user!, pin);
+            const { pin, rejected_reason } = validateOrThrow(RejectOperationSchema.safeParse(req.body));
+            const operation = await operationService.reject(id, req.user!, pin, rejected_reason);
             res.status(200).json({ operation });
         } catch (err) { next(err); }
 },

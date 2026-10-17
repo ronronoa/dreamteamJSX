@@ -105,6 +105,13 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
         } : null}
       />
 
+      {record.status === "REJECTED" && record.rejected_reason && (
+        <section className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <h3 className="text-sm font-bold text-red-800">Rejection reason</h3>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-red-700">{record.rejected_reason}</p>
+        </section>
+      )}
+
       <div className="flex justify-end border-t border-gray-200 pt-3"><CommonButton variant="gray" onClick={onClose}>Close</CommonButton></div>
     </div>
   );

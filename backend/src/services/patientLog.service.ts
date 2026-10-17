@@ -1,6 +1,6 @@
 import type { Role } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
-import { NotFoundError } from "@/shared/errors";
+import { NotFoundError, ValidationError } from "@/shared/errors";
 import { prepareReportReview, type ReportReviewAction } from "@/services/reportReviewWorkflow";
 
 const patientLogIncludes = {
@@ -34,13 +34,17 @@ export const patientLogService = {
     actor: { userId: string; role: Role },
     pin: string,
     action: ReportReviewAction,
+    rejectedReason?: string,
   ) {
     const patientLog = await this.getById(id);
+    if (action === "reject" && !rejectedReason?.trim()) {
+      throw new ValidationError("A rejection reason is required.");
+    }
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: patientLog.status });
 
     return prisma.patientLog.update({
       where: { patient_log_id: id },
-      data: { status: nextStatus },
+      data: { status: nextStatus, rejected_reason: action === "reject" ? rejectedReason!.trim() : null },
       include: patientLogIncludes,
     });
   },

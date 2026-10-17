@@ -117,14 +117,14 @@ export function useVehiclesDashboard() {
     setReviewTarget({ record, action: resolvedAction });
   }
 
-  async function handleReview(pin: string) {
+  async function handleReview(pin: string, rejectedReason = "") {
     if (!accessToken || !reviewTarget || busy) return;
     setBusy(true);
     setPinError("");
     setDispatchError("");
     setSuccessMessage("");
     try {
-      await reviewVehicularDispatch(accessToken, reviewTarget.record.dispatchId, reviewTarget.action, pin);
+      await reviewVehicularDispatch(accessToken, reviewTarget.record.dispatchId, reviewTarget.action, pin, rejectedReason);
       const resultMessage = reviewTarget.action === "authorize"
         ? "sent for administrator review"
         : reviewTarget.action === "validate" ? "approved" : "rejected";

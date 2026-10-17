@@ -119,7 +119,7 @@ export function useOperationsDashboard() {
     setReviewTarget({ row, action });
   }
 
-  async function handleReview(pin: string) {
+  async function handleReview(pin: string, rejectedReason = "") {
     if (!accessToken || !reviewTarget || busy) return;
 
     setBusy(true);
@@ -128,7 +128,7 @@ export function useOperationsDashboard() {
     setSuccessMessage("");
     try {
       if (reviewTarget.action === "reject") {
-        await rejectOperation(accessToken, reviewTarget.row.operationId, pin);
+        await rejectOperation(accessToken, reviewTarget.row.operationId, pin, rejectedReason);
         setSuccessMessage(`${reviewTarget.row.id} was rejected.`);
       } else {
         await validateOperation(accessToken, reviewTarget.row.operationId, pin);

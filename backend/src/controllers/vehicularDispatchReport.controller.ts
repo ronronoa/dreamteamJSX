@@ -56,8 +56,8 @@ export const vehicularDispatchReportController = {
         ...req.params,
         action: requestedAction,
       }))
-      const { pin } = validateOrThrow(VehicularDispatchReviewSchema.safeParse(req.body))
-      const dispatch = await vehicularDispatchReportService.review(id, req.user!, pin, action)
+      const { pin, rejected_reason } = validateOrThrow(VehicularDispatchReviewSchema.safeParse(req.body))
+      const dispatch = await vehicularDispatchReportService.review(id, req.user!, pin, action, rejected_reason)
       res.status(200).json({ dispatch })
     } catch (error) {
       next(error)

@@ -77,6 +77,8 @@ export default function Operations() {
         open={reviewTarget !== null}
         onClose={() => { setReviewTarget(null); setPinError(""); }}
         onSubmit={(pin) => { void handleReview(pin); }}
+        requireRejectionReason={reviewTarget?.action === "reject"}
+        onSubmitReview={(pin, reason) => { void handleReview(pin, reason); }}
         loading={busy}
         error={pinError}
       />

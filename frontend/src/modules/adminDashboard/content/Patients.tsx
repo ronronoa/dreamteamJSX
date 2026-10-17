@@ -38,6 +38,8 @@ export default function Patients() {
         open={dashboard.reviewTarget !== null}
         onClose={() => { dashboard.setReviewTarget(null); dashboard.setPinError(""); }}
         onSubmit={(pin) => { void dashboard.handleReview(pin); }}
+        requireRejectionReason={dashboard.reviewTarget?.action === "reject"}
+        onSubmitReview={(pin, reason) => { void dashboard.handleReview(pin, reason); }}
         loading={dashboard.busy}
         error={dashboard.pinError}
       />

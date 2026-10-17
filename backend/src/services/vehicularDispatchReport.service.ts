@@ -35,13 +35,14 @@ function toDispatchRecord(dispatch: DispatchRecord) {
     odometer_out: dispatch.odometer_out,
     passengers: dispatch.passengers,
     status: dispatch.status,
+    rejected_reason: dispatch.rejected_reason,
   }
 }
 
 async function findDispatchRecordById(id: string) {
   const dispatch = await prisma.vehicularDispatch.findFirst({
     // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
-    where: { archive: null },
+    where: { dispatch_id: id, archive: null },
     include: dispatchRecordInclude,
   })
   if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
@@ -106,16 +107,19 @@ export const vehicularDispatchReportService = {
     return findDispatchRecordById(id)
   },
 
-  async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction) {
+  async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction, rejectedReason?: string) {
     const dispatch = await prisma.vehicularDispatch.findFirst({
       // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
       where: { dispatch_id: id, archive: null },
     })
     if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
+    if (action === "reject" && !rejectedReason?.trim()) {
+      throw new ValidationError("A rejection reason is required.")
+    }
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: dispatch.status })
     await prisma.vehicularDispatch.update({
       where: { dispatch_id: id },
-      data: { status: nextStatus },
+      data: { status: nextStatus, rejected_reason: action === "reject" ? rejectedReason!.trim() : null },
     })
     return findDispatchRecordById(id)
   },
