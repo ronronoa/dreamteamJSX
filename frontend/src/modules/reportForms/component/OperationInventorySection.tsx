@@ -262,6 +262,7 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
               <CommonSearchSelect
                 id="operation-inventory-item"
                 label="Inventory item"
+                singleSelect
                 placeholder="Search inventory…"
                 options={availableItems.map((item) => ({
                   value: item.itemId,

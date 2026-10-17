@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:3000/api";
+export const API_URL = "https://ruper.dpdns.org/api";
 export const WS_URL = "";
 
 export async function checkBackend() {

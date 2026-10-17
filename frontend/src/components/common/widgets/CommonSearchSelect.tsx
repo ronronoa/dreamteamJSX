@@ -35,6 +35,7 @@ interface CommonSearchSelectProps
   onChange?: (value: string[], options: CommonSearchSelectOption[]) => void
   emptyMessage?: string
   errorMessage?: string
+  singleSelect?: boolean
 }
 
 export default function CommonSearchSelect({
@@ -45,6 +46,7 @@ export default function CommonSearchSelect({
   onChange,
   emptyMessage = "No results found",
   errorMessage,
+  singleSelect = false,
   placeholder = "Search...",
   className = "",
   ...props
@@ -79,6 +81,13 @@ export default function CommonSearchSelect({
 
   function toggleOption(option: CommonSearchSelectOption) {
     const isSelected = value.includes(option.value)
+    if (singleSelect) {
+      const nextValues = isSelected ? [] : [option.value]
+      const nextOptions = options.filter((o) => nextValues.includes(o.value))
+      onChange?.(nextValues, nextOptions)
+      return
+    }
+
     const nextValues = isSelected
       ? value.filter((v) => v !== option.value)
       : [...value, option.value]
@@ -104,6 +113,7 @@ export default function CommonSearchSelect({
       setHighlighted(-1)
     }
   }
+
 
   return (
     <div ref={containerRef} className="relative">

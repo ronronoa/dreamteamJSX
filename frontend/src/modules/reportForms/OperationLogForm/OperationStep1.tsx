@@ -49,7 +49,7 @@ export default function OperationStep1({
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
-      <CommonFormSection title="OPERATION DETAILS">
+      <CommonFormSection title="OPERATION DETAILS" standardHeight={false}>
         <div className="space-y-4">
           <CommonInput
             variant="compact"

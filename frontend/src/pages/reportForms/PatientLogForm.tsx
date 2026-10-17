@@ -71,6 +71,10 @@ function normalizePatientReport(value: unknown): PatientLogData {
     firstAidHospital: {
       ...emptyReport.firstAidHospital,
       ...report.firstAidHospital,
+      bp: "90/120",
+      temp: "36",
+      pr: "60",
+      spo2: "90",
       hospitalRepresentative: {
         ...emptyReport.firstAidHospital.hospitalRepresentative,
         ...report.firstAidHospital?.hospitalRepresentative,

@@ -36,7 +36,7 @@ export default function PatientStep2({
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       {/* ------------------------------ PATIENT DETAILS ------------------------------ */}
-      <CommonFormSection title="PATIENT DETAILS">
+      <CommonFormSection title="PATIENT DETAILS" standardHeight={false}>
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-lg font-medium text-slate-900">Name of Patient</label>
@@ -241,7 +241,8 @@ export default function PatientStep2({
             <div className="flex items-center gap-4">
               <CommonVitalField
                 label="BP"
-                placeholder="000/000"
+                allow="/"
+                placeholder="90/120"
                 className="w-24"
                 value={firstAidHospital.bp}
                 onChange={(e) => onFirstAidHospitalChange({ bp: e.target.value })}
@@ -260,7 +261,7 @@ export default function PatientStep2({
               />
               <CommonVitalField
                 label="Temp"
-                placeholder="16°C"
+                placeholder="36°C"
                 value={firstAidHospital.temp}
                 onChange={(e) => onFirstAidHospitalChange({ temp: e.target.value })}
               />

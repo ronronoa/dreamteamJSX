@@ -73,6 +73,32 @@ export default function ManageUsers() {
         {successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>}
 
 
+        <section className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Response teams</h2>
+              <p className="mt-1 text-xs text-gray-500">Teams available for user assignment.</p>
+            </div>
+            {canManageTeams && <CommonButton compact onClick={() => { setTeamToEdit(null); setTeamError(""); setTeamModalOpen(true); }}>
+              <span className="inline-flex items-center gap-1"><Plus size={14} /> Add team</span>
+            </CommonButton>}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {teams.length > 0 ? teams.map((team) => (
+              <div key={team.team_id} className="inline-flex items-center gap-2 rounded-full bg-purple-50 py-1 pl-3 pr-2 text-xs font-medium text-purple-800">
+                <span>{team.team_name}</span>
+                {canManageTeams && <>
+                  <button type="button" aria-label={`Edit ${team.team_name}`} title="Edit team" onClick={() => { setTeamToEdit(team); setTeamError(""); setTeamModalOpen(true); }} className="text-purple-600 hover:text-purple-900">
+                    <Pencil size={13} />
+                  </button>
+                  <button type="button" aria-label={`Delete ${team.team_name}`} title="Delete team" onClick={() => setTeamToDelete(team)} className="text-gray-500 hover:text-red-700">
+                    <Trash2 size={13} />
+                  </button>
+                </>}
+              </div>
+            )) : <p className="text-xs text-gray-500">No teams have been created.</p>}
+          </div>
+        </section>
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -130,32 +156,6 @@ export default function ManageUsers() {
                 } },
               ]}
             />
-          </div>
-        </section>
-        <section className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">Response teams</h2>
-              <p className="mt-1 text-xs text-gray-500">Teams available for user assignment.</p>
-            </div>
-            {canManageTeams && <CommonButton compact onClick={() => { setTeamToEdit(null); setTeamError(""); setTeamModalOpen(true); }}>
-              <span className="inline-flex items-center gap-1"><Plus size={14} /> Add team</span>
-            </CommonButton>}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {teams.length > 0 ? teams.map((team) => (
-              <div key={team.team_id} className="inline-flex items-center gap-2 rounded-full bg-purple-50 py-1 pl-3 pr-2 text-xs font-medium text-purple-800">
-                <span>{team.team_name}</span>
-                {canManageTeams && <>
-                  <button type="button" aria-label={`Edit ${team.team_name}`} title="Edit team" onClick={() => { setTeamToEdit(team); setTeamError(""); setTeamModalOpen(true); }} className="text-purple-600 hover:text-purple-900">
-                    <Pencil size={13} />
-                  </button>
-                  <button type="button" aria-label={`Delete ${team.team_name}`} title="Delete team" onClick={() => setTeamToDelete(team)} className="text-gray-500 hover:text-red-700">
-                    <Trash2 size={13} />
-                  </button>
-                </>}
-              </div>
-            )) : <p className="text-xs text-gray-500">No teams have been created.</p>}
           </div>
         </section>
 

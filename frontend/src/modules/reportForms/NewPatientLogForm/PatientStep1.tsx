@@ -40,8 +40,8 @@ export default function PatientStep1({
   }
 
   return (
-    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
-      <CommonFormSection title="RESPONDER  DETAILS">
+    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row min-h-[650px]">
+      <CommonFormSection title="RESPONDER  DETAILS" standardHeight={false}>
         <div className="space-y-4">
           <CommonInput
             variant="compact"

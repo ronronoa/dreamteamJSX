@@ -3,6 +3,7 @@ import { Box, X, Lock, Plus, ChevronDown } from "lucide-react";
 import Modal from "./Modal";
 import CommonButton from "../widgets/CommonButton";
 import CommonInput from "../widgets/CommonInput";
+import { useEscapeKey } from "@/hooks/useModalKeys";
 
 export interface AddInventoryFormValues {
   itemId: string;
@@ -273,6 +274,7 @@ export default function AddInventoryModal({
     initialValues?.expiryDate ?? "",
   ].join("|");
 
+  useEscapeKey({ open, onClose })
   return (
     <Modal open={open} onClose={onClose}>
       <div className="w-full bg-white">

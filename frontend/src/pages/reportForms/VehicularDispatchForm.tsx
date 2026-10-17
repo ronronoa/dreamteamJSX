@@ -8,6 +8,7 @@ import PinModal from "../../modules/reportForms/modal/PinModal"
 import VehicularStep1 from "@/modules/reportForms/VehicularDispatchForm/VehicularStep1"
 import VehicularStep2 from "@/modules/reportForms/VehicularDispatchForm/VehicularStep2"
 import VehicularStep3 from "@/modules/reportForms/VehicularDispatchForm/VehicularStep3"
+import VehicularDispatchLastStep from "@/modules/reportForms/VehicularDispatchForm/VehicularDispatchLastStep"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
@@ -114,17 +115,6 @@ function isReportEmpty(report: VehicularDispatchReportData): boolean {
     !dispatch.vehicle && !dispatch.driver && !dispatch.departTime &&
     !dispatch.arrivalTime && !dispatch.odometerIn && !dispatch.odometerOut &&
     passengers.length === 0
-}
-
-function VehicularDispatchSuccess() {
-  return (
-    <CommonBackground className="flex min-h-screen items-center justify-center p-4">
-      <section role="status" aria-live="polite" className="w-full max-w-lg rounded-2xl bg-white px-8 py-10 text-center shadow-2xl">
-        <h1 className="text-2xl font-bold text-slate-900">Vehicular Dispatch Form Complete</h1>
-        <p className="mt-3 text-base text-slate-600">The dispatch report was submitted and is now pending review.</p>
-      </section>
-    </CommonBackground>
-  )
 }
 
 export default function VehicularDispatchForm() {
@@ -292,7 +282,7 @@ export default function VehicularDispatchForm() {
     }
   }
 
-  if (step === SUCCESS_STEP) return <VehicularDispatchSuccess />
+  if (step === SUCCESS_STEP) return <VehicularDispatchLastStep />
 
   return (
     <>

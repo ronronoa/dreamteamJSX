@@ -32,7 +32,7 @@ export default function VehicularStep1({
 }: VehicularStep1Props) {
 
   return (
-    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
+    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row min-h-[650px]">
       <CommonFormSection standardHeight={false} title="RESPONDER DETAILS">
         <div className="space-y-4">
           <CommonInput
