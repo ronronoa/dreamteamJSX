@@ -109,7 +109,7 @@ export const vehicularDispatchReportService = {
   async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction) {
     const dispatch = await prisma.vehicularDispatch.findFirst({
       // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
-      where: { archive: null },
+      where: { dispatch_id: id, archive: null },
     })
     if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: dispatch.status })

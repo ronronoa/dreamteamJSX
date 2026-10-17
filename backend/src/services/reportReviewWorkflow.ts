@@ -36,7 +36,10 @@ export async function prepareReportReview({
     return "TO_REVIEW";
   }
 
-  if (!REVIEWABLE_SOURCE_STATUSES.includes(currentStatus)) {
+  const canReviewStatus = REVIEWABLE_SOURCE_STATUSES.includes(currentStatus);
+  const canRejectAgain = action === "reject" && currentStatus === "REJECTED";
+
+  if (!canReviewStatus && !canRejectAgain) {
     throw new ConflictError(`Cannot ${action} from ${currentStatus}.`);
   }
 

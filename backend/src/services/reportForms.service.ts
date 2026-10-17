@@ -127,7 +127,7 @@ export const reportFormsService = {
 
     if (formType === "operations") {
       const records = await prisma.operationLog.findMany({
-        where: { archive: null },
+        where: { archive: null, status: {not: "REJECTED"} },
         orderBy: { createdAt: "desc" },
         take: SUGGESTION_RECORD_LIMIT,
         select: {
