@@ -1,17 +1,17 @@
-# pillow magic stuff idk
+"""Prepare uploaded document images for OCR."""
 from __future__ import annotations
 
 from collections.abc import Sequence
 from math import sqrt
-from pathlib import Path
 
 from PIL import Image, ImageEnhance, ImageOps, ImageStat
 
 MAX_PROCESSED_PIXELS = 1_500_000
 ANALYSIS_MAX_EDGE = 600
-PAGE_BRIGHTNESS_THRESHOLD = 190
-DARK_BACKGROUND_THRESHOLD = 175
-EDGE_PADDING_RATIO = 0.012
+MIN_PAGE_BRIGHTNESS = 145
+MIN_EDGE_CONTRAST = 22
+EDGE_PADDING_RATIO = 0.008
+MIN_RETAINED_DIMENSION_RATIO = 0.45
 
 
 def preprocess_document_image(image: Image.Image) -> Image.Image:
@@ -32,32 +32,12 @@ def _resize_to_pixel_limit(image: Image.Image) -> Image.Image:
     if pixel_count <= MAX_PROCESSED_PIXELS:
         return image
 
-    if pixel_count > MAX_PROCESSED_PIXELS:
-        scale = sqrt(MAX_PROCESSED_PIXELS / pixel_count)
-        new_size = (
-            max(1, round(image.width * scale)),
-            max(1, round(image.height * scale)),
-        )
-        processed_image = image.resize(new_size, Image.Resampling.LANCZOS)
-    else:
-        processed_image = image
-
-    output_dir = Path("./test")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if processed_image.mode in ("RGBA", "LA") or (processed_image.info.get("transparency") is not None):
-        save_path = output_dir / "processed_test.png"
-        processed_image.save(save_path, format="PNG")
-    else:
-        save_path = output_dir / "processed_test.jpg"
-        # Convert to RGB mode if it's grayscale to ensure clean JPEG saving
-        if processed_image.mode != "RGB":
-            processed_image = processed_image.convert("RGB")
-        processed_image.save(save_path, format="JPEG", quality=90)
-
-    print(f"Saved processed preview to: {save_path.resolve()}")
-
-    return processed_image
+    scale = sqrt(MAX_PROCESSED_PIXELS / pixel_count)
+    new_size = (
+        max(1, round(image.width * scale)),
+        max(1, round(image.height * scale)),
+    )
+    return image.resize(new_size, Image.Resampling.LANCZOS)
 
 
 def _crop_document_if_detectable(image: Image.Image) -> Image.Image:
@@ -67,8 +47,8 @@ def _crop_document_if_detectable(image: Image.Image) -> Image.Image:
         Image.Resampling.BILINEAR,
     )
 
-    left_ratio = image.width / analysis_image.width
-    top_ratio = image.height / analysis_image.height
+    scale_x = image.width / analysis_image.width
+    scale_y = image.height / analysis_image.height
     horizontal_projection = _horizontal_brightness_projection(analysis_image)
     vertical_projection = _vertical_brightness_projection(analysis_image)
 
@@ -88,10 +68,10 @@ def _crop_document_if_detectable(image: Image.Image) -> Image.Image:
         return image
 
     original_crop = (
-        round(crop_left * left_ratio),
-        round(crop_top * top_ratio),
-        min(image.width, round(crop_right * left_ratio)),
-        min(image.height, round(crop_bottom * top_ratio)),
+        round(crop_left * scale_x),
+        round(crop_top * scale_y),
+        min(image.width, round(crop_right * scale_x)),
+        min(image.height, round(crop_bottom * scale_y)),
     )
     if original_crop == (0, 0, image.width, image.height):
         return image
@@ -104,7 +84,7 @@ def _horizontal_brightness_projection(image: Image.Image) -> list[float]:
 
     for x_coordinate in range(image.width):
         column = image.crop((x_coordinate, vertical_margin, x_coordinate + 1, image.height - vertical_margin))
-        projection.append(ImageStat.Stat(column).mean[0])
+        projection.append(ImageStat.Stat(column).median[0])
 
     return projection
 
@@ -115,7 +95,7 @@ def _vertical_brightness_projection(image: Image.Image) -> list[float]:
 
     for y_coordinate in range(image.height):
         row = image.crop((horizontal_margin, y_coordinate, image.width - horizontal_margin, y_coordinate + 1))
-        projection.append(ImageStat.Stat(row).mean[0])
+        projection.append(ImageStat.Stat(row).median[0])
 
     return projection
 
@@ -131,14 +111,16 @@ def _find_edge(projection: Sequence[float], from_start: bool) -> int | None:
     middle_end = max(middle_start + 1, round(len(ordered_values) * 0.6))
     page_brightness = sum(ordered_values[middle_start:middle_end]) / len(ordered_values[middle_start:middle_end])
 
-    # Only crop when a dark background and a much brighter page create a clear edge.
-    if edge_brightness >= DARK_BACKGROUND_THRESHOLD:
+    # Look for a clear brightness change, including pages on lighter backgrounds.
+    if page_brightness < MIN_PAGE_BRIGHTNESS:
         return None
-    if page_brightness < PAGE_BRIGHTNESS_THRESHOLD:
+    brightness_difference = page_brightness - edge_brightness
+    if brightness_difference < MIN_EDGE_CONTRAST:
         return None
 
-    search_limit = round(len(ordered_values) * 0.35)
-    window_size = max(2, round(len(ordered_values) * 0.008))
+    transition_brightness = edge_brightness + brightness_difference * 0.55
+    search_limit = round(len(ordered_values) * 0.4)
+    window_size = max(3, round(len(ordered_values) * 0.01))
     required_bright_rows = max(2, round(window_size * 0.75))
 
     for offset in range(edge_band_size, search_limit):
@@ -146,7 +128,7 @@ def _find_edge(projection: Sequence[float], from_start: bool) -> int | None:
         if len(window) < window_size:
             break
 
-        bright_count = sum(value >= PAGE_BRIGHTNESS_THRESHOLD for value in window)
+        bright_count = sum(value >= transition_brightness for value in window)
         if bright_count >= required_bright_rows:
             edge = offset if from_start else len(projection) - offset
             return edge
@@ -167,7 +149,10 @@ def _crop_is_too_aggressive(
     if crop_width <= 0 or crop_height <= 0:
         return True
 
-    return crop_width < image_width * 0.6 or crop_height < image_height * 0.6
+    return (
+        crop_width < image_width * MIN_RETAINED_DIMENSION_RATIO
+        or crop_height < image_height * MIN_RETAINED_DIMENSION_RATIO
+    )
 
 
 def _apply_gamma(image: Image.Image, gamma: float) -> Image.Image:
