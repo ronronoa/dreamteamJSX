@@ -155,6 +155,7 @@ export default function ImageUpload({
           variant="orange"
           className="flex w-70 items-center gap-2"
           onClick={() => fileInputRef.current?.click()}
+
         >
           Upload
           <Upload size={18} />
