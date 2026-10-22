@@ -9,7 +9,7 @@ import PatientStatusBadge from "./PatientStatusBadge";
 import { formatPatientLogId } from "./patientUtils";
 
 export default function PatientDetails({ record, onClose }: { record: PatientLogRecord; onClose: () => void }) {
-  const [selectedImage, setSelectedImage] = useState<PatientLogRecord["patient"]["images"][number] | null>(null);
+  const [previewedImage, setPreviewedImage] = useState<{ name: string; url: string } | null>(null);
   const apiOrigin = API_URL.replace(/\/api\/?$/, "");
   const reportData = record.report_data && typeof record.report_data === "object"
     ? record.report_data as Record<string, unknown>
@@ -23,6 +23,9 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
   const responderDetails = reportData.responderDetails && typeof reportData.responderDetails === "object"
     ? reportData.responderDetails as Record<string, unknown>
     : {};
+  const reportDispatch = reportData.dispatch && typeof reportData.dispatch === "object"
+    ? reportData.dispatch as Record<string, unknown>
+    : {};
   const legacyDisposition = Array.isArray(responderDetails.teamAssigned)
     ? responderDetails.teamAssigned[0]
     : responderDetails.teamAssigned;
@@ -34,6 +37,19 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
       : "";
   const inventory = Array.isArray(reportData.inventory) ? reportData.inventory as Array<Record<string, unknown>> : [];
   const dispatch = record.dispatches[0];
+  const formImagePath = record.form_image;
+
+  function getImagePreviewUrl(imagePath: string) {
+    if (/^https?:\/\//i.test(imagePath)) return imagePath;
+    return `${apiOrigin}${imagePath}`;
+  }
+
+  function openImagePreview(imagePath: string, fallbackName: string) {
+    setPreviewedImage({
+      name: imagePath.split("/").pop() || fallbackName,
+      url: getImagePreviewUrl(imagePath),
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -78,7 +94,7 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
           {dispatch ? <DetailsGrid fields={[
             ["From", dispatch.from_location], ["To", dispatch.to_location],
             ["Vehicle", dispatch.vehicle ? `${dispatch.vehicle.vehicle_name} (${dispatch.vehicle.plate_number})` : "—"],
-            ["Driver", dispatch.driver_name], ["Depart", formatTime(dispatch.depart_time)], ["Arrival", formatTime(dispatch.arrival_time)],
+            ["Driver", dispatch.driver_name || String(reportDispatch.driver ?? "")], ["Depart", formatTime(dispatch.depart_time)], ["Arrival", formatTime(dispatch.arrival_time)],
             ["Odometer In", dispatch.odometer_in === null ? "—" : `${dispatch.odometer_in} km`],
             ["Odometer Out", dispatch.odometer_out === null ? "—" : `${dispatch.odometer_out} km`],
           ]} /> : <p className="text-sm text-gray-500">No dispatch information.</p>}
@@ -93,11 +109,30 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
         )}
       </DetailsSection>
 
+      {formImagePath && (
+        <DetailsSection title="SCANNED PHYSICAL FORM">
+          <button
+            type="button"
+            onClick={() => openImagePreview(formImagePath, "Scanned patient form")}
+            className="block w-full rounded-md border border-gray-200 bg-gray-50 p-3 text-left text-sm text-purple-800 hover:border-purple-300"
+          >
+            <img
+              src={getImagePreviewUrl(formImagePath)}
+              alt="Scanned physical patient log form"
+              className="max-h-96 w-full rounded object-contain"
+            />
+            <span className="mt-2 block truncate">
+              {formImagePath.split("/").pop() || "Scanned patient form"}
+            </span>
+          </button>
+        </DetailsSection>
+      )}
+
       <DetailsSection title="ATTACHED WAIVER IMAGES">
         {record.patient.images.length === 0 ? <p className="text-sm text-gray-500">No waiver images attached.</p> : (
           <div className="space-y-2">
             {record.patient.images.map((image) => (
-              <button key={image.attachment_id} type="button" onClick={() => setSelectedImage(image)} className="block w-full truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm text-purple-800 hover:border-purple-300">
+              <button key={image.attachment_id} type="button" onClick={() => openImagePreview(image.image_url, "Patient attachment")} className="block w-full truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm text-purple-800 hover:border-purple-300">
                 {image.image_url.split("/").pop() || "Patient attachment"}
               </button>
             ))}
@@ -106,13 +141,10 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
       </DetailsSection>
 
       <ImagePreviewModal
-        open={selectedImage !== null}
-        onClose={() => setSelectedImage(null)}
+        open={previewedImage !== null}
+        onClose={() => setPreviewedImage(null)}
         file={null}
-        image={selectedImage ? {
-          name: selectedImage.image_url.split("/").pop() || "Patient attachment",
-          url: `${apiOrigin}${selectedImage.image_url}`,
-        } : null}
+        image={previewedImage}
       />
 
       {record.status === "REJECTED" && record.rejected_reason && (

@@ -5,9 +5,11 @@ import CommonCheckbox from "@/components/common/widgets/CommonCheckbox";
 import CommonInput from "@/components/common/widgets/CommonInput";
 import CommonTextarea from "@/components/common/widgets/CommonTextarea";
 import SingleImageUpload, { type SingleImageUploadHandle } from "@/modules/reportForms/component/SingleImageUpload";
-import { LoaderCircle, Maximize } from "lucide-react";
+import { LoaderCircle, Maximize, X } from "lucide-react";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import { scanPatientLogImage, type PatientLogOcrResult } from "@/api/patientForm";
+import { useNavigate } from "react-router";
+import { ROUTES } from "@/routes";
 
 const MAX_OCR_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -180,10 +182,19 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
     setScanResult((current) => ({ ...current, dispositionType: value }));
   }
 
+  const navigate = useNavigate();
+
   return (
     <CommonBackground className="min-h-screen lg:h-screen lg:overflow-hidden">
+      <CommonButton
+        onClick={() => navigate(ROUTES.LOGIN)}
+        variant="none"
+        className="m-0! fixed left-2 top-2 z-999 bg-white/20 p-4! hover:bg-slate-500"
+      >
+        <X size={15} />
+      </CommonButton>
       <main className="grid min-h-screen min-w-0 grid-rows-1 gap-4 overflow-x-hidden p-4 lg:h-screen lg:min-h-0 lg:grid-cols-[0.5fr_1fr] lg:overflow-hidden">
-        <section className="relative h-[50vh] min-h-[280px] w-full border-2 lg:h-full lg:min-h-0 lg:overflow-hidden">
+        <section className="relative h-[50vh] min-h-[280px] w-full border rounded-2xl border-purple-800/80 bg-black/10 lg:h-full lg:min-h-0 lg:overflow-hidden">
           <SingleImageUpload
             ref={imageUploadRef}
             image={image}
@@ -201,19 +212,21 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
 
         <section className="flex flex-col gap-10 rounded-2xl py-4 bg-black/15 border border-purple-900 lg:h-full lg:min-h-0 lg:overflow-y-auto">
 
-          <div className="flex items-center gap-2 p-4">
-            <div className="p-2 rounded-2xl bg-slate-500/10">
-              <Maximize size={36} className="text-purple-600/80"/>
-            </div>
+          <div className="flex gap-4 items-center p-4">
+              <div className="p-2 rounded-2xl bg-slate-500/10">
+                <Maximize size={36} className="text-purple-600/80"/>
+              </div>
 
-            <span className="flex flex-col  text-slate-100">
-              <h1 className="text-lg font-extrabold">
-                AI Scan Results
-              </h1>
-              <p className="text-sm text-slate-300/50">
-                Structured data extraction result
-              </p>
-            </span> </div>
+              <span className="flex flex-col  text-slate-100">
+                <h1 className="text-lg font-extrabold">
+                  AI Scan Results
+                </h1>
+                <p className="text-sm text-slate-300/50">
+                  Structured data extraction result
+                </p>
+              </span>
+          </div>
+
           {scanError && (
             <p role="alert" className="mx-4 rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
               {scanError}

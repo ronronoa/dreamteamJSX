@@ -8,6 +8,7 @@ from google.genai.errors import APIError as GeminiAPIError
 from PIL import Image
 
 from src.ocr.gemini_ocr import GeminiOCR
+from src.ocr.image_preprocessing import preprocess_document_image
 
 router = APIRouter(tags=["ocr"])
 logger = logging.getLogger(__name__)
@@ -16,8 +17,12 @@ logger = logging.getLogger(__name__)
 async def gemini_scan(file: UploadFile = File(...)):
     start_time = time.perf_counter()
     print("/gemini-scan start")
+
     image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes))
+    with Image.open(io.BytesIO(image_bytes)) as uploaded_image:
+        original_size = uploaded_image.size
+        image = preprocess_document_image(uploaded_image)
+    logger.info("Prepared patient form image from %s to %s", original_size, image.size)
 
     try:
         result = await run_in_threadpool(GeminiOCR.scan, image)

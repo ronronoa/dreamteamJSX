@@ -77,7 +77,7 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
                 ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})`
                 : dispatch.vehicle ? "Vehicle unavailable" : ""}
             />
-            <SummaryField label="Driver" value={dispatch.vehicle === "none" ? "—" : dispatch.driver} />
+            <SummaryField label="Driver" value={dispatch.driver || (dispatch.vehicle === "none" ? "—" : "")} />
             <SummaryField
               label="Depart"
               value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`}

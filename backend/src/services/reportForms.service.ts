@@ -663,7 +663,7 @@ export const reportFormsService = {
                 submitter_name: responderDetails.submitterName,
                  vehicle_id: vehicle?.vehicle_id ?? null,
                  vehicle_name: dispatch.vehicle === "other" ? dispatch.vehicleOther?.trim() ?? null : null,
-                 driver_name: dispatch.vehicle === "none" ? null : dispatch.driver || null,
+                driver_name: dispatch.driver || null,
                 from_location: dispatch.from,
                 to_location: dispatch.to,
                 depart_time: departure,
