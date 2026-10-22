@@ -11,6 +11,7 @@ import {
 } from "@/api/patientForm";
 import { ROUTES } from "@/routes";
 import { useTitle } from "@/hooks/useTitle";
+import { isValidDateInputNotInFuture } from "@/utils/dateTime";
 import CreateReportWithAI from "@/modules/reportForms/NewPatientLogForm/CreateReportWithAI";
 import OperationInventorySection from "@/modules/reportForms/component/OperationInventorySection";
 import PatientStep4 from "@/modules/reportForms/NewPatientLogForm/PatientStep4";
@@ -77,7 +78,9 @@ function matchResponderIds(
     );
 
     if (!responder) {
-      unmatchedNames.push(name);
+      if (!unmatchedNames.some((unmatchedName) => normalizeName(unmatchedName) === normalizeName(name))) {
+        unmatchedNames.push(name.trim());
+      }
       continue;
     }
 
@@ -115,6 +118,7 @@ function createPatientReportFromScan(
       typeOfRequest: scanResult.requestFor,
       dispositionType: scanResult.dispositionType as TransferDisposition,
       responders: matchedIds,
+      otherResponders: [...(scanResult.teamInformation.otherResponders ?? []), ...unmatchedNames],
     },
     dispatch: {
       ...emptyReport.dispatch,
@@ -166,24 +170,22 @@ function createPatientReportFromScan(
     },
   };
 
-  return { report, unmatchedNames };
+  return report;
 }
 
-function getSubmissionIssues(
-  formData: PatientLogData,
-  unmatchedResponderNames: string[],
-) {
+function getSubmissionIssues(formData: PatientLogData) {
   const issues: string[] = [];
   const { responderDetails, patientDetails, firstAidHospital, inventory } = formData;
 
   if (!responderDetails.submitterName.trim()) issues.push("Enter the Checked By name; it is saved as the submitter.");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(responderDetails.date)) issues.push("Enter a valid report date in the scan results.");
+  if (!isValidDateInputNotInFuture(responderDetails.date)) {
+    issues.push("Enter a valid report date that is not in the future.");
+  }
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(responderDetails.time)) issues.push("Enter a valid report time in the scan results.");
   if (!responderDetails.typeOfRequest) issues.push("Select a request type in the scan results.");
   if (!responderDetails.dispositionType) issues.push("Select Pick-Up or Drop-Off in the scan results.");
-  if (responderDetails.responders.length === 0) issues.push("No scanned responder matched an active responder account.");
-  if (unmatchedResponderNames.length > 0) {
-    issues.push(`Match these scanned responder names to active accounts: ${unmatchedResponderNames.join(", ")}.`);
+  if (responderDetails.responders.length + responderDetails.otherResponders.length === 0) {
+    issues.push("Add at least one responder.");
   }
   if (!patientDetails.name.firstName || !patientDetails.name.surname) issues.push("Enter the patient's first and last name.");
   if (!patientDetails.birthdate) issues.push("Enter the patient's birthday.");
@@ -210,7 +212,6 @@ export default function CreateReportWithAIPatients() {
   const [optionsRequestId, setOptionsRequestId] = useState(0);
   const [formData, setFormData] = useState<PatientLogData>(createEmptyPatientLogData);
   const [formImage, setFormImage] = useState<File | null>(null);
-  const [unmatchedResponderNames, setUnmatchedResponderNames] = useState<string[]>([]);
   const [submissionIssues, setSubmissionIssues] = useState<string[]>([]);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -251,10 +252,9 @@ export default function CreateReportWithAIPatients() {
   function handleProceed(scanResult: PatientLogOcrResult, sourceImage: File | null) {
     if (optionsLoading || optionsError) return;
 
-    const { report, unmatchedNames } = createPatientReportFromScan(scanResult, options);
+    const report = createPatientReportFromScan(scanResult, options);
     setFormData(report);
     setFormImage(sourceImage);
-    setUnmatchedResponderNames(unmatchedNames);
     setSubmissionIssues([]);
     setStep(2);
   }
@@ -264,7 +264,7 @@ export default function CreateReportWithAIPatients() {
   }
 
   function handleOpenPinModal() {
-    const issues = getSubmissionIssues(formData, unmatchedResponderNames);
+    const issues = getSubmissionIssues(formData);
     setSubmissionIssues(issues);
     if (issues.length > 0) return;
 

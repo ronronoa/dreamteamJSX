@@ -42,6 +42,7 @@ export type OperationDetails = {
   nameOfCaller: PersonName
   teamAssigned: string[]
   responders: string[]
+  otherResponders: string[]
 }
 export type VehicularDispatch = {
   from: string
@@ -66,6 +67,7 @@ export const createEmptyOperationDetails = (): OperationDetails => ({
   nameOfCaller: createEmptyPersonName(),
   teamAssigned: [],
   responders: [],
+  otherResponders: [],
 })
 
 export const createEmptyVehicularDispatch = (): VehicularDispatch => ({

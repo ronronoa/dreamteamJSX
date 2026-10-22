@@ -35,6 +35,13 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
     : disposition === "DROP_OFF" || disposition === "Drop-Off" || disposition === "drop-off"
       ? "Drop-Off"
       : "";
+  const savedOtherResponders = Array.isArray(responderDetails.otherResponders)
+    ? responderDetails.otherResponders.filter((name): name is string => typeof name === "string")
+    : [];
+  const responderNames = [
+    ...record.responders.map(({ user }) => user.name),
+    ...savedOtherResponders,
+  ];
   const inventory = Array.isArray(reportData.inventory) ? reportData.inventory as Array<Record<string, unknown>> : [];
   const dispatch = record.dispatches[0];
   const formImagePath = record.form_image;
@@ -75,7 +82,7 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
           <DetailsGrid fields={[
             ["Request Type", record.type_of_request.replaceAll("_", " ")], ["Caller", record.name_of_caller],
             ["Transfer", transferLabel],
-            ["Submitter", record.submitter?.name ?? record.submitter_name], ["Responders", record.responders.map(({ user }) => user.name).join(", ")],
+            ["Submitter", record.submitter?.name ?? record.submitter_name], ["Responders", responderNames.join(", ")],
             ["Medical Assessment", record.medical_assessment], ["First Aid Given", String(firstAid.firstAidGiven ?? "")],
             ["Waiver Description", record.waiver_description],
           ]} />

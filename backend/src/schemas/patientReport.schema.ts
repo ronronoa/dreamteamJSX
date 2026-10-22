@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getTodayDateInputValue } from "@/shared/utils/date";
 
 const personNameSchema = z.object({
   surname: z.string().trim().max(80),
@@ -27,7 +28,9 @@ const optionalOdometerSchema = z.union([odometerSchema, z.literal("")]);
 export const PatientReportSchema = z.object({
   responderDetails: z.object({
     submitterName: z.string().trim().min(1).max(120),
-    date: z.iso.date(),
+    date: z.iso.date().refine((date) => date <= getTodayDateInputValue(), {
+      message: "Report date cannot be in the future.",
+    }),
     time: formTimeSchema,
     typeOfRequest: z.enum([
       "TRANSPORT_ASSISTANCE",
@@ -37,7 +40,8 @@ export const PatientReportSchema = z.object({
     ]),
     caller: personNameSchema,
     dispositionType: z.enum(["DROP_OFF", "PICK_UP"]),
-    responders: z.array(z.uuid()).min(1).max(50),
+    responders: z.array(z.uuid()).max(50),
+    otherResponders: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
   }),
   dispatch: z.object({
     from: z.string().trim().max(200),
@@ -94,6 +98,9 @@ export const PatientReportSchema = z.object({
 }).refine((form) => form.firstAidHospital.hospitalName.length > 0, {
   path: ["firstAidHospital", "hospitalName"],
   message: "Hospital name is required.",
+}).refine((form) => form.responderDetails.responders.length + form.responderDetails.otherResponders.length > 0, {
+  path: ["responderDetails", "responders"],
+  message: "Add at least one responder.",
 });
 
 export type PatientReportInput = z.infer<typeof PatientReportSchema>;

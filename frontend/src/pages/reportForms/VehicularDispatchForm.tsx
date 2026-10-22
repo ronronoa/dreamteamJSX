@@ -88,6 +88,9 @@ function normalizeReport(value: unknown): VehicularDispatchReportData {
       responders: Array.isArray(details.responders)
         ? details.responders.filter((responder): responder is string => typeof responder === "string")
         : [],
+      otherResponders: Array.isArray(details.otherResponders)
+        ? details.otherResponders.filter((responder): responder is string => typeof responder === "string")
+        : [],
       transfers: Array.isArray(details.transfers)
         ? details.transfers.filter((transfer): transfer is "Drop-Off" | "Pick-Up" => transfer === "Drop-Off" || transfer === "Pick-Up")
         : [],
@@ -111,7 +114,7 @@ function normalizeReport(value: unknown): VehicularDispatchReportData {
 
 function isReportEmpty(report: VehicularDispatchReportData): boolean {
   const { details, dispatch, passengers } = report
-  return !details.submitterName && !details.date && details.responders.length === 0 &&
+  return !details.submitterName && !details.date && details.responders.length === 0 && details.otherResponders.length === 0 &&
     details.transfers.length === 0 && !dispatch.from && !dispatch.to &&
     !dispatch.vehicle && !dispatch.driver && !dispatch.departTime &&
     !dispatch.arrivalTime && !dispatch.odometerIn && !dispatch.odometerOut &&
@@ -149,6 +152,7 @@ export default function VehicularDispatchForm() {
     const responder = formOptions.responders.find((option) => option.user_id === responderId)
     return responder ? [responder.name] : []
   })
+  responderLabels.push(...formData.details.otherResponders)
 
   useEffect(() => {
     let isCurrentRequest = true

@@ -8,6 +8,7 @@ export interface OperationRecord {
   name_of_caller: string;
   nature_of_operation: string;
   event_description: string;
+  other_responders: string[];
   submitted_by: string | null;
   submitter_name: string | null;
   validated_by: string | null;

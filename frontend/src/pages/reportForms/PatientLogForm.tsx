@@ -74,6 +74,7 @@ function normalizePatientReport(value: unknown): PatientLogData {
     responderDetails: {
       ...emptyReport.responderDetails,
       ...savedResponderDetails,
+      otherResponders: savedResponderDetails.otherResponders ?? [],
       date: getCurrentDateInputValue(),
       time: getCurrentTimeInputValue(),
       dispositionType,

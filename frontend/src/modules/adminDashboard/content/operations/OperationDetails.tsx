@@ -33,7 +33,7 @@ export default function OperationDetails({ record, onClose }: { record: Operatio
             <PreviewField label="Nature of Operation" value={record.nature_of_operation} />
             <PreviewField label="Caller" value={record.name_of_caller} />
             <PreviewField label="Team Assigned" value={teams.length > 0 ? teams.join(", ") : record.team.team_name} />
-            <PreviewField label="Responders" value={record.responders.map(({ user }) => user.name).join(", ")} />
+            <PreviewField label="Responders" value={[...record.responders.map(({ user }) => user.name), ...record.other_responders].join(", ")} />
             <PreviewField label="Approved By" value={record.validator?.name ?? "—"} />
           </div>
         </PreviewSection>

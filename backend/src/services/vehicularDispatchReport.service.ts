@@ -27,7 +27,10 @@ function toDispatchRecord(dispatch: DispatchRecord) {
     vehicle_name: dispatch.vehicle?.vehicle_name ?? dispatch.vehicle_name ?? "Unknown vehicle",
     plate_number: dispatch.vehicle?.plate_number ?? "",
     driver_name: dispatch.driver_name ?? "",
-    responders: dispatch.responders.map((responder) => responder.user.name),
+    responders: [
+      ...dispatch.responders.map((responder) => responder.user.name),
+      ...dispatch.other_responders,
+    ],
     from_location: dispatch.from_location ?? "",
     to_location: dispatch.to_location ?? "",
     transfers: dispatch.transfers.map((transfer) => transfer === "DROP_OFF" ? "Drop-Off" : "Pick-Up"),
@@ -164,6 +167,7 @@ export const vehicularDispatchReportService = {
         date: toDateInputValue(dispatch.dispatch_date),
         time: `${String(dispatch.dispatch_date.getHours()).padStart(2, "0")}:${String(dispatch.dispatch_date.getMinutes()).padStart(2, "0")}`,
         responders: dispatch.responders.map((responder) => responder.user_id),
+        otherResponders: dispatch.other_responders,
         transfers: dispatch.transfers.map((transfer) => transfer === "DROP_OFF" ? "Drop-Off" : "Pick-Up"),
       },
       dispatch: {
@@ -257,6 +261,7 @@ export const vehicularDispatchReportService = {
         responders: {
           create: form.details.responders.map((userId) => ({ user_id: userId })),
         },
+        other_responders: form.details.otherResponders,
         passengers: {
           create: form.passengers.map((passenger) => ({
             full_name: formatPassengerName(passenger),

@@ -10,6 +10,8 @@ import CommonButton from "@/components/common/widgets/CommonButton";
 import { scanPatientLogImage, type PatientLogOcrResult } from "@/api/patientForm";
 import { useNavigate } from "react-router";
 import { ROUTES } from "@/routes";
+import OtherRespondersInput from "@/modules/reportForms/component/OtherRespondersInput";
+import { getCurrentDateInputValue, isValidDateInputNotInFuture } from "@/utils/dateTime";
 
 const MAX_OCR_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -40,7 +42,7 @@ function createEmptyScanResult(): PatientLogOcrResult {
     patientNameAndSignature: "",
     guardianNameAndSignature: "",
     waiver: "",
-    teamInformation: { ambulanceDriver: "", responder: [] },
+    teamInformation: { ambulanceDriver: "", responder: [], otherResponders: [] },
     timeInformation: {
       barangayOut: "",
       barangayIn: "",
@@ -85,6 +87,11 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
       setScanResult({
         ...result,
         checkedBy: "",
+        teamInformation: {
+          ...result.teamInformation,
+          responder: [],
+          otherResponders: result.teamInformation.responder,
+        },
         timeInformation: {
           ...result.timeInformation,
           odometerOut: result.timeInformation.odometerOut.replace(/\D/g, ""),
@@ -145,6 +152,13 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
         ...current.teamInformation,
         responder: value.split(",").map((name) => name.trim()).filter(Boolean),
       },
+    }));
+  }
+
+  function updateOtherResponders(otherResponders: string[]) {
+    setScanResult((current) => ({
+      ...current,
+      teamInformation: { ...current.teamInformation, otherResponders },
     }));
   }
 
@@ -246,10 +260,15 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
 
             <div className="grid grid-cols-[0.57fr_1fr_0.1fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Date</label>
-              <CommonInput type="date" variant="compact" value={scanResult.date} onChange={(event) => updateTextField("date", event.target.value)}/>
+              <CommonInput type="date" variant="compact" max={getCurrentDateInputValue()} value={scanResult.date} onChange={(event) => updateTextField("date", event.target.value)}/>
 
               <label className=" block text-lg font-bold text-slate-100">Time</label>
               <CommonInput type="time" variant="compact" value={scanResult.time} onChange={(event) => updateTextField("time", event.target.value)}/>
+              {scanResult.date && !isValidDateInputNotInFuture(scanResult.date) && (
+                <p className="col-span-full text-sm font-medium text-red-200" role="alert">
+                  Choose a valid date that is not in the future.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
@@ -358,6 +377,13 @@ export default function CreateReportWithAI({ onProceed, proceedDisabled = false 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100">Responder</label>
               <CommonInput placeholder="" variant="compact" value={scanResult.teamInformation.responder.join(", ")} onChange={(event) => updateTeamInformation(event.target.value)}/>
+
+              <label className="block text-lg font-bold text-slate-100">Other responders</label>
+              <OtherRespondersInput
+                value={scanResult.teamInformation.otherResponders ?? []}
+                onChange={updateOtherResponders}
+                variant="dark"
+              />
             </div>
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">

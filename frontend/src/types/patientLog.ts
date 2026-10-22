@@ -25,6 +25,7 @@ export type ResponderDetails = {
   caller: PersonName
   dispositionType: TransferDisposition
   responders: string[]
+  otherResponders: string[]
 }
 
 export type VehicularDispatch = {
@@ -49,6 +50,7 @@ export const createEmptyResponderDetails = (): ResponderDetails => ({
   caller: createEmptyPersonName(),
   dispositionType: "",
   responders: [],
+  otherResponders: [],
 })
 
 export const createEmptyVehicularDispatch = (): VehicularDispatch => ({

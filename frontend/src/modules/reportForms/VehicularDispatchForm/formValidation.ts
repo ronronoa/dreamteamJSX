@@ -31,7 +31,7 @@ function validateDispatchDetails(data: VehicularDispatchReportData): VehicularDi
 
   if (!isValidDate(details.date) || details.date > today) errors["details.date"] = "Choose a valid date that is not in the future."
   if (!FORM_TIME_PATTERN.test(details.time)) errors["details.time"] = "Enter a valid time."
-  if (details.responders.length === 0) errors["details.responders"] = "Select at least one responder."
+  if (details.responders.length + details.otherResponders.length === 0) errors["details.responders"] = "Add at least one responder."
   if (details.responders.length > 50) errors["details.responders"] = "Select no more than 50 responders."
   if (details.transfers.length === 0) errors["details.transfers"] = "Select at least one transfer type."
   if (!dispatch.from.trim()) errors["dispatch.from"] = "Enter the departure location."

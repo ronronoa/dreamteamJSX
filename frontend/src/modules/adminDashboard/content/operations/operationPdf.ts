@@ -233,7 +233,7 @@ export function createOperationPdf(records: OperationRecord[]) {
       ["Caller", record.name_of_caller],
       ["Status", record.status],
       ["Team assigned", record.teamAssignments.map(({ team }) => team.team_name).join(", ") || record.team.team_name],
-      ["Responders", record.responders.map(({ user }) => user.name).join(", ")],
+      ["Responders", [...record.responders.map(({ user }) => user.name), ...record.other_responders].join(", ")],
       ["Submitted by", record.submitter?.name ?? record.submitter_name ?? "Unknown submitter"],
       ["Approved by", record.validator?.name],
     ]);

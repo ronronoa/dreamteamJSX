@@ -8,6 +8,8 @@ import type { OperationDetails, VehicularDispatch } from "../../../types/operati
 import type { OperationFormOptions } from "../../../api/operationForm"
 import type { FormErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
+import OtherRespondersInput from "../component/OtherRespondersInput"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("operations")
 
@@ -66,6 +68,7 @@ export default function OperationStep1({
               type="date"
               label="Date"
               value={operationDetails.date}
+              max={getCurrentDateInputValue()}
               onChange={(e) => onOperationDetailsChange({ date: e.target.value })}
               errorMessage={errors["operationDetails.date"]}
             />
@@ -177,6 +180,10 @@ export default function OperationStep1({
             onChange={(responders) => onOperationDetailsChange({ responders })}
             disabled={optionsLoading || operationDetails.teamAssigned.length === 0}
             errorMessage={errors["operationDetails.responders"]}
+          />
+          <OtherRespondersInput
+            value={operationDetails.otherResponders}
+            onChange={(otherResponders) => onOperationDetailsChange({ otherResponders })}
           />
         </div>
       </CommonFormSection>

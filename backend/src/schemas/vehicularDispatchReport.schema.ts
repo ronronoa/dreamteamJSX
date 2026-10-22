@@ -51,7 +51,8 @@ export const VehicularDispatchReportSchema = z.object({
       message: "Dispatch date cannot be in the future.",
     }),
     time: formTimeSchema,
-    responders: z.array(z.uuid()).min(1).max(50),
+    responders: z.array(z.uuid()).max(50),
+    otherResponders: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
     transfers: z.array(z.enum(["Drop-Off", "Pick-Up"])).min(1).max(2),
   }),
   dispatch: z.object({
@@ -77,6 +78,9 @@ export const VehicularDispatchReportSchema = z.object({
     message: "Specify the vehicle.",
   }),
   passengers: z.array(passengerSchema).max(100),
+}).refine((form) => form.details.responders.length + form.details.otherResponders.length > 0, {
+  path: ["details", "responders"],
+  message: "Add at least one responder.",
 })
 
 export type VehicularDispatchReportInput = z.infer<typeof VehicularDispatchReportSchema>

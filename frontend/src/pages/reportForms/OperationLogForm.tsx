@@ -55,6 +55,7 @@ function normalizeOperationReport(value: unknown): OperationLogData {
     operationDetails: {
       ...emptyReport.operationDetails,
       ...report.operationDetails,
+      otherResponders: report.operationDetails?.otherResponders ?? [],
       date: emptyReport.operationDetails.date,
       time: emptyReport.operationDetails.time,
     },

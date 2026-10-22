@@ -32,6 +32,7 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
   const responderNames = operationDetails.responders.map((responderId) =>
     options.responders.find((responder) => responder.user_id === responderId)?.name ?? "Responder unavailable",
   )
+  responderNames.push(...operationDetails.otherResponders)
   const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
   const previewFile =

@@ -6,6 +6,8 @@ import CommonFormSection from "../component/CommonFormSection"
 import type { VehicularDispatchDetails, VehicularDispatch } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
+import OtherRespondersInput from "../component/OtherRespondersInput"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("vehicular-dispatches")
 
@@ -50,6 +52,7 @@ export default function VehicularStep1({
               type="date"
               label="Date"
               value={details.date}
+              max={getCurrentDateInputValue()}
               onChange={(e) => onDetailsChange({ date: e.target.value })}
               errorMessage={errors["details.date"]}
             />
@@ -73,6 +76,10 @@ export default function VehicularStep1({
             onChange={(responders) => onDetailsChange({ responders })}
             errorMessage={errors["details.responders"]}
             disabled={optionsLoading}
+          />
+          <OtherRespondersInput
+            value={details.otherResponders}
+            onChange={(otherResponders) => onDetailsChange({ otherResponders })}
           />
           <div>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">

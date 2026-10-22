@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getTodayDateInputValue } from "@/shared/utils/date";
 
 const personNameSchema = z.object({
   surname: z.string().trim().max(80),
@@ -44,12 +45,18 @@ const formTime = z.preprocess(
 export const OperationReportSchema = z.object({
   operationDetails: z.object({
     submitterName: z.string().trim().max(120),
-    date: z.preprocess((value) => value === "" ? new Date().toISOString().slice(0, 10) : value, z.iso.date()),
+    date: z.preprocess(
+      (value) => value === "" ? getTodayDateInputValue() : value,
+      z.iso.date().refine((date) => date <= getTodayDateInputValue(), {
+        message: "Operation date cannot be in the future.",
+      }),
+    ),
     time: formTime,
     natureOfOperation: z.string().trim().max(100),
     nameOfCaller: personNameSchema,
     teamAssigned: z.array(z.uuid()).max(10),
     responders: z.array(z.uuid()).max(50),
+    otherResponders: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
   }),
   dispatch: z.object({
     from: z.string().trim().max(200),

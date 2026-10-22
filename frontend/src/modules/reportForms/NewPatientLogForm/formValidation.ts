@@ -1,4 +1,5 @@
 import type { PatientLogData } from "../../../types/patientLog"
+import { isValidDateInputNotInFuture } from "@/utils/dateTime"
 
 export function isFormEmpty(formData: PatientLogData): boolean {
   const { responderDetails, dispatch, patientDetails, firstAidHospital, waiverForm, inventory } = formData
@@ -11,6 +12,7 @@ export function isFormEmpty(formData: PatientLogData): boolean {
     !responderDetails.caller.firstName &&
     !responderDetails.dispositionType &&
     responderDetails.responders.length === 0 &&
+    responderDetails.otherResponders.length === 0 &&
     !dispatch.from &&
     !dispatch.to &&
     !dispatch.vehicle &&
@@ -53,13 +55,13 @@ export const isStep1Complete = (formData: PatientLogData) => {
 
   return (
     responderDetails.submitterName.trim() !== "" &&
-    responderDetails.date.trim() !== "" &&
+    isValidDateInputNotInFuture(responderDetails.date) &&
     responderDetails.time.trim() !== "" &&
     responderDetails.typeOfRequest.trim() !== "" &&
     responderDetails.caller.surname.trim() !== "" &&
     responderDetails.caller.firstName.trim() !== "" &&
     responderDetails.dispositionType !== "" &&
-    responderDetails.responders.length > 0 &&
+    responderDetails.responders.length + responderDetails.otherResponders.length > 0 &&
     dispatchIsComplete
   )
 }

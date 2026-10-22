@@ -41,6 +41,7 @@ export interface PatientLogOcrResult {
   teamInformation: {
     ambulanceDriver: string;
     responder: string[];
+    otherResponders?: string[];
   };
   timeInformation: {
     barangayOut: string;

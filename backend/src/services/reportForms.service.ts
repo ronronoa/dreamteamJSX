@@ -276,6 +276,7 @@ export const reportFormsService = {
         nameOfCaller: splitPersonName(operation.name_of_caller),
         teamAssigned: operation.teamAssignments.map((assignment) => assignment.team_id),
         responders: operation.responders.map((responder) => responder.user_id),
+        otherResponders: operation.other_responders,
       },
       dispatch: {
         from: dispatch?.from_location ?? "",
@@ -519,6 +520,7 @@ export const reportFormsService = {
           responders: {
             create: form.operationDetails.responders.map((userId) => ({ user_id: userId })),
           },
+          other_responders: form.operationDetails.otherResponders,
           personsInvolved: {
             create: form.people.map((person) => ({
               full_name: formatPersonName(person.name),

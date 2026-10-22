@@ -47,6 +47,7 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
   const responderNames = responderDetails.responders.map((responderId) =>
     options.responders.find((responder) => responder.user_id === responderId)?.name ?? "Responder unavailable",
   )
+  responderNames.push(...responderDetails.otherResponders)
   const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
   return (

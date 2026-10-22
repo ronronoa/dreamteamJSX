@@ -140,6 +140,7 @@ model OperationLog {
   name_of_caller      String
   nature_of_operation String
   event_description   String
+  other_responders    String[]        @default([])
   submitted_by        String?
   submitter_name      String?
   validated_by        String?
@@ -444,6 +445,7 @@ model VehicularDispatch {
   depart_time    DateTime?
   arrival_time   DateTime?
   dispatch_type  DispatchType?
+  other_responders String[]       @default([])
   from_location  String?
   to_location    String?
   odometer_in    Int?

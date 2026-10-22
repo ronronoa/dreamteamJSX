@@ -7,6 +7,8 @@ import type { PatientFormOptions } from "@/api/patientForm"
 import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
 import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
+import OtherRespondersInput from "../component/OtherRespondersInput"
+import { getCurrentDateInputValue, isValidDateInputNotInFuture } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("patients")
 
@@ -58,8 +60,15 @@ export default function PatientStep1({
               type="date"
               label="Date"
               value={responderDetails.date}
+              max={getCurrentDateInputValue()}
               onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
             />
+
+            {!isValidDateInputNotInFuture(responderDetails.date) && responderDetails.date && (
+              <p className="text-xs font-medium text-red-700 sm:col-span-2" role="alert">
+                Choose a valid date that is not in the future.
+              </p>
+            )}
 
             <CommonInput
               variant="compact"
@@ -137,6 +146,11 @@ export default function PatientStep1({
             value={responderDetails.responders}
             onChange={(vals) => onResponderDetailsChange({ responders: vals })}
             disabled={optionsLoading}
+          />
+
+          <OtherRespondersInput
+            value={responderDetails.otherResponders}
+            onChange={(otherResponders) => onResponderDetailsChange({ otherResponders })}
           />
 
 

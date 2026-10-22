@@ -1,7 +1,7 @@
 import type { OperationFormOptions } from "../../../api/operationForm";
 import type { OperationLogData, Person } from "../../../types/operationLog";
 import { calculateAge } from "../../../types/operationLog";
-import { formatDate } from "../../../utils/dateTime";
+import { formatDate, isValidDateInputNotInFuture } from "../../../utils/dateTime";
 
 export type FormErrors = Record<string, string>;
 
@@ -23,6 +23,7 @@ export function isFormEmpty(formData: OperationLogData): boolean {
     !operationDetails.nameOfCaller.firstName &&
     operationDetails.teamAssigned.length === 0 &&
     operationDetails.responders.length === 0 &&
+    operationDetails.otherResponders.length === 0 &&
     !dispatch.from &&
     !dispatch.to &&
     !dispatch.vehicle &&
@@ -41,7 +42,7 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   const submitterName = operationDetails.submitterName.trim();
   if (!submitterName) errors["operationDetails.submitterName"] = "Enter the submitter's name.";
   else if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
-  if (!operationDetails.date || operationDetails.date > formatDate(new Date(), "YYYY-MM-DD")) {
+  if (!isValidDateInputNotInFuture(operationDetails.date)) {
     errors["operationDetails.date"] = "Choose a valid date that is not in the future.";
   }
   if (!FORM_TIME_PATTERN.test(operationDetails.time)) {

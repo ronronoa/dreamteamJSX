@@ -40,6 +40,12 @@ export function createPatientPdf(records: PatientLogRecord[]) {
     const patientDetails = report.patientDetails && typeof report.patientDetails === "object" ? report.patientDetails as Record<string, unknown> : {};
     const firstAid = report.firstAidHospital && typeof report.firstAidHospital === "object" ? report.firstAidHospital as Record<string, unknown> : {};
     const inventory = Array.isArray(report.inventory) ? report.inventory as Array<Record<string, unknown>> : [];
+    const responderDetails = report.responderDetails && typeof report.responderDetails === "object"
+      ? report.responderDetails as Record<string, unknown>
+      : {};
+    const otherResponders = Array.isArray(responderDetails.otherResponders)
+      ? responderDetails.otherResponders.filter((name): name is string => typeof name === "string")
+      : [];
     const dispatch = record.dispatches[0];
 
     document.setFont("helvetica", "bold");
@@ -76,7 +82,7 @@ export function createPatientPdf(records: PatientLogRecord[]) {
     addLine("Request type", record.type_of_request.replaceAll("_", " "));
     addLine("Caller", record.name_of_caller);
     addLine("Submitted by", record.submitter?.name ?? record.submitter_name);
-    addLine("Responders", record.responders.map(({ user }) => user.name).join(", "));
+    addLine("Responders", [...record.responders.map(({ user }) => user.name), ...otherResponders].join(", "));
 
     addSection("Assessment and care");
     addLine("Assessment", record.medical_assessment);

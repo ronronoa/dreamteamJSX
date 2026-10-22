@@ -13,6 +13,7 @@ export type VehicularDispatchDetails = {
   date: string
   time: string
   responders: string[]
+  otherResponders: string[]
   transfers: DispatchTransfer[]
 }
 
@@ -28,6 +29,7 @@ export const createEmptyVehicularDispatchReport = (): VehicularDispatchReportDat
     date: getCurrentDateInputValue(),
     time: getCurrentTimeInputValue(),
     responders: [],
+    otherResponders: [],
     transfers: [],
   },
   dispatch: createEmptyVehicularDispatch(),
