@@ -50,8 +50,9 @@ export default function CommonTextarea({
         {...props}
         aria-invalid={Boolean(errorMessage)}
         aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
-        className={`w-full resize-none px-4 py-3 outline-none placeholder:text-gray-400 ${textareaClass} ${className}`}
+        className={`w-full resize-none px-4 py-3 outline-none placeholder:text-gray-400 ${textareaClass} ${errorMessage ? "border-red-500 ring-1 ring-red-500" : ""} ${className}`}
       />
+      {!label && errorMessage && <p id={`${props.id}-error`} role="alert" className="mt-1 text-xs font-medium text-red-700">{errorMessage}</p>}
     </div>
   )
 }

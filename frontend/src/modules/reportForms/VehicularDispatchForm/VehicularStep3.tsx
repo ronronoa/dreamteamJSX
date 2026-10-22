@@ -2,11 +2,14 @@ import CommonFormSection from "../component/CommonFormSection"
 import SummaryField from "../component/SummaryField"
 import type { Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchReportData } from "../../../types/vehicularDispatchReport"
+import type { VehicularDispatchErrors } from "./formValidation"
 
 type VehicularStep3Props = {
   formData: VehicularDispatchReportData
   vehicleLabel: string
   responderLabels: string[]
+  onEditStep: (step: number) => void
+  errors: VehicularDispatchErrors
 }
 
 function formatPersonName(person: Person): string {
@@ -22,13 +25,13 @@ function formatPersonAddress(person: Person): string {
     .join(", ") || "—"
 }
 
-export default function VehicularStep3({ formData, vehicleLabel, responderLabels }: VehicularStep3Props) {
+export default function VehicularStep3({ formData, vehicleLabel, responderLabels, onEditStep, errors }: VehicularStep3Props) {
   const { details, dispatch, passengers } = formData
 
   return (
     <main className="flex w-full flex-col gap-4">
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CommonFormSection title="RESPONDER DETAILS" standardHeight={false}>
+        <CommonFormSection title="RESPONDER DETAILS" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "details")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={details.submitterName} />
             <SummaryField label="Date" value={details.date} />
@@ -38,7 +41,7 @@ export default function VehicularStep3({ formData, vehicleLabel, responderLabels
           </div>
         </CommonFormSection>
 
-        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false}>
+        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "dispatch")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
@@ -52,7 +55,7 @@ export default function VehicularStep3({ formData, vehicleLabel, responderLabels
         </CommonFormSection>
       </section>
 
-      <CommonFormSection title="CIVILIAN PASSENGERS" standardHeight={false}>
+      <CommonFormSection title="CIVILIAN PASSENGERS" standardHeight={false} onClick={() => onEditStep(2)} hasError={hasErrorsForPrefix(errors, "passengers")}>
         <div className="overflow-x-auto rounded-md border border-purple-400">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -83,4 +86,8 @@ export default function VehicularStep3({ formData, vehicleLabel, responderLabels
       </CommonFormSection>
     </main>
   )
+}
+
+function hasErrorsForPrefix(errors: VehicularDispatchErrors, prefix: string): boolean {
+  return Object.keys(errors).some((field) => field === prefix || field.startsWith(`${prefix}.`))
 }

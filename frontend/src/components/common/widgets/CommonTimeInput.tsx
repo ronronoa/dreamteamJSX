@@ -194,7 +194,7 @@ export default function CommonTimeInput({
         {errorMessage && <span role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
       </label>
 
-      <div className="flex" onBlur={handleBlur}>
+      <div className={`flex rounded-md ${errorMessage ? "border-2 border-red-500" : ""}`} onBlur={handleBlur}>
         <div className="flex h-10 items-center rounded-l-md border border-gray-300 bg-gray-100">
           {digits.map((digit, index) => (
             <Fragment key={index}>

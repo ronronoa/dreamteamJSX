@@ -142,7 +142,7 @@ export default function CommonSearchSelect({
           setQuery("")
         }}
         onKeyDown={handleKeyDown}
-        wrapperClassName={`${wrapperClass} ${className}`}
+        wrapperClassName={`${wrapperClass} ${errorMessage ? "border-red-500 ring-2 ring-red-500" : ""} ${className}`}
         inputClassName={`w-full bg-transparent outline-none placeholder:text-gray-400 ${inputClass}`}
       />
 

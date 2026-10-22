@@ -28,7 +28,7 @@ import {
   type Person,
 } from "../../types/vehicularDispatchReport"
 import { validateReport, validateStep, type VehicularDispatchErrors } from "../../modules/reportForms/VehicularDispatchForm/formValidation"
-import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { hasStoredDraft, hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
 import { useTitle } from "@/hooks/useTitle"
 
 const DRAFT_STORAGE_KEY = "reportForms.vehicularDispatch.draft"
@@ -131,12 +131,18 @@ export default function VehicularDispatchForm() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState("")
   const [optionsRequestId, setOptionsRequestId] = useState(0)
-  const [formData, setFormData] = useState<VehicularDispatchReportData>(() => readStoredReport(
-    DRAFT_STORAGE_KEY,
-    LATEST_STORAGE_KEY,
-    createEmptyVehicularDispatchReport,
-    normalizeReport,
-  ))
+  const [formData, setFormData] = useState<VehicularDispatchReportData>(() => {
+    const storedReport = readStoredReport(
+      DRAFT_STORAGE_KEY,
+      LATEST_STORAGE_KEY,
+      createEmptyVehicularDispatchReport,
+      normalizeReport,
+    )
+    if (!hasStoredDraft(DRAFT_STORAGE_KEY)) {
+      storedReport.details.otherResponders = []
+    }
+    return storedReport
+  })
   const [validationErrors, setValidationErrors] = useState<VehicularDispatchErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
@@ -180,6 +186,7 @@ export default function VehicularDispatchForm() {
         const report = await fetchLatestVehicularDispatchReport()
         if (!isCurrentRequest || !report) return
         const normalizedReport = normalizeReport(report)
+        normalizedReport.details.otherResponders = []
         if (!hasLocalReport) {
           setFormData(normalizedReport)
           saveStoredReport(LATEST_STORAGE_KEY, normalizedReport)
@@ -324,6 +331,10 @@ export default function VehicularDispatchForm() {
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div
                   key={step}
+                  onBlurCapture={() => {
+                    if (step > 2) return
+                    setValidationErrors(validateStep(step, formData))
+                  }}
                   variants={variants}
                   custom={direction}
                   initial="enter"
@@ -337,7 +348,7 @@ export default function VehicularDispatchForm() {
                       onDetailsChange={updateDetails}
                       dispatch={formData.dispatch}
                       onDispatchChange={updateDispatch}
-                      errors={validationErrors}
+                      errors={allErrors}
                       vehicleOptions={formOptions.vehicles.map((vehicle) => ({
                         label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
                         value: vehicle.vehicle_id,
@@ -354,7 +365,7 @@ export default function VehicularDispatchForm() {
                     <VehicularStep2
                       people={formData.passengers}
                       onPeopleChange={updatePassengers}
-                      errors={validationErrors}
+                      errors={allErrors}
                     />
                   )}
                   {step === 3 && (
@@ -362,6 +373,11 @@ export default function VehicularDispatchForm() {
                       formData={formData}
                       vehicleLabel={vehicleLabel}
                       responderLabels={responderLabels}
+                      errors={allErrors}
+                      onEditStep={(targetStep) => {
+                        setDirection(targetStep < step ? -1 : 1)
+                        setStep(targetStep)
+                      }}
                     />
                   )}
                 </motion.div>

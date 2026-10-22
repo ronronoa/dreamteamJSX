@@ -15,6 +15,7 @@ import {
   isStep1Complete,
   isStep2Complete,
   isStep3Complete,
+  getPatientStepErrors,
 } from "../../modules/reportForms/NewPatientLogForm/formValidation"
 
 import {
@@ -33,7 +34,7 @@ import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
-import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { hasStoredDraft, hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
 import { getCurrentDateInputValue, getCurrentTimeInputValue } from "@/utils/dateTime"
 
 const PATIENT_DRAFT_KEY = "reportForms.patient.draft"
@@ -122,12 +123,18 @@ export default function PatientLogForm() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState("")
   const [optionsRequestId, setOptionsRequestId] = useState(0)
-  const [formData, setFormData] = useState<PatientLogData>(() => readStoredReport(
-    PATIENT_DRAFT_KEY,
-    PATIENT_LATEST_KEY,
-    createEmptyPatientLogData,
-    normalizePatientReport,
-  ))
+  const [formData, setFormData] = useState<PatientLogData>(() => {
+    const storedReport = readStoredReport(
+      PATIENT_DRAFT_KEY,
+      PATIENT_LATEST_KEY,
+      createEmptyPatientLogData,
+      normalizePatientReport,
+    )
+    if (!hasStoredDraft(PATIENT_DRAFT_KEY)) {
+      storedReport.responderDetails.otherResponders = []
+    }
+    return storedReport
+  })
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate()
@@ -174,6 +181,7 @@ export default function PatientLogForm() {
         const latestReport = await fetchLatestPatientReport()
         if (!isCurrentRequest || !latestReport) return
         const normalizedReport = normalizePatientReport(latestReport)
+        normalizedReport.responderDetails.otherResponders = []
         setFormData(normalizedReport)
         saveStoredReport(PATIENT_LATEST_KEY, normalizedReport)
       } catch (error) {
@@ -340,6 +348,7 @@ export default function PatientLogForm() {
                       dispatch={formData.dispatch}
                       onDispatchChange={updateDispatch}
                       options={formOptions}
+                      errors={getPatientStepErrors(1, formData)}
                       optionsLoading={optionsLoading}
                     />
                   )}
@@ -350,6 +359,7 @@ export default function PatientLogForm() {
                       onPatientDetailsChange={updatePatientDetails}
                       firstAidHospital={formData.firstAidHospital}
                       onFirstAidHospitalChange={updateFirstAidHospital}
+                      errors={getPatientStepErrors(2, formData)}
                     />
                   )}
 
@@ -359,10 +369,25 @@ export default function PatientLogForm() {
                       onWaiverFormChange={updateWaiverForm}
                       inventory={formData.inventory}
                       onInventoryChange={updateInventory}
+                      errors={getPatientStepErrors(3, formData)}
                     />
                   )}
 
-                  {step === 4 && <PatientStep4 formData={formData} options={formOptions} />}
+                  {step === 4 && (
+                    <PatientStep4
+                      formData={formData}
+                      options={formOptions}
+                      invalidSteps={[
+                        ...(!isStep1Complete(formData) ? [1] : []),
+                        ...(!isStep2Complete(formData) ? [2] : []),
+                        ...(!isStep3Complete(formData) ? [3] : []),
+                      ]}
+                      onEditStep={(targetStep) => {
+                        setDirection(targetStep < step ? -1 : 1)
+                        setStep(targetStep)
+                      }}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>

@@ -25,7 +25,7 @@ import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
-import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { hasStoredDraft, hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
 import { useTitle } from "@/hooks/useTitle"
 
 const OPERATION_DRAFT_KEY = "reportForms.operation.draft"
@@ -81,12 +81,18 @@ export default function OperationLogForm() {
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
-  const [formData, setFormData] = useState<OperationLogData>(() => readStoredReport(
-    OPERATION_DRAFT_KEY,
-    OPERATION_LATEST_KEY,
-    createEmptyOperationLogData,
-    normalizeOperationReport,
-  ))
+  const [formData, setFormData] = useState<OperationLogData>(() => {
+    const storedReport = readStoredReport(
+      OPERATION_DRAFT_KEY,
+      OPERATION_LATEST_KEY,
+      createEmptyOperationLogData,
+      normalizeOperationReport,
+    )
+    if (!hasStoredDraft(OPERATION_DRAFT_KEY)) {
+      storedReport.operationDetails.otherResponders = []
+    }
+    return storedReport
+  })
   const [formOptions, setFormOptions] = useState<OperationFormOptions>({
     operationNatures: [],
     teams: [],
@@ -135,6 +141,7 @@ export default function OperationLogForm() {
         const latestReport = await fetchLatestOperationReport()
         if (!isCurrentRequest || !latestReport) return
         const normalizedReport = normalizeOperationReport(latestReport)
+        normalizedReport.operationDetails.otherResponders = []
         setFormData(normalizedReport)
         saveStoredReport(OPERATION_LATEST_KEY, normalizedReport)
       } catch (error) {
@@ -303,6 +310,10 @@ const nextStep = () => {
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div
                   key={step}
+                  onBlurCapture={() => {
+                    if (step > 3) return
+                    setValidationErrors(validateStep(step, formData, formOptions))
+                  }}
                   variants={VARIANTS}
                   custom={direction}
                   initial="enter"
@@ -318,7 +329,7 @@ const nextStep = () => {
                       onDispatchChange={updateDispatch}
                       options={formOptions}
                       optionsLoading={optionsLoading}
-                      errors={validationErrors}
+                      errors={reportValidationErrors}
                     />
                   )}
 
@@ -326,7 +337,7 @@ const nextStep = () => {
                     <OperationStep2 
                       people={formData.people}
                       onPeopleChange={updatePeople}
-                      errors={validationErrors}
+                      errors={reportValidationErrors}
                     />
                   )}
 
@@ -336,12 +347,22 @@ const nextStep = () => {
                       onOperationDescriptionChange={updateOperationDescription}
                       inventory={formData.inventory}
                       onInventoryChange={updateInventory}
-                      errors={validationErrors}
+                      errors={reportValidationErrors}
                     />
                   )}
 
 
-                  {step === 4 && <OperationStep4 formData={formData} options={formOptions} />}
+                  {step === 4 && (
+                    <OperationStep4
+                      formData={formData}
+                      options={formOptions}
+                      errors={reportValidationErrors}
+                      onEditStep={(targetStep) => {
+                        setDirection(targetStep < step ? -1 : 1)
+                        setStep(targetStep)
+                      }}
+                    />
+                  )}
 
                 </motion.div>
               </AnimatePresence>

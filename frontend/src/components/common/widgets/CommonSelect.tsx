@@ -63,6 +63,7 @@ export default function CommonSelect({
           w-full px-2 outline-none
           ${!props.value ? "text-gray-400" : ""}
           ${selectClass}
+          ${errorMessage ? "border-red-500 ring-2 ring-red-500" : ""}
           ${className}
         `}
       >

@@ -81,7 +81,7 @@ export default function VehicularStep1({
             value={details.otherResponders}
             onChange={(otherResponders) => onDetailsChange({ otherResponders })}
           />
-          <div>
+          <div className={errors["details.transfers"] ? "rounded-md border border-red-400 bg-red-50 p-2" : ""}>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
               <span>Transfer</span>
             </label>

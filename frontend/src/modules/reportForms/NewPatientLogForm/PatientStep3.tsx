@@ -10,6 +10,7 @@ type PatientStep3Props = {
   onWaiverFormChange: (patch: Partial<WaiverForm>) => void
   inventory: InventoryItem[]
   onInventoryChange: (inventory: InventoryItem[]) => void
+  errors: Record<string, string>
 }
 
 export default function PatientStep3({
@@ -17,6 +18,7 @@ export default function PatientStep3({
   onWaiverFormChange,
   inventory,
   onInventoryChange,
+  errors,
 }: PatientStep3Props) {
   const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useImageDrag()
 
@@ -72,6 +74,7 @@ export default function PatientStep3({
       <OperationInventorySection
         inventory={inventory}
         onInventoryChange={onInventoryChange}
+        errors={errors}
       />
     </div>
   )

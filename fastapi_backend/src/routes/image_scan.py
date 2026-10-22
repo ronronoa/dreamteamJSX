@@ -1,6 +1,7 @@
 import io
 import logging
 import time
+from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
@@ -22,7 +23,28 @@ async def gemini_scan(file: UploadFile = File(...)):
     with Image.open(io.BytesIO(image_bytes)) as uploaded_image:
         original_size = uploaded_image.size
         image = preprocess_document_image(uploaded_image)
-    logger.info("Prepared patient form image from %s to %s", original_size, image.size)
+    print("Prepared patient form image from %s to %s", original_size, image.size)
+
+    # --- SAVE THE PREPROCESSED IMAGE AS FINAL_PROCESS ---
+    try:
+        output_dir = Path("./test")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Check if the image contains alpha/transparency channels
+        if image.mode in ("RGBA", "LA") or (image.info.get("transparency") is not None):
+            save_path = output_dir / "final_process.png"
+            image.save(save_path, format="PNG")
+        else:
+            save_path = output_dir / "final_process.jpg"
+            # Ensure proper conversion for JPEGs if grayscale or indexed
+            save_image = image if image.mode == "RGB" else image.convert("RGB")
+            save_image.save(save_path, format="JPEG", quality=90)
+            
+        print(f"Saved visual artifact to: {save_path.resolve()}")
+    except Exception as save_error:
+        # Prevent file saving issues from crashing the core API endpoint logic
+        logger.warning("Failed to save final_process debug image: %s", save_error)
+    # ----------------------------------------------------
 
     try:
         result = await run_in_threadpool(GeminiOCR.scan, image)

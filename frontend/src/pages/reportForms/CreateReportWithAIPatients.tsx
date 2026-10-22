@@ -250,7 +250,7 @@ export default function CreateReportWithAIPatients() {
   }, [navigate, step]);
 
   function handleProceed(scanResult: PatientLogOcrResult, sourceImage: File | null) {
-    if (optionsLoading || optionsError) return;
+    if (optionsLoading || optionsError || !scanResult.checkedBy.trim()) return;
 
     const report = createPatientReportFromScan(scanResult, options);
     setFormData(report);
@@ -313,6 +313,9 @@ export default function CreateReportWithAIPatients() {
         <CreateReportWithAI
           onProceed={handleProceed}
           proceedDisabled={optionsLoading || Boolean(optionsError)}
+          responderOptions={options.responders}
+          optionsLoading={optionsLoading}
+          optionsError={optionsError}
         />
       </div>
 

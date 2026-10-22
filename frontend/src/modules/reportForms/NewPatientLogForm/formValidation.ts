@@ -110,3 +110,65 @@ export const isFormComplete = (formData: PatientLogData) => {
     isStep3Complete(formData)
   )
 }
+
+export function getPatientStepErrors(step: number, formData: PatientLogData): Record<string, string> {
+  const errors: Record<string, string> = {}
+
+  if (step === 1) {
+    const { responderDetails, dispatch } = formData
+    if (!responderDetails.submitterName.trim()) errors.submitterName = "Enter the submitter's name."
+    if (!isValidDateInputNotInFuture(responderDetails.date)) errors.date = "Choose a valid date that is not in the future."
+    if (!responderDetails.time.trim()) errors.time = "Enter the report time."
+    if (!responderDetails.typeOfRequest) errors.typeOfRequest = "Choose a request type."
+    if (!responderDetails.caller.surname.trim()) errors.callerSurname = "Enter the caller's surname."
+    if (!responderDetails.caller.firstName.trim()) errors.callerFirstName = "Enter the caller's first name."
+    if (!responderDetails.responders.length && !responderDetails.otherResponders.length) errors.responders = "Select or add at least one responder."
+    if (!responderDetails.dispositionType) errors.transfer = "Select a transfer type."
+
+    const dispatchIsRequired = Boolean(dispatch.vehicle && dispatch.vehicle !== "none")
+    if (dispatchIsRequired) {
+      if (!dispatch.from.trim()) errors["dispatch.from"] = "Enter the departure location."
+      if (!dispatch.to.trim()) errors["dispatch.to"] = "Enter the destination."
+      if (dispatch.vehicle === "other" && !dispatch.vehicleOther?.trim()) errors["dispatch.vehicleOther"] = "Specify the vehicle."
+      if (!dispatch.driver.trim()) errors["dispatch.driver"] = "Enter the driver's name."
+      if (!dispatch.departTime.trim()) errors["dispatch.departTime"] = "Enter the departure time."
+      if (!dispatch.arrivalTime.trim()) errors["dispatch.arrivalTime"] = "Enter the arrival time."
+      if (!dispatch.odometerIn.trim()) errors["dispatch.odometerIn"] = "Enter the odometer reading."
+      if (!dispatch.odometerOut.trim()) errors["dispatch.odometerOut"] = "Enter the odometer reading."
+    }
+    return errors
+  }
+
+  if (step === 2) {
+    const { patientDetails, firstAidHospital } = formData
+    if (!patientDetails.name.surname.trim()) errors.patientSurname = "Enter the patient's surname."
+    if (!patientDetails.name.firstName.trim()) errors.patientFirstName = "Enter the patient's first name."
+    if (!isValidDateInputNotInFuture(patientDetails.birthdate) || !patientDetails.age) {
+      errors.birthdate = "Choose a valid birthdate that is not in the future."
+    }
+    if (!patientDetails.sex) errors.sex = "Select the patient's sex."
+    if (!patientDetails.contactPerson.surname.trim()) errors.contactSurname = "Enter the contact person's surname."
+    if (!patientDetails.contactPerson.firstName.trim()) errors.contactFirstName = "Enter the contact person's first name."
+    if (!patientDetails.contactNumber.trim()) errors.contactNumber = "Enter a contact number."
+    if (!patientDetails.address.phase.trim()) errors.phase = "Enter the phase."
+    if (!patientDetails.address.package.trim()) errors.package = "Enter the package."
+    if (!patientDetails.address.block.trim()) errors.block = "Enter the block."
+    if (!patientDetails.address.lot.trim()) errors.lot = "Enter the lot."
+    if (!firstAidHospital.medicalAssessment.trim()) errors.medicalAssessment = "Enter the medical assessment."
+    if (!firstAidHospital.hospitalName.trim()) errors.hospitalName = "Enter the hospital name."
+    if (!firstAidHospital.hospitalRepresentative.surname.trim()) errors.hospitalSurname = "Enter the representative's surname."
+    if (!firstAidHospital.hospitalRepresentative.firstName.trim()) errors.hospitalFirstName = "Enter the representative's first name."
+    if (!firstAidHospital.hospitalInTime.trim()) errors.hospitalInTime = "Enter the hospital in time."
+    if (!firstAidHospital.hospitalOutTime.trim()) errors.hospitalOutTime = "Enter the hospital out time."
+    return errors
+  }
+
+  if (step === 3) {
+    formData.inventory.forEach((item, index) => {
+      if (!item.itemName.trim()) errors[`inventory.${index}.itemName`] = "Enter an item name."
+      if (!item.quantity.trim()) errors[`inventory.${index}.quantity`] = "Enter a quantity."
+    })
+  }
+
+  return errors
+}

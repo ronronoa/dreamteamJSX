@@ -117,6 +117,7 @@ export default function OperationStep1({
                 variant="compact"
                 placeholder="Surname"
                 value={operationDetails.nameOfCaller.surname}
+                errorMessage={errors["operationDetails.nameOfCaller.surname"]}
                 onChange={(e) =>
                   onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, surname: e.target.value } })
                 }
@@ -125,6 +126,7 @@ export default function OperationStep1({
                 variant="compact"
                 placeholder="First Name"
                 value={operationDetails.nameOfCaller.firstName}
+                errorMessage={errors["operationDetails.nameOfCaller.firstName"]}
                 onChange={(e) =>
                   onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, firstName: e.target.value } })
                 }
@@ -133,6 +135,7 @@ export default function OperationStep1({
                 variant="compact"
                 placeholder="M.I"
                 value={operationDetails.nameOfCaller.middleInitial}
+                errorMessage={errors["operationDetails.nameOfCaller.middleInitial"]}
                 onChange={(e) =>
                   onOperationDetailsChange({
                     nameOfCaller: { ...operationDetails.nameOfCaller, middleInitial: e.target.value },
@@ -144,6 +147,7 @@ export default function OperationStep1({
                 variant="compact"
                 placeholder="Sfx"
                 value={operationDetails.nameOfCaller.suffix}
+                errorMessage={errors["operationDetails.nameOfCaller.suffix"]}
                 onChange={(e) =>
                   onOperationDetailsChange({ nameOfCaller: { ...operationDetails.nameOfCaller, suffix: e.target.value } })
                 }

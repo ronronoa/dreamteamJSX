@@ -1,11 +1,13 @@
+# pillow magic stuff idk
 from __future__ import annotations
 
 from collections.abc import Sequence
 from math import sqrt
+from pathlib import Path
 
 from PIL import Image, ImageEnhance, ImageOps, ImageStat
 
-MAX_PROCESSED_PIXELS = 1_800_000
+MAX_PROCESSED_PIXELS = 1_500_000
 ANALYSIS_MAX_EDGE = 600
 PAGE_BRIGHTNESS_THRESHOLD = 190
 DARK_BACKGROUND_THRESHOLD = 175
@@ -30,12 +32,32 @@ def _resize_to_pixel_limit(image: Image.Image) -> Image.Image:
     if pixel_count <= MAX_PROCESSED_PIXELS:
         return image
 
-    scale = sqrt(MAX_PROCESSED_PIXELS / pixel_count)
-    new_size = (
-        max(1, round(image.width * scale)),
-        max(1, round(image.height * scale)),
-    )
-    return image.resize(new_size, Image.Resampling.LANCZOS)
+    if pixel_count > MAX_PROCESSED_PIXELS:
+        scale = sqrt(MAX_PROCESSED_PIXELS / pixel_count)
+        new_size = (
+            max(1, round(image.width * scale)),
+            max(1, round(image.height * scale)),
+        )
+        processed_image = image.resize(new_size, Image.Resampling.LANCZOS)
+    else:
+        processed_image = image
+
+    output_dir = Path("./test")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if processed_image.mode in ("RGBA", "LA") or (processed_image.info.get("transparency") is not None):
+        save_path = output_dir / "processed_test.png"
+        processed_image.save(save_path, format="PNG")
+    else:
+        save_path = output_dir / "processed_test.jpg"
+        # Convert to RGB mode if it's grayscale to ensure clean JPEG saving
+        if processed_image.mode != "RGB":
+            processed_image = processed_image.convert("RGB")
+        processed_image.save(save_path, format="JPEG", quality=90)
+
+    print(f"Saved processed preview to: {save_path.resolve()}")
+
+    return processed_image
 
 
 def _crop_document_if_detectable(image: Image.Image) -> Image.Image:

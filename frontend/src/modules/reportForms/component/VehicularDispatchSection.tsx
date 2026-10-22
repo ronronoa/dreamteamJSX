@@ -3,6 +3,7 @@ import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
 import CommonFormSection from "./CommonFormSection"
+import { useEffect } from "react"
 import type { FormErrors } from "../OperationLogForm/formValidation"
 
 import type { VehicularDispatch } from "../../../types/operationLog"
@@ -47,6 +48,16 @@ export default function VehicularDispatchSection({
   const isOtherVehicle = dispatch.vehicle === OTHER_VEHICLE_VALUE
   const hasNoVehicle = dispatch.vehicle === NO_VEHICLE_VALUE || dispatch.vehicle === ""
   const hasSelectedDatabaseVehicle = vehicleOptions.some((option) => option.value === dispatch.vehicle)
+  const selectedDatabaseVehicle = vehicleOptions.find((option) => option.value === dispatch.vehicle)
+
+  useEffect(() => {
+    if (!selectedDatabaseVehicle || selectedDatabaseVehicle.currentOdometer === undefined) return
+
+    const databaseOdometer = String(selectedDatabaseVehicle.currentOdometer)
+    if (dispatch.odometerIn === databaseOdometer) return
+
+    onDispatchChange({ odometerIn: databaseOdometer })
+  }, [dispatch.odometerIn, onDispatchChange, selectedDatabaseVehicle])
 
   return (
     <CommonFormSection title={title} standardHeight={false}>

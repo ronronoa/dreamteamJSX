@@ -18,6 +18,7 @@ type PatientStep2Props = {
   onPatientDetailsChange: (patch: Partial<PatientDetails>) => void
   firstAidHospital: FirstAidHospitalDetails
   onFirstAidHospitalChange: (patch: Partial<FirstAidHospitalDetails>) => void
+  errors: Record<string, string>
 }
 
 export default function PatientStep2({
@@ -25,6 +26,7 @@ export default function PatientStep2({
   onPatientDetailsChange,
   firstAidHospital,
   onFirstAidHospitalChange,
+  errors,
 }: PatientStep2Props) {
   function handleBirthdateChange(value: string) {
     onPatientDetailsChange({
@@ -46,6 +48,7 @@ export default function PatientStep2({
                 variant="compact"
                 placeholder="Surname"
                 value={patientDetails.name.surname}
+                errorMessage={errors.patientSurname}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     name: { ...patientDetails.name, surname: e.target.value },
@@ -56,6 +59,7 @@ export default function PatientStep2({
                 variant="compact"
                 placeholder="First Name"
                 value={patientDetails.name.firstName}
+                errorMessage={errors.patientFirstName}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     name: { ...patientDetails.name, firstName: e.target.value },
@@ -92,6 +96,7 @@ export default function PatientStep2({
               label="Birthdate"
               value={patientDetails.birthdate}
               onChange={(e) => handleBirthdateChange(e.target.value)}
+              errorMessage={errors.birthdate}
             />
             <CommonInput
               variant="compact"
@@ -102,7 +107,7 @@ export default function PatientStep2({
             />
           </div>
 
-          <div className="mb-5">
+          <div className={`mb-5 ${errors.sex ? "rounded-md border border-red-400 bg-red-50 p-2" : ""}`}>
             <label className="mb-1 block text-lg font-medium text-slate-900">Sex</label>
 
             <div className="flex gap-10">
@@ -117,6 +122,7 @@ export default function PatientStep2({
                 onChange={() => onPatientDetailsChange({ sex: "Female" })}
               />
             </div>
+            {errors.sex && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{errors.sex}</p>}
           </div>
 
           <div>
@@ -127,6 +133,7 @@ export default function PatientStep2({
                 variant="compact"
                 placeholder="Surname"
                 value={patientDetails.contactPerson.surname}
+                errorMessage={errors.contactSurname}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     contactPerson: { ...patientDetails.contactPerson, surname: e.target.value },
@@ -137,6 +144,7 @@ export default function PatientStep2({
                 variant="compact"
                 placeholder="First Name"
                 value={patientDetails.contactPerson.firstName}
+                errorMessage={errors.contactFirstName}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     contactPerson: { ...patientDetails.contactPerson, firstName: e.target.value },
@@ -172,6 +180,7 @@ export default function PatientStep2({
             placeholder="0912345678"
             value={patientDetails.contactNumber}
             onChange={(e) => onPatientDetailsChange({ contactNumber: e.target.value })}
+            errorMessage={errors.contactNumber}
           />
 
           <div className="mb-5">
@@ -184,6 +193,7 @@ export default function PatientStep2({
                 className="w-9 px-1 text-center"
                 placeholder="9"
                 value={patientDetails.address.phase}
+                errorMessage={errors.phase}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     address: { ...patientDetails.address, phase: e.target.value },
@@ -196,6 +206,7 @@ export default function PatientStep2({
                 className="w-9 px-1 text-center"
                 placeholder="3"
                 value={patientDetails.address.package}
+                errorMessage={errors.package}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     address: { ...patientDetails.address, package: e.target.value },
@@ -208,6 +219,7 @@ export default function PatientStep2({
                 className="w-9 px-1 text-center"
                 placeholder="25"
                 value={patientDetails.address.block}
+                errorMessage={errors.block}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     address: { ...patientDetails.address, block: e.target.value },
@@ -220,6 +232,7 @@ export default function PatientStep2({
                 className="w-9 px-1 text-center"
                 placeholder="16"
                 value={patientDetails.address.lot}
+                errorMessage={errors.lot}
                 onChange={(e) =>
                   onPatientDetailsChange({
                     address: { ...patientDetails.address, lot: e.target.value },
@@ -281,8 +294,9 @@ export default function PatientStep2({
               placeholder="Provide a medical assessment of the patient"
               value={firstAidHospital.medicalAssessment}
               onChange={(e) => onFirstAidHospitalChange({ medicalAssessment: e.target.value })}
-              className="w-full resize-none rounded-md border border-gray-300 bg-gray-100 px-2 py-1.5 text-sm text-gray-800 outline-none focus:border-purple-500"
+              className={`w-full resize-none rounded-md border ${errors.medicalAssessment ? "border-red-500" : "border-gray-300"} bg-gray-100 px-2 py-1.5 text-sm text-gray-800 outline-none focus:border-purple-500`}
             />
+            {errors.medicalAssessment && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{errors.medicalAssessment}</p>}
           </div>
 
           {/* first aid */}
@@ -306,6 +320,7 @@ export default function PatientStep2({
             placeholder="Ex. Tala Hospital"
             value={firstAidHospital.hospitalName}
             onChange={(e) => onFirstAidHospitalChange({ hospitalName: e.target.value })}
+              errorMessage={errors.hospitalName}
           />
 
           <div>
@@ -326,11 +341,13 @@ export default function PatientStep2({
                     },
                   })
                 }
+                errorMessage={errors.hospitalSurname}
               />
               <CommonInput
                 variant="compact"
                 placeholder="First Name"
                 value={firstAidHospital.hospitalRepresentative.firstName}
+                errorMessage={errors.hospitalFirstName}
                 onChange={(e) =>
                   onFirstAidHospitalChange({
                     hospitalRepresentative: {
@@ -376,6 +393,7 @@ export default function PatientStep2({
               period={firstAidHospital.hospitalInPeriod}
               onTimeChange={(value) => onFirstAidHospitalChange({ hospitalInTime: value })}
               onPeriodChange={(value) => onFirstAidHospitalChange({ hospitalInPeriod: value })}
+              errorMessage={errors.hospitalInTime}
             />
             <CommonTimeInput
               label="Hospital Out"
@@ -383,6 +401,7 @@ export default function PatientStep2({
               period={firstAidHospital.hospitalOutPeriod}
               onTimeChange={(value) => onFirstAidHospitalChange({ hospitalOutTime: value })}
               onPeriodChange={(value) => onFirstAidHospitalChange({ hospitalOutPeriod: value })}
+              errorMessage={errors.hospitalOutTime}
             />
           </div>
         </div>

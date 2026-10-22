@@ -68,8 +68,10 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   const isOtherVehicle = dispatch.vehicle === "other"
   const hasSelectedVehicle = Boolean(dispatch.vehicle) && !hasNoVehicle && !isOtherVehicle
 
-  validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
-  validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
+  if (!dispatch.from.trim()) errors["dispatch.from"] = "Enter the departure location.";
+  else validateOptionalTextLength(dispatch.from, 200, "Departure location must be 200 characters or fewer.", "dispatch.from", errors);
+  if (!dispatch.to.trim()) errors["dispatch.to"] = "Enter the destination.";
+  else validateOptionalTextLength(dispatch.to, 200, "Destination must be 200 characters or fewer.", "dispatch.to", errors);
   if (hasSelectedVehicle && !options.vehicles.some((vehicle) => vehicle.vehicle_id === dispatch.vehicle)) {
     errors["dispatch.vehicle"] = "Select an available vehicle, Other, or None.";
   }

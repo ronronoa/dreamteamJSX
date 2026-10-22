@@ -11,6 +11,8 @@ import { useState } from "react"
 type OperationStep4Props = {
   formData: OperationLogData
   options: OperationFormOptions
+  onEditStep: (step: number) => void
+  errors: FormErrors
 }
 
 const formatPersonName = (name: PersonName) => {
@@ -23,7 +25,7 @@ const formatPersonAddress = (person: Person) => {
   return `P${phase} PK${pkg} B${block} L${lot}`
 }
 
-export default function OperationStep4({ formData, options }: OperationStep4Props) {
+export default function OperationStep4({ formData, options, onEditStep, errors }: OperationStep4Props) {
   const { operationDetails, dispatch, people, operationDescription, inventory } = formData
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const teamNames = operationDetails.teamAssigned.map((teamId) =>
@@ -44,7 +46,7 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
     <main className="flex w-full flex-col gap-4">
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CommonFormSection title="OPERATION DETAILS" standardHeight={false}>
+        <CommonFormSection title="OPERATION DETAILS" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "operationDetails.")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={operationDetails.submitterName} />
             <SummaryField label="Date" value={operationDetails.date} />
@@ -56,7 +58,7 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
           </div>
         </CommonFormSection>
 
-        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false}>
+        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "dispatch.")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
@@ -83,7 +85,7 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
         </CommonFormSection>
       </section>
 
-      <CommonFormSection title="PEOPLE INVOLVED" standardHeight={false}>
+      <CommonFormSection title="PEOPLE INVOLVED" standardHeight={false} onClick={() => onEditStep(2)} hasError={hasErrorsForPrefix(errors, "people")}>
         <div className="overflow-x-auto rounded-md border border-purple-400">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -125,6 +127,8 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
             title="OPERATION DESCRIPTION"
             standardHeight={false}
             scrollable
+            onClick={() => onEditStep(3)}
+            hasError={hasErrorsForPrefix(errors, "operationDescription.")}
             className="lg:min-h-[200px] sm:flex-1"
           >
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-900">
@@ -136,6 +140,8 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
             title="INVENTORY USED"
             standardHeight={false}
             scrollable
+            onClick={() => onEditStep(3)}
+            hasError={hasErrorsForPrefix(errors, "inventory")}
             className="lg:min-h-[250px] lg:max-h-[500px]"
           >
             <div className="overflow-x-auto rounded-md">
@@ -168,13 +174,16 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
           </CommonFormSection>
         </div>
 
-        <CommonFormSection title="ATTACHED IMAGE" standardHeight={false} scrollable className="w-full sm:min-h-0">
+        <CommonFormSection title="ATTACHED IMAGE" standardHeight={false} scrollable onClick={() => onEditStep(3)} hasError={Boolean(errors["operationDescription.images"])} className="w-full sm:min-h-0">
           <div className="space-y-2">
             {operationDescription.images.map((file, index) => (
               <button
                 key={`${file.name}-${index}`}
                 type="button"
-                onClick={() => setPreviewIndex(index)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setPreviewIndex(index)
+                }}
                 className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm italic text-gray-700 transition hover:border-purple-400 hover:bg-gray-50"
               >
                 <span className="flex items-center gap-2 truncate">
@@ -201,4 +210,8 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
 
     </main>
   )
+}
+
+function hasErrorsForPrefix(errors: FormErrors, prefix: string): boolean {
+  return Object.keys(errors).some((field) => field === prefix || field.startsWith(`${prefix}.`))
 }

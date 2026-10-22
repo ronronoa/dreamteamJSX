@@ -26,10 +26,7 @@ export default function OperationStep3({
       <CommonFormSection title="OPERATION DESCRIPTION">
         <div className="flex h-full flex-col">
           <div className="mb-5">
-            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
-              <span>Description</span>
-              {errors["operationDescription.description"] && <span role="alert" className="text-xs font-medium text-red-700">{errors["operationDescription.description"]}</span>}
-            </label>
+            <label className="mb-1 block text-lg font-medium text-slate-900">Description</label>
 
             <ReportAutocompleteTextarea
               formType="operations"

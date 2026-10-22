@@ -38,3 +38,15 @@ export function hasStoredReport(draftKey: string, latestKey: string) {
     return false;
   }
 }
+
+export function hasStoredDraft(draftKey: string) {
+  try {
+    const storedDraft = localStorage.getItem(draftKey)
+    if (!storedDraft) return false
+
+    const parsedDraft: unknown = JSON.parse(storedDraft)
+    return typeof parsedDraft === "object" && parsedDraft !== null
+  } catch {
+    return false
+  }
+}

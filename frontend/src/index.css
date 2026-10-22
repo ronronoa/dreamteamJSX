@@ -18,8 +18,8 @@ html {
 }
 
 *::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
+  width: 2px !important;
+  height: 2px !important;
 }
 
 *::-webkit-scrollbar-track {

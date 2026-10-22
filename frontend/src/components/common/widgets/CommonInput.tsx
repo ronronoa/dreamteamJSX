@@ -105,16 +105,22 @@ export default function CommonInput({
       <div>
         <InputBase
           {...(props as InputBaseProps)}
+          isInvalid={Boolean(errorMessage)}
           aria-invalid={Boolean(errorMessage)}
           aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
           type={type}
           icon={LeadingIcon}
           hidePasswordToggle={!showPasswordToggle}
           onChange={handleChange}
-          wrapperClassName={wrapperClassName}
+          wrapperClassName={`${wrapperClassName} ${errorMessage ? "ring-2 ring-red-500" : ""}`}
           inputClassName={`w-full outline-none invalid:text-gray-400 ${leftPadding} ${rightPadding} ${inputClass} ${className}`}
         />
       </div>
+      {!label && errorMessage && (
+        <p id={`${props.id}-error`} role="alert" className="mt-1 text-xs font-medium text-red-700">
+          {errorMessage}
+        </p>
+      )}
     </div>
   )
 }

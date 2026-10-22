@@ -20,8 +20,7 @@ type OperationStep2Props = {
 
 export default function OperationStep2({ people, onPeopleChange, errors }: OperationStep2Props) {
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
-  const [draftErrors, setDraftErrors] = useState<FormErrors>({})
-  const [attemptedAdd, setAttemptedAdd] = useState(false)
+  const draftErrors = validatePerson(draft)
 
   function formatGroupedErrors(fields: Array<[string, string]>) {
     return fields.filter(([, message]) => Boolean(message)).map(([label, message]) => `${label}: ${message}`).join(" ")
@@ -30,7 +29,6 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
   const updateDraft = (patch: Partial<Person>) => {
     const updatedDraft = { ...draft, ...patch }
     setDraft(updatedDraft)
-    if (attemptedAdd) setDraftErrors(validatePerson(updatedDraft))
   }
 
   const handleBirthdateChange = (birthdate: string) => {
@@ -38,15 +36,11 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
   }
 
   const addPerson = () => {
-    setAttemptedAdd(true)
     const validationErrors = validatePerson(draft)
-    setDraftErrors(validationErrors)
     if (Object.keys(validationErrors).length > 0) return
 
     onPeopleChange([...people, { ...draft, id: crypto.randomUUID() }])
     setDraft(createEmptyPerson())
-    setDraftErrors({})
-    setAttemptedAdd(false)
   }
 
   const removePerson = (id: string) => {
@@ -88,6 +82,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               variant="compact"
               placeholder="Surname"
               value={draft.name.surname}
+              errorMessage={draftErrors["name.surname"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, surname: e.target.value } })}
             />
 
@@ -95,6 +90,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               variant="compact"
               placeholder="First Name"
               value={draft.name.firstName}
+              errorMessage={draftErrors["name.firstName"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, firstName: e.target.value } })}
             />
 
@@ -103,6 +99,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="px-1"
               placeholder="M.I"
               value={draft.name.middleInitial}
+              errorMessage={draftErrors["name.middleInitial"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: e.target.value } })}
             />
 
@@ -111,6 +108,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="px-1"
               placeholder="Sfx"
               value={draft.name.suffix}
+              errorMessage={draftErrors["name.suffix"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
             />
           </div>
@@ -190,6 +188,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="w-9 px-1 text-center"
               placeholder="9"
               value={draft.address.phase}
+              errorMessage={draftErrors["address.phase"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, phase: e.target.value } })}
             />
 
@@ -199,6 +198,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="w-9 px-1 text-center"
               placeholder="3"
               value={draft.address.package}
+              errorMessage={draftErrors["address.package"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, package: e.target.value } })}
             />
 
@@ -208,6 +208,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="w-9 px-1 text-center"
               placeholder="25"
               value={draft.address.block}
+              errorMessage={draftErrors["address.block"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, block: e.target.value } })}
             />
 
@@ -217,6 +218,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               className="w-9 px-1 text-center"
               placeholder="16"
               value={draft.address.lot}
+              errorMessage={draftErrors["address.lot"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, lot: e.target.value } })}
             />
           </div>

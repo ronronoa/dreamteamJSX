@@ -24,6 +24,14 @@ type VehicularStep2Props = {
 export default function VehicularStep2({ people, onPeopleChange, errors }: VehicularStep2Props) {
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
   const [draftError, setDraftError] = useState("")
+  const today = formatDate(new Date(), "YYYY-MM-DD")
+  const draftErrors = {
+    surname: draft.name.surname.trim() ? "" : "Enter the passenger's surname.",
+    firstName: draft.name.firstName.trim() ? "" : "Enter the passenger's first name.",
+    birthdate: !draft.birthdate || draft.birthdate > today || draft.age === "" ? "Choose a valid birthdate that is not in the future." : "",
+    gender: draft.gender ? "" : "Select the passenger's sex.",
+    contactNumber: draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH ? `Contact number must be ${MAX_CONTACT_NUMBER_LENGTH} characters or fewer.` : "",
+  }
 
 
   const updateDraft = (patch: Partial<Person>) => {
@@ -89,6 +97,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
               variant="compact"
               placeholder="Surname"
               value={draft.name.surname}
+              errorMessage={draftErrors.surname}
               onChange={(e) => updateDraft({ name: { ...draft.name, surname: e.target.value } })}
             />
 
@@ -96,6 +105,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
               variant="compact"
               placeholder="First Name"
               value={draft.name.firstName}
+              errorMessage={draftErrors.firstName}
               onChange={(e) => updateDraft({ name: { ...draft.name, firstName: e.target.value } })}
             />
 
@@ -125,6 +135,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
             value={draft.birthdate}
             max={formatDate(new Date(), "YYYY-MM-DD")}
             onChange={(e) => handleBirthdateChange(e.target.value)}
+            errorMessage={draftErrors.birthdate}
           />
 
           <CommonInput
@@ -153,6 +164,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
               onChange={() => updateDraft({ gender: "Female" })}
             />
           </div>
+          {draftErrors.gender && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{draftErrors.gender}</p>}
         </div>
 
         <div className="mb-5">
@@ -163,6 +175,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
             placeholder="09123456789"
             value={draft.contactNumber}
             onChange={(e) => updateDraft({ contactNumber: e.target.value })}
+            errorMessage={draftErrors.contactNumber}
           />
         </div>
 

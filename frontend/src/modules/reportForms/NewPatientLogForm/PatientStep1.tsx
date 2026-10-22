@@ -8,7 +8,7 @@ import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
 import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import OtherRespondersInput from "../component/OtherRespondersInput"
-import { getCurrentDateInputValue, isValidDateInputNotInFuture } from "@/utils/dateTime"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("patients")
 
@@ -26,6 +26,7 @@ type PatientStep1Props = {
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
   options: PatientFormOptions
   optionsLoading: boolean
+  errors: Record<string, string>
 }
 
 export default function PatientStep1({
@@ -35,6 +36,7 @@ export default function PatientStep1({
   onDispatchChange,
   options,
   optionsLoading,
+  errors,
 }: PatientStep1Props) {
   const selectTransfer = (dispositionType: "DROP_OFF" | "PICK_UP") => {
     onResponderDetailsChange({
@@ -52,23 +54,21 @@ export default function PatientStep1({
             placeholder="Place holder"
             value={responderDetails.submitterName}
             onChange={(e) => onResponderDetailsChange({ submitterName: e.target.value })}
+            errorMessage={errors.submitterName}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <CommonInput
-              variant="compact"
-              type="date"
-              label="Date"
-              value={responderDetails.date}
-              max={getCurrentDateInputValue()}
-              onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
-            />
-
-            {!isValidDateInputNotInFuture(responderDetails.date) && responderDetails.date && (
-              <p className="text-xs font-medium text-red-700 sm:col-span-2" role="alert">
-                Choose a valid date that is not in the future.
-              </p>
-            )}
+            <div>
+              <CommonInput
+                variant="compact"
+                type="date"
+                label="Date"
+                value={responderDetails.date}
+                max={getCurrentDateInputValue()}
+                onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
+                errorMessage={errors.date}
+              />
+            </div>
 
             <CommonInput
               variant="compact"
@@ -76,6 +76,7 @@ export default function PatientStep1({
               label="Time"
               value={responderDetails.time}
               onChange={(e) => onResponderDetailsChange({ time: e.target.value })}
+              errorMessage={errors.time}
             />
           </div>
 
@@ -86,6 +87,7 @@ export default function PatientStep1({
             options={PatientRequestType}
             value={responderDetails.typeOfRequest}
             onChange={(e) => onResponderDetailsChange({ typeOfRequest: e.target.value })}
+            errorMessage={errors.typeOfRequest}
           />
 
           <div>
@@ -96,6 +98,7 @@ export default function PatientStep1({
                 variant="compact"
                 placeholder="Surname"
                 value={responderDetails.caller.surname}
+                errorMessage={errors.callerSurname}
                 onChange={(e) =>
                   onResponderDetailsChange({
                     caller: { ...responderDetails.caller, surname: e.target.value },
@@ -107,6 +110,7 @@ export default function PatientStep1({
                 variant="compact"
                 placeholder="First Name"
                 value={responderDetails.caller.firstName}
+                errorMessage={errors.callerFirstName}
                 onChange={(e) =>
                   onResponderDetailsChange({
                     caller: { ...responderDetails.caller, firstName: e.target.value },
@@ -146,6 +150,7 @@ export default function PatientStep1({
             value={responderDetails.responders}
             onChange={(vals) => onResponderDetailsChange({ responders: vals })}
             disabled={optionsLoading}
+            errorMessage={errors.responders}
           />
 
           <OtherRespondersInput
@@ -154,7 +159,7 @@ export default function PatientStep1({
           />
 
 
-          <div>
+          <div className={errors.transfer ? "rounded-md border border-red-400 bg-red-50 p-2" : ""}>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
               <span>Transfer</span>
             </label>
@@ -171,6 +176,7 @@ export default function PatientStep1({
                 onChange={() => selectTransfer("PICK_UP")}
               />
             </div>
+            {errors.transfer && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{errors.transfer}</p>}
           </div>
         </div>
       </CommonFormSection>
@@ -179,6 +185,7 @@ export default function PatientStep1({
         formType="patients"
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
+        errors={errors}
         vehicleOptions={options.vehicles.map((vehicle) => ({
           label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
           value: vehicle.vehicle_id,
