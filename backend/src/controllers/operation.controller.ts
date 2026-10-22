@@ -1,4 +1,4 @@
-import { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, OperatioStatusSchema, PersonInvolvedIdSchema, PersonInvolvedSchema, RejectOperationSchema, SetOperationStatusSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema";
+import { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, PersonInvolvedIdSchema, PersonInvolvedSchema, RejectOperationSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema";
 import { operationService } from "@/services/operation.service";
 import { validate, validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
@@ -146,7 +146,6 @@ export const operationController = {
     // async setStatus(req: Request, res: Response, next: NextFunction) {
     //     try {
     //         const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
-    //         const { status } = validateOrThrow(SetOperationStatusSchema.safeParse(req.body))
     //         const operation = await operationService.setStatus(id, status, req.user!.userId)
     //         res.status(200).json({operation})
     //     } catch (err) {

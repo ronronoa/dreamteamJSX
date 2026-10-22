@@ -14,13 +14,12 @@ import TablePagination from "../component/TablePagination"
 import TableSearch from "../component/TableSearch"
 import TableStatus from "../component/TableStatus"
 import VehicularDispatchDetails from "./vehicles/VehicularDispatchDetails"
-import { useVehiclesDashboard, VEHICLE_PAGE_SIZE } from "./vehicles/useVehiclesDashboard"
+import { useVehiclesDashboard } from "./vehicles/useVehiclesDashboard"
 import type { FleetVehicle } from "@/api/vehicles"
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
-  { value: "PENDING", label: "Pending" },
-  { value: "TO_REVIEW", label: "To review" },
+  // { value: "PENDING", label: "Pending" },
   { value: "VALIDATED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ]
@@ -116,7 +115,6 @@ function FleetVehicleRow({ vehicle, canEdit, saving, detailsSaving, availability
 function getStatusVariant(status: VehicleLogStatus) {
   if (status === "VALIDATED") return "approved" as const
   if (status === "REJECTED") return "rejected" as const
-  if (status === "TO_REVIEW") return "warning" as const
   if (status === "ARCHIVED") return "archived" as const
   return "pending" as const
 }
@@ -124,7 +122,7 @@ function getStatusVariant(status: VehicleLogStatus) {
 export default function Vehicles() {
   const dashboard = useVehiclesDashboard()
   const pendingCount = dashboard.dispatchRecords.filter(
-    (record) => record.status === "PENDING" || record.status === "TO_REVIEW",
+    (record) => record.status === "PENDING",
   ).length
   const timedRecords = dashboard.dispatchRecords.filter((record) => record.durationMilliseconds !== null)
   const averageDuration = timedRecords.length > 0
@@ -139,11 +137,13 @@ export default function Vehicles() {
   return (
     <>
       <PinModal
-        title={dashboard.reviewTarget?.action === "reject" ? "Reject vehicle dispatch" : dashboard.reviewTarget?.action === "authorize" ? "Send vehicle dispatch for review" : "Approve vehicle dispatch"}
-        open={dashboard.reviewTarget !== null}
-        onClose={() => { dashboard.setReviewTarget(null); dashboard.setPinError("") }}
+        title={dashboard.bulkReviewAction
+          ? `${dashboard.bulkReviewAction === "reject" ? "Reject" : "Approve"} ${dashboard.selectedPendingRows.length} vehicle dispatches`
+          : dashboard.reviewTarget?.action === "reject" ? "Reject vehicle dispatch" : dashboard.reviewTarget?.action === "authorize" ? "Send vehicle dispatch for review" : "Approve vehicle dispatch"}
+        open={dashboard.reviewTarget !== null || dashboard.bulkReviewAction !== null}
+        onClose={() => { dashboard.setReviewTarget(null); dashboard.setBulkReviewAction(null); dashboard.setPinError("") }}
         onSubmit={(pin) => { void dashboard.handleReview(pin) }}
-        requireRejectionReason={dashboard.reviewTarget?.action === "reject"}
+        requireRejectionReason={dashboard.reviewTarget?.action === "reject" || dashboard.bulkReviewAction === "reject"}
         onSubmitReview={(pin, reason) => { void dashboard.handleReview(pin, reason) }}
         loading={dashboard.busy}
         error={dashboard.pinError}
@@ -192,19 +192,26 @@ export default function Vehicles() {
               emptyMessage="No vehicle dispatches are waiting for review."
               columns={getVehicleRecordColumns({
                 busy: dashboard.busy,
+                selectedIds: dashboard.selectedIds,
+                onToggleSelection: dashboard.toggleSelection,
+                visibleRecords: dashboard.visiblePendingRows,
+                onSelectVisible: (ids, shouldSelect) => dashboard.setSelectedIds((current) => updateVisibleSelection(current, ids, shouldSelect)),
                 canReview: dashboard.canReview,
                 canReject: dashboard.canReject,
-                role: dashboard.role,
                 onView: dashboard.openDetails,
                 onApprove: (record) => dashboard.openReview(record, "approve"),
                 onReject: (record) => dashboard.openReview(record, "reject"),
               })}
             />
-            {dashboard.pendingRows.length > VEHICLE_PAGE_SIZE && (
-              <div className="flex justify-end border-t border-gray-100 px-4 py-3">
-                <TablePagination currentPage={dashboard.pendingPage} pageCount={dashboard.pendingPageCount} onPageChange={dashboard.setPendingPage} />
-              </div>
-            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+              <TablePagination currentPage={dashboard.pendingPage} pageCount={dashboard.pendingPageCount} onPageChange={dashboard.setPendingPage} />
+              {dashboard.selectedPendingRows.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {dashboard.canReview && <CommonButton compact variant="gray" disabled={dashboard.busy} onClick={() => dashboard.openBulkReview("approve")}>Approve {dashboard.selectedPendingRows.length}</CommonButton>}
+                  {dashboard.canReject && <CommonButton compact variant="gray" disabled={dashboard.busy} onClick={() => dashboard.openBulkReview("reject")}>Reject {dashboard.selectedPendingRows.length}</CommonButton>}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -246,6 +253,8 @@ export default function Vehicles() {
                 busy: dashboard.busy,
                 selectedIds: dashboard.selectedIds,
                 onToggleSelection: dashboard.toggleSelection,
+                visibleRecords: dashboard.visibleReviewedRows,
+                onSelectVisible: (ids, shouldSelect) => dashboard.setSelectedIds((current) => updateVisibleSelection(current, ids, shouldSelect)),
                 onView: dashboard.openDetails,
               })}
             />
@@ -322,9 +331,10 @@ function getVehicleRecordColumns(actions: {
   busy?: boolean
   canReview?: boolean
   canReject?: boolean
-  role?: string
   selectedIds?: string[]
   onToggleSelection?: (dispatchId: string) => void
+  visibleRecords?: VehicleDispatchRecord[]
+  onSelectVisible?: (dispatchIds: string[], shouldSelect: boolean) => void
   onView: (record: VehicleDispatchRecord) => void
   onApprove?: (record: VehicleDispatchRecord) => void
   onReject?: (record: VehicleDispatchRecord) => void
@@ -333,6 +343,22 @@ function getVehicleRecordColumns(actions: {
     ...(actions.onToggleSelection ? [{
       label: "Select",
       align: "center" as const,
+      renderHeader: () => {
+        const visibleIds = actions.visibleRecords?.map((record) => record.dispatchId) ?? []
+        const selectedIds = actions.selectedIds ?? []
+        const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
+
+        return (
+          <input
+            type="checkbox"
+            aria-label="Select all visible vehicle dispatch records"
+            checked={allVisibleSelected}
+            disabled={actions.busy || visibleIds.length === 0}
+            onChange={(event) => actions.onSelectVisible?.(visibleIds, event.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 accent-purple-700"
+          />
+        )
+      },
       render: (record: VehicleDispatchRecord) => (
         <input
           type="checkbox"
@@ -364,16 +390,9 @@ function getVehicleRecordColumns(actions: {
           {actions.canReview && actions.onApprove && (
             <button
               type="button"
-              aria-label={actions.role === "TEAM_LEADER" ? `Send ${record.id} for review` : `Approve ${record.id}`}
-              title={
-                record.status ===
-                  "TO_REVIEW" && actions.role === "TEAM_LEADER" 
-                  ? "Waiting for administrator review" 
-                  : actions.role === "TEAM_LEADER"
-                    ? "Send to administrator review"
-                    : "Approve report"
-                }
-              disabled={actions.busy || (record.status === "TO_REVIEW" && actions.role === "TEAM_LEADER")}
+              aria-label={`Approve ${record.id}`}
+              title="Approve report"
+              disabled={actions.busy}
               onClick={() => actions.onApprove?.(record)}
               className="text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -389,4 +408,12 @@ function getVehicleRecordColumns(actions: {
       ),
     },
   ]
+}
+
+function updateVisibleSelection(selectedIds: string[], visibleIds: string[], shouldSelect: boolean) {
+  if (!shouldSelect) {
+    return selectedIds.filter((id) => !visibleIds.includes(id))
+  }
+
+  return [...new Set([...selectedIds, ...visibleIds])]
 }

@@ -1,6 +1,6 @@
 import { apiFetch } from "./apiFetch";
 
-export type OperationStatus = "PENDING" | "TO_REVIEW" | "VALIDATED" | "REJECTED" | "ARCHIVED";
+export type ReportStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED";
 
 export interface OperationRecord {
   operation_id: string;
@@ -12,7 +12,7 @@ export interface OperationRecord {
   submitted_by: string | null;
   submitter_name: string | null;
   validated_by: string | null;
-  status: OperationStatus;
+  status: ReportStatus;
   rejected_reason: string | null;
   team: { team_id: string; team_name: string };
   teamAssignments: Array<{ team: { team_id: string; team_name: string } }>;
@@ -66,15 +66,15 @@ export async function fetchOperations(accessToken: string): Promise<OperationRec
 }
 
 export async function authorizeOperation(accessToken: string, operationId: string, pin: string) {
-  return updateOperationStatus(accessToken, operationId, "authorize", pin);
+  return updateReportStatus(accessToken, operationId, "authorize", pin);
 }
 
 export async function validateOperation(accessToken: string, operationId: string, pin: string) {
-  return updateOperationStatus(accessToken, operationId, "validate", pin);
+  return updateReportStatus(accessToken, operationId, "validate", pin);
 }
 
 export async function rejectOperation(accessToken: string, operationId: string, pin: string, rejectedReason: string) {
-  return updateOperationStatus(accessToken, operationId, "reject", pin, rejectedReason);
+  return updateReportStatus(accessToken, operationId, "reject", pin, rejectedReason);
 }
 
 export async function archiveOperation(accessToken: string, operationId: string) {
@@ -85,7 +85,7 @@ export async function archiveOperation(accessToken: string, operationId: string)
   return parseResponse<{ archived: boolean }>(response);
 }
 
-async function updateOperationStatus(
+async function updateReportStatus(
   accessToken: string,
   operationId: string,
   action: "authorize" | "validate" | "reject",

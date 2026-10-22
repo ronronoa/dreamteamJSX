@@ -1,7 +1,7 @@
 import { formatDuration, getElapsedMilliseconds } from "@/utils/dateTime"
 import { apiFetch } from "./apiFetch"
 
-export type VehicleLogStatus = "PENDING" | "TO_REVIEW" | "VALIDATED" | "REJECTED" | "ARCHIVED"
+export type VehicleLogStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED"
 
 export interface VehicleDispatchRecord {
   id: string

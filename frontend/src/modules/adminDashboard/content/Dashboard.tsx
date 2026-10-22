@@ -31,8 +31,8 @@ export default function Dashboard() {
   const hourlyReportCounts = getHourlyReportCounts(reportDates.map((createdAt) => ({ createdAt })), now)
   const recentActivity = getRecentDashboardActivity(dashboard.operations, dashboard.patients, dashboard.dispatches)
   const todayReportCount = getTodayReportsCount(reportDates.map((createdAt) => ({ createdAt })), now)
-  const patientPendingCount = dashboard.patients.filter((record) => record.status === "PENDING" || record.status === "TO_REVIEW").length
-  const dispatchPendingCount = dashboard.dispatches.filter((record) => record.status === "PENDING" || record.status === "TO_REVIEW").length
+  const patientPendingCount = dashboard.patients.filter((record) => record.status === "PENDING").length
+  const dispatchPendingCount = dashboard.dispatches.filter((record) => record.status === "PENDING").length
   const activeInventoryWarnings = dashboard.inventory?.items.filter((item) => item.status !== "Available") ?? []
   const availableVehicleCount = dashboard.vehicles.filter((vehicle) => vehicle.status === "AVAILABLE").length
   const vehicleAvailability = dashboard.vehicles.length === 0

@@ -44,6 +44,7 @@ export function useVehiclesDashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<VehicleDispatchRecord["record"] | null>(null);
   const [reviewTarget, setReviewTarget] = useState<{ record: VehicleDispatchRecord; action: ReviewAction } | null>(null);
+  const [bulkReviewAction, setBulkReviewAction] = useState<"approve" | "reject" | null>(null);
   const [pinError, setPinError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [pdfConfirmationOpen, setPdfConfirmationOpen] = useState(false);
@@ -104,7 +105,7 @@ export function useVehiclesDashboard() {
   }, [allRows, search, statusFilter]);
 
   const pendingRows = useMemo(
-    () => matchingRows.filter((record) => ( record.status === "PENDING" || record.status === "TO_REVIEW" ) && ( !record.operation_id || !record.patient_log_id ) ),
+    () => matchingRows.filter((record) => record.status === "PENDING" && ( !record.operation_id || !record.patient_log_id ) ),
     [matchingRows],
   );
   const reviewedRows = useMemo(
@@ -112,6 +113,7 @@ export function useVehiclesDashboard() {
     [matchingRows],
   );
   const selectedRows = reviewedRows.filter((record) => selectedIds.includes(record.dispatchId));
+  const selectedPendingRows = pendingRows.filter((record) => selectedIds.includes(record.dispatchId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * VEHICLE_PAGE_SIZE, pendingPage * VEHICLE_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * VEHICLE_PAGE_SIZE, reviewedPage * VEHICLE_PAGE_SIZE);
 
@@ -136,13 +138,37 @@ export function useVehiclesDashboard() {
     setReviewTarget({ record, action: resolvedAction });
   }
 
+  function openBulkReview(action: "approve" | "reject") {
+    if (selectedPendingRows.length === 0) return;
+    setPinError("");
+    setBulkReviewAction(action);
+  }
+
   async function handleReview(pin: string, rejectedReason = "") {
-    if (!accessToken || !reviewTarget || busy) return;
+    if (!accessToken || (!reviewTarget && !bulkReviewAction) || busy) return;
     setBusy(true);
     setPinError("");
     setDispatchError("");
     setSuccessMessage("");
     try {
+      if (bulkReviewAction) {
+        const action = bulkReviewAction === "reject" ? "reject" : "validate";
+        const reviewResults = await Promise.allSettled(selectedPendingRows.map((record) =>
+          reviewVehicularDispatch(accessToken, record.dispatchId, action, pin, rejectedReason),
+        ));
+        const successfulCount = reviewResults.filter((result) => result.status === "fulfilled").length;
+        const failedIds = selectedPendingRows
+          .filter((_record, index) => reviewResults[index].status === "rejected")
+          .map((record) => record.dispatchId);
+        setSelectedIds(failedIds);
+        setBulkReviewAction(null);
+        setSuccessMessage(`${successfulCount} vehicle dispatch${successfulCount === 1 ? " was" : "es were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
+        await loadDispatchRecords();
+        if (failedIds.length > 0) setDispatchError(`${failedIds.length} selected dispatch${failedIds.length === 1 ? " was" : "es were"} not updated.`);
+        return;
+      }
+
+      if (!reviewTarget) return;
       await reviewVehicularDispatch(accessToken, reviewTarget.record.dispatchId, reviewTarget.action, pin, rejectedReason);
       const resultMessage = reviewTarget.action === "authorize"
         ? "sent for administrator review"
@@ -339,6 +365,7 @@ export function useVehiclesDashboard() {
 
     selectedRecord,
     reviewTarget,
+    bulkReviewAction,
     pinError,
     successMessage,
     pendingRows,
@@ -348,6 +375,7 @@ export function useVehiclesDashboard() {
     visibleReviewedRows,
     selectedIds,
     selectedRows,
+    selectedPendingRows,
     canReview,
     canReject,
     canArchive,
@@ -363,6 +391,7 @@ export function useVehiclesDashboard() {
     setSelectedIds,
     setSelectedRecord,
     setReviewTarget,
+    setBulkReviewAction,
     setPinError,
 
     setPdfConfirmationOpen,
@@ -371,6 +400,7 @@ export function useVehiclesDashboard() {
     updateSearch,
     updateStatusFilter,
     openReview,
+    openBulkReview,
     handleReview,
     openDetails,
     toggleSelection,

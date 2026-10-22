@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { inventoryService } from "@/services/inventory.service"
 import { publishNotification, publishNotificationsRead } from "@/services/notificationHub"
 
-const MAX_NOTIFICATIONS = 25
-const NOTIFICATION_HISTORY_DAYS = 30
+const MAX_NOTIFICATIONS = 12
+const NOTIFICATION_HISTORY_DAYS = 14
 
 function getApprovalTarget(module: string) {
   return module === "Operations"

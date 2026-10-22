@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-const OperationStatusEnum = z.enum(["PENDING", "TO_REVIEW" ,"VALIDATED", "REJECTED", "ARCHIVED"])
 const GenderEnum = z.enum(["MALE", "FEMALE"])
 
 export const CreateTeamSchema = z.object({
@@ -51,14 +50,6 @@ export const UpdateOperationSchema = z.object({
 
 export const OperationIdParamSchema = z.object({
     id: z.uuid()
-})
-
-export const OperatioStatusSchema = z.object({
-    status: OperationStatusEnum
-})
-
-export const SetOperationStatusSchema = z.object({
-    status: z.enum(["VALIDATED", "REJECTED"])
 })
 
 export const OperationImageSchema = z.object({

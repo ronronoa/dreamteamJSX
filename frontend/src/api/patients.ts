@@ -1,6 +1,6 @@
 import { apiFetch } from "./apiFetch";
 
-export type PatientLogStatus = "PENDING" | "TO_REVIEW" | "VALIDATED" | "REJECTED" | "ARCHIVED";
+export type PatientLogStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED";
 
 export interface PatientLogRecord {
   patient_log_id: string;

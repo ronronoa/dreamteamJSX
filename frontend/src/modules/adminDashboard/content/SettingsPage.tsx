@@ -86,7 +86,7 @@ export default function SettingsPage() {
   if (loading) return <div className="p-6 text-sm text-gray-500">Loading settings…</div>
 
   return (
-    <div className="mx-auto max-w-4xl space-y-2">
+    <div className="mx-auto max-w-[2500px] space-y-2">
       {error && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {message && <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 

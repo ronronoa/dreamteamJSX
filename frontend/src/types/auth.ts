@@ -9,6 +9,7 @@ export interface ManagedUser {
   id: string;
   name: string;
   username: string;
+  profileImageUrl: string | null;
   email: string | null;
   role: Role;
   phone: string | null;

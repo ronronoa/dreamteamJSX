@@ -6,7 +6,6 @@ import type { HourlyActivity, MonthlyReportCount, PatientStatusCount } from "@/t
 
 const PATIENT_STATUS_COLORS: Record<PatientLogRecord["status"], string> = {
   PENDING: "#f59e0b",
-  TO_REVIEW: "#3b82f6",
   VALIDATED: "#10b981",
   REJECTED: "#ef4444",
   ARCHIVED: "#9ca3af",
@@ -19,7 +18,6 @@ export const barConfig = {
 export const pieConfig = {
   value: { label: "Patient logs" },
   PENDING: { label: "Pending", color: PATIENT_STATUS_COLORS.PENDING },
-  TO_REVIEW: { label: "To review", color: PATIENT_STATUS_COLORS.TO_REVIEW },
   VALIDATED: { label: "Approved", color: PATIENT_STATUS_COLORS.VALIDATED },
   REJECTED: { label: "Rejected", color: PATIENT_STATUS_COLORS.REJECTED },
   ARCHIVED: { label: "Archived", color: PATIENT_STATUS_COLORS.ARCHIVED },
@@ -54,7 +52,7 @@ export function getMonthlyReportCounts(
 }
 
 export function getPatientStatusCounts(records: PatientLogRecord[]): PatientStatusCount[] {
-  const statuses = ["PENDING", "TO_REVIEW", "VALIDATED", "REJECTED", "ARCHIVED"] as const
+  const statuses = ["PENDING", "VALIDATED", "REJECTED", "ARCHIVED"] as const
   return statuses.map((status) => ({
     name: status,
     value: records.filter((record) => record.status === status).length,

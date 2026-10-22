@@ -10,13 +10,12 @@ import TablePagination from "../component/TablePagination";
 import TableSearch from "../component/TableSearch";
 import PatientDetails from "./patients/PatientDetails";
 import PatientStatusBadge from "./patients/PatientStatusBadge";
-import { PATIENT_PAGE_SIZE, type PatientRow } from "./patients/patientUtils";
+import { type PatientRow } from "./patients/patientUtils";
 import { usePatientsDashboard } from "./patients/usePatientsDashboard";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
-  { value: "PENDING", label: "Pending" },
-  { value: "TO_REVIEW", label: "To review" },
+  // { value: "PENDING", label: "Pending" },
   { value: "VALIDATED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ];
@@ -34,11 +33,13 @@ export default function Patients() {
   return (
     <>
       <PinModal
-        title={reviewTitle}
-        open={dashboard.reviewTarget !== null}
-        onClose={() => { dashboard.setReviewTarget(null); dashboard.setPinError(""); }}
+        title={dashboard.bulkReviewAction
+          ? `${dashboard.bulkReviewAction === "reject" ? "Reject" : "Approve"} ${dashboard.selectedPendingRows.length} patient reports`
+          : reviewTitle}
+        open={dashboard.reviewTarget !== null || dashboard.bulkReviewAction !== null}
+        onClose={() => { dashboard.setReviewTarget(null); dashboard.setBulkReviewAction(null); dashboard.setPinError(""); }}
         onSubmit={(pin) => { void dashboard.handleReview(pin); }}
-        requireRejectionReason={dashboard.reviewTarget?.action === "reject"}
+        requireRejectionReason={dashboard.reviewTarget?.action === "reject" || dashboard.bulkReviewAction === "reject"}
         onSubmitReview={(pin, reason) => { void dashboard.handleReview(pin, reason); }}
         loading={dashboard.busy}
         error={dashboard.pinError}
@@ -84,6 +85,13 @@ export default function Patients() {
               rowKey={(row) => row.patientLogId}
               emptyMessage="No patient reports are waiting for review."
               columns={[
+                {
+                  label: "Select",
+                  align: "center",
+                  renderHeader: () => <input type="checkbox" aria-label="Select all visible pending patient reports" checked={dashboard.visiblePendingRows.length > 0 && dashboard.visiblePendingRows.every((row) => dashboard.selectedIds.includes(row.patientLogId))} onChange={(event) => dashboard.setSelectedIds((current) => updateVisibleSelection(current, dashboard.visiblePendingRows.map((row) => row.patientLogId), event.target.checked))} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                  render: (row: PatientRow) => <input type="checkbox" aria-label={`Select ${row.id}`} checked={dashboard.selectedIds.includes(row.patientLogId)} onChange={() => dashboard.toggleSelection(row.patientLogId)} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                },
+
                 { label: "Patient ID", accessor: "id" },
                 { label: "Date", render: (row) => <DateCell date={row.date} /> },
                 { label: "Name of patient", accessor: "name" },
@@ -118,7 +126,15 @@ export default function Patients() {
                 },
               ]}
             />
-            {dashboard.pendingRows.length > PATIENT_PAGE_SIZE && <div className="flex justify-end border-t border-gray-100 px-4 py-3"><TablePagination currentPage={dashboard.pendingPage} pageCount={dashboard.pendingPageCount} onPageChange={dashboard.setPendingPage} /></div>}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+              <TablePagination currentPage={dashboard.pendingPage} pageCount={dashboard.pendingPageCount} onPageChange={dashboard.setPendingPage} />
+              {dashboard.selectedPendingRows.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {dashboard.canReview && <CommonButton compact variant="gray" disabled={dashboard.busy} onClick={() => dashboard.openBulkReview("approve")}>Approve {dashboard.selectedPendingRows.length}</CommonButton>}
+                  {dashboard.canReject && <CommonButton compact variant="gray" disabled={dashboard.busy} onClick={() => dashboard.openBulkReview("reject")}>Reject {dashboard.selectedPendingRows.length}</CommonButton>}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -132,7 +148,23 @@ export default function Patients() {
               <TableSearch value={dashboard.search} onChange={dashboard.updateSearch} placeholder="Search patient records" ariaLabel="Search patient records" />
               <div className="relative">
                 <button type="button" aria-label="Filter patient records" aria-expanded={dashboard.filterOpen} onClick={() => dashboard.setFilterOpen((open) => !open)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"><Filter size={14} /></button>
-                {dashboard.filterOpen && <div className="absolute right-0 z-10 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"><label htmlFor="patient-status-filter" className="mb-1 block px-1 text-xs font-semibold text-gray-600">Status</label><select id="patient-status-filter" value={dashboard.statusFilter} onChange={(event) => dashboard.updateStatusFilter(event.target.value)} className="w-full rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 outline-none focus:border-purple-400">{STATUS_FILTERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>}
+                {dashboard.filterOpen &&
+                  <div className="absolute right-0 z-10 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                    <label htmlFor="patient-status-filter" className="mb-1 block px-1 text-xs font-semibold text-gray-600">Status</label>
+                    <select
+                      id="patient-status-filter"
+                      value={dashboard.statusFilter}
+                      onChange={(event) => dashboard.updateStatusFilter(event.target.value)}
+                      className="w-full rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 outline-none focus:border-purple-400">
+                      {STATUS_FILTERS.map((option) =>
+                        <option
+                          key={option.value}
+                          value={option.value}>
+                          {option.label}
+                        </option>)}
+                    </select>
+                  </div>
+                }
               </div>
             </div>
           </div>
@@ -143,7 +175,12 @@ export default function Patients() {
               rowKey={(row) => row.patientLogId}
               emptyMessage="No reviewed patient records match your search or filter."
               columns={[
-                { label: "Select", align: "center", render: (row: PatientRow) => <input type="checkbox" aria-label={`Select ${row.id}`} checked={dashboard.selectedIds.includes(row.patientLogId)} onChange={() => dashboard.toggleSelection(row.patientLogId)} className="h-4 w-4 rounded border-gray-300 accent-purple-700" /> },
+                {
+                  label: "Select",
+                  align: "center",
+                  renderHeader: () => <input type="checkbox" aria-label="Select all visible reviewed patient reports" checked={dashboard.visibleReviewedRows.length > 0 && dashboard.visibleReviewedRows.every((row) => dashboard.selectedIds.includes(row.patientLogId))} onChange={(event) => dashboard.setSelectedIds((current) => updateVisibleSelection(current, dashboard.visibleReviewedRows.map((row) => row.patientLogId), event.target.checked))} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                  render: (row: PatientRow) => <input type="checkbox" aria-label={`Select ${row.id}`} checked={dashboard.selectedIds.includes(row.patientLogId)} onChange={() => dashboard.toggleSelection(row.patientLogId)} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                },
                 { label: "Patient ID", accessor: "id" },
                 { label: "Date", render: (row) => <DateCell date={row.date} /> },
                 { label: "Name of patient", accessor: "name" },
@@ -172,4 +209,12 @@ export default function Patients() {
       </div>
     </>
   );
+}
+
+function updateVisibleSelection(selectedIds: string[], visibleIds: string[], shouldSelect: boolean) {
+  if (!shouldSelect) {
+    return selectedIds.filter((id) => !visibleIds.includes(id));
+  }
+
+  return [...new Set([...selectedIds, ...visibleIds])];
 }

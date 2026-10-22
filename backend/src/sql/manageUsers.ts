@@ -7,6 +7,7 @@ export async function listManagedUsers() {
     id: string;
     name: string;
     username: string;
+    profileImageUrl: string | null;
     email: string | null;
     role: string;
     phone: string | null;
@@ -20,6 +21,7 @@ export async function listManagedUsers() {
       u."user_id" AS id,
       u."name",
       u."username",
+      u."profileImageUrl",
       u."email",
       u."role"::text AS role,
       u."phone",

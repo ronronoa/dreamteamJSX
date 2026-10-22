@@ -17,9 +17,8 @@ enum Role {
   MEMBER
 }
 
-enum OperationStatus {
+enum ReportStatus {
   PENDING
-  TO_REVIEW
   VALIDATED
   REJECTED
   ARCHIVED
@@ -145,7 +144,7 @@ model OperationLog {
   submitter_name      String?
   validated_by        String?
   rejected_reason     String?
-  status              OperationStatus @default(PENDING)
+  status              ReportStatus @default(PENDING)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
@@ -391,7 +390,7 @@ model PatientLog {
   type_of_request         PatientRequestType
   submitted_by            String?
   submitter_name          String?
-  status                  OperationStatus      @default(PENDING)
+  status                  ReportStatus         @default(PENDING)
   rejected_reason         String?
   name_of_caller          String?
   bp                      String?
@@ -437,7 +436,7 @@ model VehicularDispatch {
   submitter_name String?
   nature_of_operation String?
   transfers      DispatchType[] @default([])
-  status         OperationStatus @default(PENDING)
+  status         ReportStatus @default(PENDING)
   rejected_reason String?
   submitted_by   String?
   vehicle_id     String?

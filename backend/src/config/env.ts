@@ -7,6 +7,8 @@ const EnvSchema = z.object({
   ACCESS_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_SECRET: z.string().min(32),
   OCR_BACKEND_URL: z.string().url(),
+  FORGET_PASS_EMAIL: z.string().email(),
+  FORGET_PASS_EMAIL_APP_PASS: z.string(),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

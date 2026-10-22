@@ -1,4 +1,4 @@
-import type { OperationRecord, OperationStatus } from "@/api/operations";
+import type { OperationRecord, ReportStatus } from "@/api/operations";
 import { formatDuration, getElapsedMilliseconds, isSameMonth } from "@/utils/dateTime";
 
 export const OPERATION_PAGE_SIZE = 10;
@@ -12,7 +12,7 @@ export interface OperationRow {
   location: string;
   team: string;
   submittedBy: string;
-  status: OperationStatus;
+  status: ReportStatus;
   record: OperationRecord;
 }
 

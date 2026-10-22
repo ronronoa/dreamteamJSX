@@ -35,6 +35,7 @@ export function usePatientsDashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<PatientLogRecord | null>(null);
   const [reviewTarget, setReviewTarget] = useState<{ row: PatientRow; action: ReviewAction } | null>(null);
+  const [bulkReviewAction, setBulkReviewAction] = useState<"approve" | "reject" | null>(null);
   const [pinError, setPinError] = useState("");
   const [pdfConfirmationOpen, setPdfConfirmationOpen] = useState(false);
   const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
@@ -86,9 +87,10 @@ export function usePatientsDashboard() {
     });
   }, [allRows, search, statusFilter]);
 
-  const pendingRows = useMemo(() => matchingRows.filter((row) => row.status === "PENDING" || row.status === "TO_REVIEW"), [matchingRows]);
+  const pendingRows = useMemo(() => matchingRows.filter((row) => row.status === "PENDING"), [matchingRows]);
   const reviewedRows = useMemo(() => matchingRows.filter((row) => row.status === "VALIDATED" || row.status === "REJECTED"), [matchingRows]);
   const selectedRows = reviewedRows.filter((row) => selectedIds.includes(row.patientLogId));
+  const selectedPendingRows = pendingRows.filter((row) => selectedIds.includes(row.patientLogId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * PATIENT_PAGE_SIZE, pendingPage * PATIENT_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * PATIENT_PAGE_SIZE, reviewedPage * PATIENT_PAGE_SIZE);
   const currentMonthRows = allRows.filter(isPatientLogThisMonth);
@@ -125,13 +127,37 @@ export function usePatientsDashboard() {
     setReviewTarget({ row, action: resolvedAction });
   }
 
+  function openBulkReview(action: "approve" | "reject") {
+    if (selectedPendingRows.length === 0) return;
+    setPinError("");
+    setBulkReviewAction(action);
+  }
+
   async function handleReview(pin: string, rejectedReason = "") {
-    if (!accessToken || !reviewTarget || busy) return;
+    if (!accessToken || (!reviewTarget && !bulkReviewAction) || busy) return;
     setBusy(true);
     setPinError("");
     setPageError("");
     setSuccessMessage("");
     try {
+      if (bulkReviewAction) {
+        const action = bulkReviewAction === "reject" ? "reject" : "validate";
+        const reviewResults = await Promise.allSettled(selectedPendingRows.map((row) =>
+          reviewPatientLog(accessToken, row.patientLogId, action, pin, rejectedReason),
+        ));
+        const successfulCount = reviewResults.filter((result) => result.status === "fulfilled").length;
+        const failedIds = selectedPendingRows
+          .filter((_row, index) => reviewResults[index].status === "rejected")
+          .map((row) => row.patientLogId);
+        setSelectedIds(failedIds);
+        setBulkReviewAction(null);
+        setSuccessMessage(`${successfulCount} patient report${successfulCount === 1 ? " was" : "s were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
+        await loadRecords();
+        if (failedIds.length > 0) setPageError(`${failedIds.length} selected report${failedIds.length === 1 ? " was" : "s were"} not updated.`);
+        return;
+      }
+
+      if (!reviewTarget) return;
       await reviewPatientLog(accessToken, reviewTarget.row.patientLogId, reviewTarget.action, pin, rejectedReason);
       const actionMessage = reviewTarget.action === "authorize" ? "sent for administrator review" : reviewTarget.action === "validate" ? "approved" : "rejected";
       setSuccessMessage(`${reviewTarget.row.id} was ${actionMessage}.`);
@@ -198,12 +224,13 @@ export function usePatientsDashboard() {
     role, loading, busy, pageError, successMessage, search, statusFilter, filterOpen,
     pendingPage, reviewedPage, selectedIds, selectedRecord, reviewTarget, pinError,
     pdfConfirmationOpen, archiveConfirmationOpen, stats, pendingRows, reviewedRows,
-    selectedRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,
+    selectedRows, selectedPendingRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,
+    bulkReviewAction,
     pendingPageCount: getPageCount(pendingRows.length, PATIENT_PAGE_SIZE),
     reviewedPageCount: getPageCount(reviewedRows.length, PATIENT_PAGE_SIZE),
     setFilterOpen, setPendingPage, setReviewedPage, setSelectedIds, setSelectedRecord,
-    setReviewTarget, setPinError, setPdfConfirmationOpen, setArchiveConfirmationOpen,
-    updateSearch, updateStatusFilter, openReview, handleReview, toggleSelection,
+    setReviewTarget, setBulkReviewAction, setPinError, setPdfConfirmationOpen, setArchiveConfirmationOpen,
+    updateSearch, updateStatusFilter, openReview, openBulkReview, handleReview, toggleSelection,
     printSelectedRecords, archiveSelectedRecords,
   };
 }

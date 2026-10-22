@@ -71,7 +71,7 @@ export default function ProfileDetailsSection({
 
   return (
     <section className={CARD_CLASS}>
-      <form onSubmit={handleSave} className="flex h-full flex-col">
+      <form onSubmit={handleSave} className="flex h-full min-h-110 flex-col">
         <header className="flex items-start justify-between border-b border-gray-300 p-6">
           <div>
             <h3 className="text-sm font-bold text-gray-900">Personal &amp; work details</h3>
@@ -82,7 +82,7 @@ export default function ProfileDetailsSection({
 
           {/* Fixed height so switching modes never resizes the header. */}
           <div className="flex h-9 items-center">
-            {!editing ? (
+            {!editing && (
               <button
                 type="button"
                 disabled={loading || !profile}
@@ -90,14 +90,6 @@ export default function ProfileDetailsSection({
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil size={13} /> Edit profile
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={cancelEditing}
-                className="inline-flex items-center gap-2 rounded-lg border border-transparent bg-transparent px-3.5 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900"
-              >
-                Cancel
               </button>
             )}
           </div>

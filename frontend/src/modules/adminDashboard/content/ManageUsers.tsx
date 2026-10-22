@@ -1,10 +1,11 @@
 import { Filter, Pencil, Plus, Trash2, UserRoundX } from "lucide-react";
+import UserAvatar from "@/components/common/widgets/UserAvatar";
+import { getProfilePhotoSource } from "@/api/profile";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import EditUserModal from "@/components/common/modals/EditUserModal";
 import StatCard from "../component/StatCard";
-import TwoLineCell from "../component/TwoLineCell";
 import TableStatus from "../component/TableStatus";
 import TeamModal from "../component/TeamModal";
 import { InputBase } from "@/components/base/input/input";
@@ -132,7 +133,20 @@ export default function ManageUsers() {
               rowKey={(user) => user.id}
               emptyMessage={search || roleFilter !== "ALL" || statusFilter !== "ALL" ? "No users match these filters." : "No user accounts yet."}
               columns={[
-                { label: "Account", render: (user) => <TwoLineCell top={user.name} bottom={`@${user.username}`} /> },
+                { label: "Account", render: (user) => (
+                  <div className="flex min-w-0 items-center gap-3">
+                    <UserAvatar
+                      initials={getUserInitials(user.name)}
+                      imageUrl={getProfilePhotoSource(user.profileImageUrl)}
+                      size="sm"
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900">{user.name}</p>
+                      <p className="truncate text-[10px] text-gray-500">@{user.username}</p>
+                    </div>
+                  </div>
+                ) },
                 { label: "Email", render: (user) => user.email ?? <span className="text-gray-400">Not set</span> },
                 { label: "Role", render: (user) => <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">{roleLabels[user.role]}</span> },
                 { label: "Team", render: (user) => user.team_name ?? <span className="text-gray-400">Unassigned</span> },
@@ -164,4 +178,14 @@ export default function ManageUsers() {
       </div>
     </>
   );
+}
+
+function getUserInitials(name: string) {
+  const nameParts = name.trim().split(/\s+/).filter(Boolean);
+  if (nameParts.length === 0) return "?";
+
+  return nameParts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }

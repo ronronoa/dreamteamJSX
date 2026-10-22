@@ -7,7 +7,6 @@ import { formatVehicularDispatchId } from "@/api/vehicularDispatches"
 
 const STATUS_VARIANTS = {
   PENDING: "pending",
-  TO_REVIEW: "warning",
   VALIDATED: "approved",
   REJECTED: "rejected",
   ARCHIVED: "archived",

@@ -1,10 +1,9 @@
-import type { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, OperatioStatusSchema, PersonInvolvedSchema, RejectOperationSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema"
+import type { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, PersonInvolvedSchema, RejectOperationSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema"
 import type { z } from "zod"
 
 export type CreateOperationInput = z.infer<typeof CreateOperationSchema>
 export type UpdateOperationInput = z.infer<typeof UpdateOperationSchema>
 export type OperationIdParam = z.infer<typeof OperationIdParamSchema>
-export type OperationStatusInput = z.infer<typeof OperatioStatusSchema>
 
 export type CreateTeamInput = z.infer<typeof CreateTeamSchema>
 export type UpdateTeamInput = z.infer<typeof UpdateTeamSchema>

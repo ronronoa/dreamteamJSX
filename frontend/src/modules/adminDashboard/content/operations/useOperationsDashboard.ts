@@ -9,6 +9,7 @@ import {
 } from "@/api/operations";
 import { useAuth } from "@/context/AuthContext";
 import { createOperationPdf } from "./operationPdf";
+import { getPageCount } from "@/utils/pagination";
 import {
   getAverageResponseTime,
   getMostFrequent,
@@ -38,6 +39,7 @@ export function useOperationsDashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<OperationRecord | null>(null);
   const [reviewTarget, setReviewTarget] = useState<{ row: OperationRow; action: ReviewAction } | null>(null);
+  const [bulkReviewAction, setBulkReviewAction] = useState<"approve" | "reject" | null>(null);
   const [pinError, setPinError] = useState("");
   const [pdfConfirmationOpen, setPdfConfirmationOpen] = useState(false);
   const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
@@ -91,7 +93,7 @@ export function useOperationsDashboard() {
   }, [allRows, search, statusFilter]);
 
   const pendingRows = useMemo(
-    () => matchingRows.filter((row) => row.status === "PENDING" || row.status === "TO_REVIEW"),
+    () => matchingRows.filter((row) => row.status === "PENDING"),
     [matchingRows],
   );
   const reviewedRows = useMemo(
@@ -99,6 +101,7 @@ export function useOperationsDashboard() {
     [matchingRows],
   );
   const selectedRows = reviewedRows.filter((row) => selectedIds.includes(row.operationId));
+  const selectedPendingRows = pendingRows.filter((row) => selectedIds.includes(row.operationId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * OPERATION_PAGE_SIZE, pendingPage * OPERATION_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * OPERATION_PAGE_SIZE, reviewedPage * OPERATION_PAGE_SIZE);
   const monthlyRows = allRows.filter((row) => isCurrentMonth(row.date));
@@ -135,19 +138,45 @@ export function useOperationsDashboard() {
     setReviewTarget({ row, action });
   }
 
+  function openBulkReview(action: "approve" | "reject") {
+    if (selectedPendingRows.length === 0) return;
+    setPinError("");
+    setBulkReviewAction(action);
+  }
+
   async function handleReview(pin: string, rejectedReason = "") {
-    if (!accessToken || !reviewTarget || busy) return;
+    if (!accessToken || (!reviewTarget && !bulkReviewAction) || busy) return;
 
     setBusy(true);
     setPinError("");
     setPageError("");
     setSuccessMessage("");
     try {
+      if (bulkReviewAction) {
+        const reviewResults = await Promise.allSettled(selectedPendingRows.map((row) =>
+          bulkReviewAction === "reject"
+            ? rejectOperation(accessToken, row.operationId, pin, rejectedReason)
+            : validateOperation(accessToken, row.operationId, pin),
+        ));
+        const successfulCount = reviewResults.filter((result) => result.status === "fulfilled").length;
+        const failedIds = selectedPendingRows
+          .filter((_row, index) => reviewResults[index].status === "rejected")
+          .map((row) => row.operationId);
+        setSelectedIds(failedIds);
+        setBulkReviewAction(null);
+        setSuccessMessage(`${successfulCount} operation report${successfulCount === 1 ? " was" : "s were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
+        await loadRecords();
+        if (failedIds.length > 0) setPageError(`${failedIds.length} selected report${failedIds.length === 1 ? " was" : "s were"} not updated.`);
+        return;
+      }
+
+      if (!reviewTarget) return;
+
       if (reviewTarget.action === "reject") {
         await rejectOperation(accessToken, reviewTarget.row.operationId, pin, rejectedReason);
         setSuccessMessage(`${reviewTarget.row.id} was rejected.`);
       } else {
-        await validateOperation(accessToken, reviewTarget.row.operationId, pin);
+        await validateOperation(accessToken, reviewTarget!.row.operationId, pin);
         setSuccessMessage(`${reviewTarget.row.id} was approved.`);
       }
 
@@ -215,13 +244,16 @@ export function useOperationsDashboard() {
     selectedIds,
     selectedRecord,
     reviewTarget,
+    bulkReviewAction,
     pinError,
     pdfConfirmationOpen,
     archiveConfirmationOpen,
     stats,
     pendingRows,
+    pendingPageCount: getPageCount(pendingRows.length, OPERATION_PAGE_SIZE),
     reviewedRows,
     selectedRows,
+    selectedPendingRows,
     visiblePendingRows,
     visibleReviewedRows,
     canReview,
@@ -233,12 +265,14 @@ export function useOperationsDashboard() {
     setSelectedIds,
     setSelectedRecord,
     setReviewTarget,
+    setBulkReviewAction,
     setPinError,
     setPdfConfirmationOpen,
     setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
     openReview,
+    openBulkReview,
     handleReview,
     toggleSelection,
     printSelectedRecords,

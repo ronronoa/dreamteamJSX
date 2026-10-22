@@ -1,7 +1,7 @@
 import { Check, ChevronRight, Filter, Printer, X } from "lucide-react";
 
 import OperationDetails from "./operations/OperationDetails";
-import OperationStatusBadge from "./operations/OperationStatusBadge";
+import ReportStatusBadge from "./operations/ReportStatusBadge";
 import { OPERATION_PAGE_SIZE, type OperationRow } from "./operations/operationUtils";
 import { useOperationsDashboard } from "./operations/useOperationsDashboard";
 import { getPageCount } from "@/utils/pagination";
@@ -17,8 +17,7 @@ import TablePagination from "../component/TablePagination";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
-  { value: "PENDING", label: "Pending" },
-  { value: "TO_REVIEW", label: "To review" },
+  // { value: "PENDING", label: "Pending" },
   { value: "VALIDATED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ];
@@ -37,6 +36,7 @@ export default function Operations() {
     selectedIds,
     selectedRecord,
     reviewTarget,
+    bulkReviewAction,
     pinError,
     pdfConfirmationOpen,
     archiveConfirmationOpen,
@@ -44,6 +44,7 @@ export default function Operations() {
     pendingRows,
     reviewedRows,
     selectedRows,
+    selectedPendingRows,
     visiblePendingRows,
     visibleReviewedRows,
     canReview,
@@ -55,12 +56,14 @@ export default function Operations() {
     setSelectedIds,
     setSelectedRecord,
     setReviewTarget,
+    setBulkReviewAction,
     setPinError,
     setPdfConfirmationOpen,
     setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
     openReview,
+    openBulkReview,
     handleReview,
     toggleSelection,
     printSelectedRecords,
@@ -73,11 +76,13 @@ export default function Operations() {
   return (
     <>
       <PinModal
-        title={reviewTarget?.action === "reject" ? "Reject operation report" : "Review operation report"}
-        open={reviewTarget !== null}
-        onClose={() => { setReviewTarget(null); setPinError(""); }}
+        title={bulkReviewAction
+          ? `${bulkReviewAction === "reject" ? "Reject" : "Approve"} ${selectedPendingRows.length} operation reports`
+          : reviewTarget?.action === "reject" ? "Reject operation report" : "Review operation report"}
+        open={reviewTarget !== null || bulkReviewAction !== null}
+        onClose={() => { setReviewTarget(null); setBulkReviewAction(null); setPinError(""); }}
         onSubmit={(pin) => { void handleReview(pin); }}
-        requireRejectionReason={reviewTarget?.action === "reject"}
+        requireRejectionReason={reviewTarget?.action === "reject" || bulkReviewAction === "reject"}
         onSubmitReview={(pin, reason) => { void handleReview(pin, reason); }}
         loading={busy}
         error={pinError}
@@ -123,6 +128,12 @@ export default function Operations() {
               rowKey={(row) => row.operationId}
               emptyMessage="No operation reports are waiting for review."
               columns={[
+                {
+                  label: "Select",
+                  align: "center",
+                  renderHeader: () => <input type="checkbox" aria-label="Select all visible pending operation reports" checked={visiblePendingRows.length > 0 && visiblePendingRows.every((row) => selectedIds.includes(row.operationId))} onChange={(event) => setSelectedIds((current) => updateVisibleSelection(current, visiblePendingRows.map((row) => row.operationId), event.target.checked))} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                  render: (row: OperationRow) => <input type="checkbox" aria-label={`Select ${row.id}`} checked={selectedIds.includes(row.operationId)} onChange={() => toggleSelection(row.operationId)} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
+                },
                 { label: "Request ID", accessor: "id" },
                 { label: "Date", render: (row) => <DateCell date={row.date} /> },
                 { label: "Caller", accessor: "caller" },
@@ -130,7 +141,7 @@ export default function Operations() {
                 { label: "Location", accessor: "location" },
                 { label: "Team", accessor: "team" },
                 { label: "Submitted by", accessor: "submittedBy" },
-                { label: "Status", render: (row) => <OperationStatusBadge status={row.status} /> },
+                { label: "Status", render: (row) => <ReportStatusBadge status={row.status} /> },
                 {
                   label: "Actions",
                   align: "right",
@@ -160,11 +171,15 @@ export default function Operations() {
                 },
               ]}
             />
-                {pendingRows.length > OPERATION_PAGE_SIZE && (
-              <div className="flex justify-end border-t border-gray-100 px-4 py-3">
-                <TablePagination currentPage={pendingPage} pageCount={getPageCount(pendingRows.length, OPERATION_PAGE_SIZE)} onPageChange={setPendingPage} />
-              </div>
-            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+              <TablePagination currentPage={pendingPage} pageCount={getPageCount(pendingRows.length, OPERATION_PAGE_SIZE)} onPageChange={setPendingPage} />
+              {selectedPendingRows.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {canReview && <CommonButton compact variant="gray" disabled={busy} onClick={() => openBulkReview("approve")}>Approve {selectedPendingRows.length}</CommonButton>}
+                  {canReject && <CommonButton compact variant="gray" disabled={busy} onClick={() => openBulkReview("reject")}>Reject {selectedPendingRows.length}</CommonButton>}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -202,6 +217,7 @@ export default function Operations() {
                 {
                   label: "Select",
                   align: "center" as const,
+                  renderHeader: () => <input type="checkbox" aria-label="Select all visible reviewed operation reports" checked={visibleReviewedRows.length > 0 && visibleReviewedRows.every((row) => selectedIds.includes(row.operationId))} onChange={(event) => setSelectedIds((current) => updateVisibleSelection(current, visibleReviewedRows.map((row) => row.operationId), event.target.checked))} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />,
                   render: (row: OperationRow) => (
                     <input type="checkbox" aria-label={`Select ${row.id} for PDF`} checked={selectedIds.includes(row.operationId)} onChange={() => toggleSelection(row.operationId)} className="h-4 w-4 rounded border-gray-300 accent-purple-700" />
                   ),
@@ -213,7 +229,7 @@ export default function Operations() {
                 { label: "Location", accessor: "location" as const },
                 { label: "Team", accessor: "team" as const },
                 { label: "Submitted by", accessor: "submittedBy" as const },
-                { label: "Status", render: (row: OperationRow) => <OperationStatusBadge status={row.status} /> },
+                { label: "Status", render: (row: OperationRow) => <ReportStatusBadge status={row.status} /> },
                 {
                   label: "Actions",
                   align: "right",
@@ -246,4 +262,12 @@ export default function Operations() {
       </div>
     </>
   );
+}
+
+function updateVisibleSelection(selectedIds: string[], visibleIds: string[], shouldSelect: boolean) {
+  if (!shouldSelect) {
+    return selectedIds.filter((id) => !visibleIds.includes(id));
+  }
+
+  return [...new Set([...selectedIds, ...visibleIds])];
 }

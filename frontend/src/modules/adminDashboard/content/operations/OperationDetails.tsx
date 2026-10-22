@@ -6,7 +6,7 @@ import { formatDate, formatDateTime, formatTime } from "@/utils/dateTime";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import ImagePreviewModal from "@/modules/reportForms/modal/ImagePreviewModal";
 import { formatOperationId, formatPersonAddress } from "./operationUtils";
-import OperationStatusBadge from "./OperationStatusBadge";
+import ReportStatusBadge from "./ReportStatusBadge";
 
 export default function OperationDetails({ record, onClose }: { record: OperationRecord; onClose: () => void }) {
   const [previewImage, setPreviewImage] = useState<OperationRecord["images"][number] | null>(null);
@@ -22,7 +22,7 @@ export default function OperationDetails({ record, onClose }: { record: Operatio
           <h2 className="mt-1 text-xl font-bold text-slate-900">{record.nature_of_operation}</h2>
           <p className="mt-1 text-xs text-gray-500">{formatDateTime(record.operation_date)} · Submitted by {submitter}</p>
         </div>
-        <OperationStatusBadge status={record.status} />
+        <ReportStatusBadge status={record.status} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
