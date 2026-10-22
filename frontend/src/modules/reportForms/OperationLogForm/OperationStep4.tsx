@@ -6,6 +6,7 @@ import ImagePreviewModal from "../modal/ImagePreviewModal"
 
 import type { OperationLogData, Person, PersonName } from "../../../types/operationLog"
 import type { OperationFormOptions } from "@/api/operationForm"
+import type { FormErrors } from "./formValidation"
 import { useState } from "react"
 
 type OperationStep4Props = {

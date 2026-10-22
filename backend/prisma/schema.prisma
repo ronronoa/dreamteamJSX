@@ -306,6 +306,7 @@ model Notification {
   message         String   @db.Text
   category        String
   target          String
+  reportFormId    String?  @map("report_form_id")
   createdAt       DateTime @default(now())
   readAt          DateTime?
 

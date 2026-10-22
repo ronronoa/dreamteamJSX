@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   archiveOperation,
   fetchOperations,
@@ -19,6 +20,8 @@ import {
 } from "./operationUtils";
 
 export function useOperationsDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRecordId = searchParams.get("reportFormId") ?? searchParams.get("recordId");
   const { session } = useAuth();
   const accessToken = session?.accessToken;
   const role = session?.user.role;
@@ -62,6 +65,19 @@ export function useOperationsDashboard() {
       await loadRecords();
     })();
   }, [loadRecords]);
+
+  useEffect(() => {
+    if (!requestedRecordId || loading) return;
+
+    const matchingRecord = records.find((record) => record.operation_id === requestedRecordId);
+    if (!matchingRecord) return;
+
+    setSelectedRecord(matchingRecord);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("recordId");
+    nextSearchParams.delete("reportFormId");
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [loading, records, requestedRecordId, searchParams, setSearchParams]);
 
   const allRows = useMemo(() => records.map(toOperationRow), [records]);
   const matchingRows = useMemo(() => {

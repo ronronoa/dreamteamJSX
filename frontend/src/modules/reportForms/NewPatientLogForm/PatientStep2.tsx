@@ -10,6 +10,7 @@ import {
   type PatientDetails,
   type FirstAidHospitalDetails,
 } from "@/types/patientLog"
+import { calculateBirthdateFromAge, getCurrentDateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("patients")
 
@@ -32,6 +33,15 @@ export default function PatientStep2({
     onPatientDetailsChange({
       birthdate: value,
       age: calculateAge(value),
+    })
+  }
+
+  function handleAgeChange(value: string) {
+    const parsedAge = Number(value)
+    const birthdate = calculateBirthdateFromAge(value)
+    onPatientDetailsChange({
+      age: birthdate ? parsedAge : "",
+      birthdate,
     })
   }
 
@@ -95,15 +105,18 @@ export default function PatientStep2({
               type="date"
               label="Birthdate"
               value={patientDetails.birthdate}
+              max={getCurrentDateInputValue()}
               onChange={(e) => handleBirthdateChange(e.target.value)}
               errorMessage={errors.birthdate}
             />
             <CommonInput
               variant="compact"
+              type="number"
               label="Age"
-              placeholder="69"
+              min={0}
+              max={MAX_REASONABLE_AGE}
               value={patientDetails.age}
-              readOnly
+              onChange={(e) => handleAgeChange(e.target.value)}
             />
           </div>
 

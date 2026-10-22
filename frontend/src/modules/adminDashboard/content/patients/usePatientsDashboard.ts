@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { archivePatientLog, fetchPatientLogs, reviewPatientLog, type PatientLogRecord } from "@/api/patients";
 import { useAuth } from "@/context/AuthContext";
 import { getPageCount } from "@/utils/pagination";
@@ -16,6 +17,8 @@ import {
 type ReviewAction = "authorize" | "validate" | "reject";
 
 export function usePatientsDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRecordId = searchParams.get("reportFormId") ?? searchParams.get("recordId");
   const { session } = useAuth();
   const accessToken = session?.accessToken;
   const role = session?.user.role;
@@ -58,6 +61,19 @@ export function usePatientsDashboard() {
       await loadRecords();
     })();
   }, [loadRecords]);
+
+  useEffect(() => {
+    if (!requestedRecordId || loading) return;
+
+    const matchingRecord = records.find((record) => record.patient_log_id === requestedRecordId);
+    if (!matchingRecord) return;
+
+    setSelectedRecord(matchingRecord);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("recordId");
+    nextSearchParams.delete("reportFormId");
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [loading, records, requestedRecordId, searchParams, setSearchParams]);
 
   const allRows = useMemo(() => records.map(toPatientRow), [records]);
   const matchingRows = useMemo(() => {

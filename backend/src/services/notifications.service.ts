@@ -7,9 +7,11 @@ const MAX_NOTIFICATIONS = 25
 const NOTIFICATION_HISTORY_DAYS = 30
 
 function getApprovalTarget(module: string) {
-  if (module === "Operations") return "operations"
-  if (module === "Patients") return "patients"
-  return "vehicles"
+  return module === "Operations"
+    ? "operations"
+    : module === "Patients"
+      ? "patients"
+      : "vehicles"
 }
 
 function getApprovalNotificationData(userId: string, activity: ActivityLog) {
@@ -22,6 +24,7 @@ function getApprovalNotificationData(userId: string, activity: ActivityLog) {
     message: `${activity.actor_name} submitted a report${recordLabel}.`,
     category: "approval",
     target: getApprovalTarget(activity.module),
+    reportFormId: activity.record_id,
     createdAt: activity.createdAt,
   }
 }
@@ -38,6 +41,7 @@ async function pushNotifications(userIds: string[], sourceKeys: string[]) {
       message: record.message,
       category: record.category,
       target: record.target,
+      reportFormId: record.reportFormId,
       createdAt: record.createdAt.toISOString(),
       read: record.readAt !== null,
     })
@@ -58,15 +62,45 @@ export const notificationsService = {
       orderBy: { createdAt: "desc" },
       take: MAX_NOTIFICATIONS,
     })
-    const notifications = records.map((record) => ({
-      id: record.notification_id,
-      title: record.title,
-      message: record.message,
-      category: record.category,
-      createdAt: record.createdAt.toISOString(),
-      read: record.readAt !== null,
-      target: record.target,
-    }))
+    const legacyActivityIds = records
+      .filter((record) => record.category === "approval" && record.reportFormId === null)
+      .map((record) => record.source_key.startsWith("activity:") ? record.source_key.slice("activity:".length) : "")
+      .filter(Boolean)
+    const legacyActivities = legacyActivityIds.length > 0
+      ? await prisma.activityLog.findMany({
+        where: { activity_id: { in: legacyActivityIds } },
+        select: { activity_id: true, record_id: true, module: true },
+      })
+      : []
+    const activityById = new Map(legacyActivities.map((activity) => [activity.activity_id, activity]))
+    const notifications = records.map((record) => {
+      let target = record.target
+      const targetParts = target.split(":", 2)
+      const targetType = targetParts[0] ?? target
+      let reportFormId = record.reportFormId ?? targetParts[1] ?? null
+      const activityId = record.source_key.startsWith("activity:")
+        ? record.source_key.slice("activity:".length)
+        : ""
+      const activity = activityById.get(activityId)
+
+      if (activity) {
+        target = getApprovalTarget(activity.module)
+        reportFormId ??= activity.record_id
+      } else {
+        target = targetType
+      }
+
+      return {
+        id: record.notification_id,
+        title: record.title,
+        message: record.message,
+        category: record.category,
+        createdAt: record.createdAt.toISOString(),
+        read: record.readAt !== null,
+        target,
+        reportFormId,
+      }
+    })
 
     return {
       notifications,

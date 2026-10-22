@@ -38,6 +38,7 @@ export function publishNotification(userId: string, notification: {
   message: string
   category: string
   target: string
+  reportFormId: string | null
   createdAt: string
   read: boolean
 }) {

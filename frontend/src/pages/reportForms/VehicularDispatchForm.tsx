@@ -143,7 +143,7 @@ export default function VehicularDispatchForm() {
     }
     return storedReport
   })
-  const [validationErrors, setValidationErrors] = useState<VehicularDispatchErrors>({})
+  const [, setValidationErrors] = useState<VehicularDispatchErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
 

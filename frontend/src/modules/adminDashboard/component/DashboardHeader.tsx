@@ -146,14 +146,9 @@ interface Notification {
   message: string;
   read: boolean;
   createdAt: string | Date;
-  target: NotificationTarget;
+  target: string;
+  reportFormId: string | null;
 }
-
-type NotificationTarget =
-  | "operations"
-  | "patients"
-  | "vehicles"
-  | "inventory";
 
 interface NotificationsDropdownProps {
   notifications: Notification[];
@@ -165,12 +160,24 @@ interface NotificationsDropdownProps {
   onSelect: (target: string) => void;
 }
 
-const NOTIFICATION_ROUTES: Record<NotificationTarget, string> = {
+const NOTIFICATION_ROUTES: Record<string, string> = {
   operations: ROUTES.DASHBOARD.OPERATIONS,
   patients: ROUTES.DASHBOARD.PATIENTS,
   vehicles: ROUTES.DASHBOARD.VEHICLES,
   inventory: ROUTES.DASHBOARD.INVENTORY,
 };
+
+function getNotificationRoute(target: string, reportFormId: string | null): string {
+  const separatorIndex = target.indexOf(":");
+  const targetType = separatorIndex === -1 ? target : target.slice(0, separatorIndex);
+  const recordId = reportFormId ?? (separatorIndex === -1 ? "" : target.slice(separatorIndex + 1));
+  const route = NOTIFICATION_ROUTES[targetType];
+
+  if (!route) return ROUTES.DASHBOARD.ROOT;
+  if (!recordId) return route;
+
+  return `${route}?reportFormId=${encodeURIComponent(recordId)}`;
+}
 
 function NotificationsDropdown({
   notifications,
@@ -271,7 +278,7 @@ function NotificationItem({ notification, onSelect }: NotificationItemProps) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(NOTIFICATION_ROUTES[notification.target])}
+      onClick={() => onSelect(getNotificationRoute(notification.target, notification.reportFormId))}
       className={`flex w-full items-start gap-3 border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
         notification.read ? "bg-white" : "bg-purple-50/60"
       }`}

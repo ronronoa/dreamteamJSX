@@ -20,6 +20,22 @@ export function getCurrentDateInputValue() {
   return dayjs().format("YYYY-MM-DD");
 }
 
+export const MAX_REASONABLE_AGE = 120;
+
+export function calculateBirthdateFromAge(ageValue: string | number): string {
+  const age = Number(ageValue);
+  if (
+    String(ageValue).trim() === "" ||
+    !Number.isInteger(age) ||
+    age < 0 ||
+    age > MAX_REASONABLE_AGE
+  ) {
+    return "";
+  }
+
+  return `${dayjs().year() - age}-01-01`;
+}
+
 export function isValidDateInputNotInFuture(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 

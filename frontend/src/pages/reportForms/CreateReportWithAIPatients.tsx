@@ -104,9 +104,13 @@ function createPatientReportFromScan(
   const hospitalArrival = parseClockValue(scanResult.timeInformation.hospitalIn);
   const hospitalDeparture = parseClockValue(scanResult.timeInformation.hospitalOut);
   const parsedAge = scanResult.patient.age.trim() ? Number(scanResult.patient.age) : Number.NaN;
-  const age = Number.isInteger(parsedAge) && parsedAge >= 0
-    ? parsedAge
-    : calculateAge(scanResult.patient.birthday);
+  const hasBirthday = scanResult.patient.birthday.trim() !== "";
+  let age: number | "" = "";
+  if (hasBirthday && isValidDateInputNotInFuture(scanResult.patient.birthday)) {
+    age = calculateAge(scanResult.patient.birthday);
+  } else if (!hasBirthday && Number.isInteger(parsedAge) && parsedAge >= 0) {
+    age = parsedAge;
+  }
 
   const report: PatientLogData = {
     ...emptyReport,

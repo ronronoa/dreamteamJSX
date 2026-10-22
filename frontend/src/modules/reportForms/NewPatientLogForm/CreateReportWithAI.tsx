@@ -11,7 +11,13 @@ import { scanPatientLogImage, type PatientFormOptions, type PatientLogOcrResult 
 import { useNavigate } from "react-router";
 import { ROUTES } from "@/routes";
 import OtherRespondersInput from "@/modules/reportForms/component/OtherRespondersInput";
-import { getCurrentDateInputValue, isValidDateInputNotInFuture } from "@/utils/dateTime";
+import {
+  calculateAge,
+  calculateBirthdateFromAge,
+  getCurrentDateInputValue,
+  isValidDateInputNotInFuture,
+  MAX_REASONABLE_AGE,
+} from "@/utils/dateTime";
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect";
 
 const MAX_OCR_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -218,12 +224,23 @@ export default function CreateReportWithAI({
   }
 
   function updatePatientTextField(
-    field: "name" | "age" | "birthday" | "contactPerson" | "contactNumber",
+    field: "name" | "birthday" | "contactPerson" | "contactNumber",
     value: string,
   ) {
     setScanResult((current) => ({
       ...current,
       patient: { ...current.patient, [field]: value },
+    }));
+  }
+
+  function updateAgeAndBirthday(ageValue: string) {
+    setScanResult((current) => ({
+      ...current,
+      patient: {
+        ...current.patient,
+        age: ageValue,
+        birthday: calculateBirthdateFromAge(ageValue),
+      },
     }));
   }
 
@@ -251,6 +268,11 @@ export default function CreateReportWithAI({
       (name) => name.trim().toLowerCase() === responder.name.trim().toLowerCase(),
     ))
     .map((responder) => responder.user_id);
+  const hasBirthday = scanResult.patient.birthday.trim() !== "";
+  const hasValidBirthday = isValidDateInputNotInFuture(scanResult.patient.birthday);
+  const ageValue = hasBirthday && hasValidBirthday
+    ? calculateAge(scanResult.patient.birthday)
+    : scanResult.patient.age;
 
   function updateOtherResponders(otherResponders: string[]) {
     setScanResult((current) => ({
@@ -431,7 +453,15 @@ export default function CreateReportWithAI({
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100">Age</label>
-              <CommonInput type="number" variant="compact" value={scanResult.patient.age} onChange={(event) => updatePatientTextField("age", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.age, "Age")}/>
+              <CommonInput
+                type="number"
+                variant="compact"
+                min={0}
+                max={MAX_REASONABLE_AGE}
+                value={ageValue}
+                onChange={(event) => updateAgeAndBirthday(event.target.value)}
+                errorMessage={missingFieldMessage(ageValue, "Age")}
+              />
             </div>
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
@@ -445,7 +475,16 @@ export default function CreateReportWithAI({
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Birthday</label>
-              <CommonInput type="date" variant="compact" value={scanResult.patient.birthday} onChange={(event) => updatePatientTextField("birthday", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.birthday, "Birthday")}/>
+              <CommonInput
+                type="date"
+                variant="compact"
+                max={getCurrentDateInputValue()}
+                value={scanResult.patient.birthday}
+                onChange={(event) => updatePatientTextField("birthday", event.target.value)}
+                errorMessage={hasScanResult && hasBirthday && !hasValidBirthday
+                  ? "Choose a valid birthday that is not in the future."
+                  : missingFieldMessage(scanResult.patient.birthday, "Birthday")}
+              />
             </div>
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">

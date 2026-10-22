@@ -7,7 +7,8 @@ export interface NotificationItem {
   category: "approval" | "inventory"
   createdAt: string
   read: boolean
-  target: "operations" | "patients" | "vehicles" | "inventory"
+  target: string
+  reportFormId: string | null
 }
 
 export interface NotificationResponse {

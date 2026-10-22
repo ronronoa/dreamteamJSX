@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import {
   createFleetVehicle,
@@ -17,6 +18,8 @@ export const VEHICLE_PAGE_SIZE = 10;
 type ReviewAction = "authorize" | "validate" | "reject";
 
 export function useVehiclesDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRecordId = searchParams.get("reportFormId") ?? searchParams.get("recordId");
   const { session } = useAuth();
   const accessToken = session?.accessToken;
   const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
@@ -67,6 +70,22 @@ export function useVehiclesDashboard() {
   }, [accessToken]);
 
   const allRows = useMemo(() => dispatchRecords, [dispatchRecords]);
+
+  useEffect(() => {
+    if (!requestedRecordId || dispatchLoading) return;
+
+    const matchingRecord = dispatchRecords.find((record) =>
+      record.dispatchId === requestedRecordId || record.record.dispatch_id === requestedRecordId,
+    );
+    if (!matchingRecord) return;
+
+    setSelectedRecord(matchingRecord.record);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("recordId");
+    nextSearchParams.delete("reportFormId");
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [dispatchLoading, dispatchRecords, requestedRecordId, searchParams, setSearchParams]);
+
   const matchingRows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return allRows.filter((record) => {

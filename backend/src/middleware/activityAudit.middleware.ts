@@ -34,12 +34,15 @@ export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
     const actorId = req.user?.userId ?? (typeof responseActorId === "string" ? responseActorId : undefined);
     const responseActorName = res.locals["activityActorName"];
     const actorName = typeof responseActorName === "string" ? responseActorName : undefined;
+    const responseRecordId = res.locals["activityRecordId"];
+    const recordId = typeof responseRecordId === "string" ? responseRecordId : undefined;
     if (!actorId && !actorName) return;
     if (!actorId && res.statusCode >= 400) return;
 
     void activityLogsService.recordRequest({
       ...(actorId ? { actorId } : {}),
       ...(actorName ? { actorName } : {}),
+      ...(recordId ? { recordId } : {}),
       method,
       path: apiPath,
       statusCode: res.statusCode,

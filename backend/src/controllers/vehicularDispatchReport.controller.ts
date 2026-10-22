@@ -104,6 +104,7 @@ export const vehicularDispatchReportController = {
 
       const dispatch = await vehicularDispatchReportService.create(parsedForm.data, req.user?.userId ?? null)
       res.locals["activityActorName"] = parsedForm.data.details.submitterName
+      res.locals["activityRecordId"] = dispatch.dispatch_id
       res.status(201).json({ dispatch })
     } catch (error) {
       next(error)

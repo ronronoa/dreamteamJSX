@@ -9,7 +9,7 @@ import CommonFormSection from "../component/CommonFormSection"
 import { calculateAge } from "../../../types/operationLog"
 import { createEmptyPerson, type Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchErrors } from "./formValidation"
-import { formatDate } from "@/utils/dateTime"
+import { calculateBirthdateFromAge, formatDate, MAX_REASONABLE_AGE } from "@/utils/dateTime"
 
 const MAX_PASSENGERS = 100
 const MAX_CONTACT_NUMBER_LENGTH = 20
@@ -42,6 +42,11 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
 
   const handleBirthdateChange = (birthdate: string) => {
     updateDraft({ birthdate, age: calculateAge(birthdate) })
+  }
+
+  const handleAgeChange = (value: string) => {
+    const birthdate = calculateBirthdateFromAge(value)
+    updateDraft({ birthdate, age: birthdate ? Number(value) : "" })
   }
 
   const addPerson = () => {
@@ -140,10 +145,12 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
 
           <CommonInput
             variant="compact"
+            type="number"
             label="Age"
             value={draft.age === "" ? "" : String(draft.age)}
-            placeholder="69"
-            readOnly
+            min={0}
+            max={MAX_REASONABLE_AGE}
+            onChange={(e) => handleAgeChange(e.target.value)}
           />
         </div>
         <div className="mb-5">

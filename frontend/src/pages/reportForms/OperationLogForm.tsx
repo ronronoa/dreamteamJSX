@@ -102,7 +102,7 @@ export default function OperationLogForm() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState("")
   const [optionsRequestId, setOptionsRequestId] = useState(0)
-  const [validationErrors, setValidationErrors] = useState<FormErrors>({})
+  const [, setValidationErrors] = useState<FormErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();

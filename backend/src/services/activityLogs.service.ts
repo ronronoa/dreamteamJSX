@@ -47,6 +47,7 @@ export const activityLogsService = {
   async recordRequest(input: {
     actorId?: string;
     actorName?: string;
+    recordId?: string;
     method: string;
     path: string;
     statusCode: number;
@@ -57,7 +58,7 @@ export const activityLogsService = {
       : input.statusCode >= 400
         ? "Warning"
         : "Success";
-    const recordId = input.path.match(UUID_PATTERN)?.[0] ?? null;
+    const recordId = input.recordId ?? input.path.match(UUID_PATTERN)?.[0] ?? null;
     const action = getAction(input.method, input.path, module);
     const details = `${input.method} ${input.path} · HTTP ${input.statusCode}`;
 

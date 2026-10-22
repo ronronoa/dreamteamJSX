@@ -9,6 +9,7 @@ import CommonFormSection from "../component/CommonFormSection"
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
 import { validatePerson, type FormErrors } from "./formValidation"
+import { calculateBirthdateFromAge, getCurrentDateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("operations")
 
@@ -33,6 +34,11 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
 
   const handleBirthdateChange = (birthdate: string) => {
     updateDraft({ birthdate, age: calculateAge(birthdate) })
+  }
+
+  const handleAgeChange = (value: string) => {
+    const birthdate = calculateBirthdateFromAge(value)
+    updateDraft({ birthdate, age: birthdate ? Number(value) : "" })
   }
 
   const addPerson = () => {
@@ -120,16 +126,19 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             type="date"
             label="Birthdate"
             value={draft.birthdate}
+            max={getCurrentDateInputValue()}
             onChange={(e) => handleBirthdateChange(e.target.value)}
             errorMessage={draftErrors.birthdate}
           />
 
           <CommonInput
             variant="compact"
+            type="number"
             label="Age"
             value={draft.age === "" ? "" : String(draft.age)}
-            placeholder="69"
-            readOnly
+            min={0}
+            max={MAX_REASONABLE_AGE}
+            onChange={(e) => handleAgeChange(e.target.value)}
           />
         </div>
         <div className="mb-5">
