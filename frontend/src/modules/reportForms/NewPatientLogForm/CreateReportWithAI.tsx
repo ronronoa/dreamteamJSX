@@ -333,11 +333,11 @@ export default function CreateReportWithAI({
       <CommonButton
         onClick={() => navigate(ROUTES.LOGIN)}
         variant="none"
-        className="m-0! fixed left-2 top-2 z-999 bg-white/20 p-4! hover:bg-slate-500"
+        className="m-0! fixed left-2 top-2 z-999 bg-white/20 p-2! hover:bg-slate-500 sm:p-4!"
       >
         <X size={15} />
       </CommonButton>
-      <main className="grid min-h-screen min-w-0 grid-rows-1 gap-4 overflow-x-hidden p-4 lg:h-screen lg:min-h-0 lg:grid-cols-[0.5fr_1fr] lg:overflow-hidden">
+      <main className="grid min-h-screen min-w-0 grid-rows-1 gap-4 p-4 lg:h-screen lg:min-h-0 lg:grid-cols-[0.5fr_1fr] lg:overflow-hidden">
         <section className="relative h-[50vh] min-h-[280px] w-full border rounded-2xl border-purple-800/80 bg-black/10 lg:h-full lg:min-h-0 lg:overflow-hidden">
           <SingleImageUpload
             ref={imageUploadRef}
@@ -363,7 +363,7 @@ export default function CreateReportWithAI({
 
         <section
           aria-busy={isScanning}
-          className={`relative flex flex-col gap-10 rounded-2xl py-4 bg-black/15 border border-purple-900 lg:h-full lg:min-h-0 ${isScanning ? "overflow-hidden" : "lg:overflow-y-auto"}`}
+          className={`ai-results-panel relative flex min-w-0 w-full max-w-full flex-col gap-10 rounded-2xl py-4 bg-black/15 border border-purple-900 lg:h-full lg:min-h-0 ${isScanning ? "overflow-hidden" : "lg:overflow-y-auto"}`}
         >
           {isScanning && (
             <div
@@ -416,10 +416,10 @@ export default function CreateReportWithAI({
             </div>
           )}
 
-          <div className="px-4 flex flex-col gap-4 max-w-[1200px] mx-auto">
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+          <div className="ai-results-content mx-auto flex w-full min-w-0 max-w-[1200px] flex-col gap-4 px-4">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Request for</label>
-              <div className={`flex gap-4 justify-between ${hasScanResult && !scanResult.requestFor ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
+              <div className={`ai-scan-checkbox-options flex gap-4 justify-between ${hasScanResult && !scanResult.requestFor ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
                 <CommonCheckbox label="T/A" labelClassName="text-slate-100 font-extrabold" checked={scanResult.requestFor === "TRANSPORT_ASSISTANCE"} onChange={(event) => updateRequestFor(event.target.checked ? "TRANSPORT_ASSISTANCE" : "")}/>
                 <CommonCheckbox label="EMERGENCY" labelClassName="text-slate-100 font-extrabold" checked={scanResult.requestFor === "EMERGENCY"} onChange={(event) => updateRequestFor(event.target.checked ? "EMERGENCY" : "")}/>
                 <CommonCheckbox label="IFT" labelClassName="text-slate-100 font-extrabold" checked={scanResult.requestFor === "INTER_FACILITY_TRANSFER"} onChange={(event) => updateRequestFor(event.target.checked ? "INTER_FACILITY_TRANSFER" : "")}/>
@@ -428,7 +428,7 @@ export default function CreateReportWithAI({
               {missingFieldMessage(scanResult.requestFor, "Request for") && <p role="alert" className="col-span-full text-sm text-red-200">{missingFieldMessage(scanResult.requestFor, "Request for")}</p>}
             </div>
 
-            <div className="grid grid-cols-[0.57fr_1fr_0.1fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row ai-scan-date-row grid grid-cols-[0.57fr_1fr_0.1fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Date</label>
               <CommonInput type="date" variant="compact" max={getCurrentDateInputValue()} value={scanResult.date} onChange={(event) => updateTextField("date", event.target.value)} errorMessage={hasScanResult && !isValidDateInputNotInFuture(scanResult.date) ? "Choose a valid date that is not in the future." : missingFieldMessage(scanResult.date, "Date")}/>
 
@@ -436,22 +436,22 @@ export default function CreateReportWithAI({
               <CommonInput type="time" variant="compact" value={scanResult.time} onChange={(event) => updateTextField("time", event.target.value)} errorMessage={missingFieldMessage(scanResult.time, "Time")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">From</label>
               <CommonInput variant="compact" value={scanResult.from} onChange={(event) => updateTextField("from", event.target.value)} errorMessage={missingFieldMessage(scanResult.from, "From")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">To</label>
               <CommonInput variant="compact" value={scanResult.to} onChange={(event) => updateTextField("to", event.target.value)} errorMessage={missingFieldMessage(scanResult.to, "To")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Patient Name</label>
               <CommonInput variant="compact" value={scanResult.patient.name} onChange={(event) => updatePatientTextField("name", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.name, "Patient name")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100">Age</label>
               <CommonInput
                 type="number"
@@ -464,16 +464,16 @@ export default function CreateReportWithAI({
               />
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Gender</label>
-              <div className={`flex gap-10 justify-start ${hasScanResult && !scanResult.patient.gender ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
+              <div className={`ai-scan-checkbox-options flex gap-10 justify-start ${hasScanResult && !scanResult.patient.gender ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
                 <CommonCheckbox label="MALE" labelClassName="text-slate-100 font-extrabold" checked={scanResult.patient.gender === "MALE"} onChange={(event) => updateGender(event.target.checked ? "MALE" : "")}/>
                 <CommonCheckbox label="FEMALE" labelClassName="text-slate-100 font-extrabold" checked={scanResult.patient.gender === "FEMALE"} onChange={(event) => updateGender(event.target.checked ? "FEMALE" : "")}/>
               </div>
               {missingFieldMessage(scanResult.patient.gender, "Gender") && <p role="alert" className="col-span-full text-sm text-red-200">{missingFieldMessage(scanResult.patient.gender, "Gender")}</p>}
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Birthday</label>
               <CommonInput
                 type="date"
@@ -487,10 +487,10 @@ export default function CreateReportWithAI({
               />
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Address</label>
 
-              <div className="flex gap-4 items-center">
+              <div className="ai-scan-inline-fields flex gap-4 items-center">
                 <label className=" block text-lg font-bold text-slate-100">PHASE</label>
                 <CommonInput type="number" variant="compact" value={scanResult.patient.address.phase ?? ""} onChange={(event) => updateAddressValue("phase", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.address.phase, "Phase")}/>
 
@@ -505,25 +505,25 @@ export default function CreateReportWithAI({
               </div>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Contact Person</label>
               <CommonInput variant="compact" value={scanResult.patient.contactPerson} onChange={(event) => updatePatientTextField("contactPerson", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.contactPerson, "Contact person")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Contact No.</label>
               <CommonInput variant="compact" value={scanResult.patient.contactNumber} onChange={(event) => updatePatientTextField("contactNumber", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.contactNumber, "Contact number")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100 mt-1">Assessment</label>
               <CommonTextarea placeholder="(Patient's Condition)" variant="compact" value={scanResult.assessment} onChange={(event) => updateTextField("assessment", event.target.value)} errorMessage={missingFieldMessage(scanResult.assessment, "Assessment")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Vitals</label>
 
-              <div className="flex gap-4 items-center">
+              <div className="ai-scan-inline-fields flex gap-4 items-center">
                 <label className=" block text-lg font-bold text-slate-100">BP</label>
                 <CommonInput variant="compact" value={scanResult.vitals.bp} onChange={(event) => updateVitalField("bp", event.target.value)} errorMessage={missingFieldMessage(scanResult.vitals.bp, "Blood pressure")}/>
 
@@ -538,9 +538,9 @@ export default function CreateReportWithAI({
               </div>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Type</label>
-              <div className={`flex gap-10 justify-start ${hasScanResult && !scanResult.dispositionType ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
+              <div className={`ai-scan-checkbox-options flex gap-10 justify-start ${hasScanResult && !scanResult.dispositionType ? "rounded-md border border-red-400 bg-red-500/10 p-2" : ""}`}>
                 <CommonCheckbox label="DROP OFF" labelClassName="text-slate-100 font-extrabold" checked={scanResult.dispositionType === "DROP_OFF"} onChange={(event) => updateDisposition(event.target.checked ? "DROP_OFF" : "")}/>
                 <CommonCheckbox label="PICK UP" labelClassName="text-slate-100 font-extrabold" checked={scanResult.dispositionType === "PICK_UP"} onChange={(event) => updateDisposition(event.target.checked ? "PICK_UP" : "")}/>
               </div>
@@ -548,17 +548,17 @@ export default function CreateReportWithAI({
             </div>
 
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100 mt-1">Waiver</label>
               <CommonTextarea placeholder="" variant="compact" value={scanResult.waiver} onChange={(event) => updateTextField("waiver", event.target.value)} errorMessage={missingFieldMessage(scanResult.waiver, "Waiver")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100">Ambulance Driver</label>
               <CommonInput placeholder="" variant="compact" value={scanResult.teamInformation.ambulanceDriver} onChange={(event) => updateTeamDriver(event.target.value)} errorMessage={missingFieldMessage(scanResult.teamInformation.ambulanceDriver, "Ambulance driver")}/>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className="block text-lg font-bold text-slate-100">Responder</label>
               <CommonSearchSelect
                 variant="compact"
@@ -578,10 +578,10 @@ export default function CreateReportWithAI({
               />
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Barangay</label>
 
-              <div className="grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
+              <div className="ai-scan-time-fields grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
                 <div className="flex gap-2 items-center">
                   <label className=" block text-lg font-bold text-slate-100">OUT</label>
                   <CommonInput type="time" variant="compact" value={scanResult.timeInformation.barangayOut} onChange={(event) => updateTimeInformation("barangayOut", event.target.value)} errorMessage={missingFieldMessage(scanResult.timeInformation.barangayOut, "Barangay out time")}/>
@@ -599,10 +599,10 @@ export default function CreateReportWithAI({
               </div>
             </div>
 
-            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+            <div className="ai-scan-row grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Hospital</label>
 
-              <div className="grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
+              <div className="ai-scan-time-fields grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
                 <div className="flex gap-2 items-center">
                   <label className=" block text-lg font-bold text-slate-100">OUT</label>
                   <CommonInput type="time" variant="compact" value={scanResult.timeInformation.hospitalOut} onChange={(event) => updateTimeInformation("hospitalOut", event.target.value)} errorMessage={missingFieldMessage(scanResult.timeInformation.hospitalOut, "Hospital out time")}/>
@@ -620,7 +620,7 @@ export default function CreateReportWithAI({
               </div>
             </div>
 
-            <div className="grid grid-cols-[0.47fr_0.5fr_0.6fr_0.47fr] rounded-2xl gap-2 items-center bg-black/10 p-3">
+            <div className="ai-scan-row ai-scan-checked-row grid grid-cols-[0.47fr_0.5fr_0.6fr_0.47fr] rounded-2xl gap-2 items-center bg-black/10 p-3">
               <label className=" block text-lg font-bold text-slate-100">Checked By</label>
               <CommonInput variant="compact" value={scanResult.checkedBy} onChange={(event) => updateTextField("checkedBy", event.target.value)} errorMessage={hasScanResult && !scanResult.checkedBy.trim() ? "Checked By is required to proceed." : undefined}/>
 
