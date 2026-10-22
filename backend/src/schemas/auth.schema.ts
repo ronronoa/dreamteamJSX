@@ -32,3 +32,17 @@ export const ChangePasswordSchema = z.object({
     path: ["newPassword"],
     message: "New password must be different from the current password",
 });
+
+export const RequestPasswordResetSchema = z.object({
+    email: z.string().trim().email().max(254).transform((email) => email.toLowerCase()),
+});
+
+export const CompletePasswordResetSchema = z.object({
+    email: z.string().trim().email().max(254).transform((email) => email.toLowerCase()),
+    code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit verification code."),
+    newPassword: z.string().min(8, "Password must be at least 8 characters.").max(64),
+    confirmPassword: z.string().min(1, "Confirm your new password."),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+});

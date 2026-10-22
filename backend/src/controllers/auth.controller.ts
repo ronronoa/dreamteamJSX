@@ -1,9 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import { ChangePasswordSchema, RefreshTokenSchema, SignInSchema, SignUpSchema } from "@/schemas/auth.schema";
+import { ChangePasswordSchema, CompletePasswordResetSchema, RefreshTokenSchema, RequestPasswordResetSchema, SignInSchema, SignUpSchema } from "@/schemas/auth.schema";
 import { ValidationError, UnauthorizedError } from "@/shared/errors/app-error";
 import { authService } from "@/services/auth.service";
 import { env } from "@/config/env";
+import { passwordResetService } from "@/services/passwordReset.service";
 
 const REFRESH_COOKIE = "refreshToken";
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -59,6 +60,40 @@ function getFirstZodIssue(error: z.ZodError): z.ZodIssue {
 }
 
 export const authController = {
+  async requestPasswordReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = RequestPasswordResetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        const issue = getFirstZodIssue(parsed.error);
+        throw new ValidationError(issue.message, { [issue.path.join(".")]: [issue.message] });
+      }
+      const result = await passwordResetService.requestCode(parsed.data.email);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async completePasswordReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = CompletePasswordResetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        const issue = getFirstZodIssue(parsed.error);
+        throw new ValidationError(issue.message, { [issue.path.join(".")]: [issue.message] });
+      }
+      const result = await passwordResetService.resetPassword(
+        parsed.data.email,
+        parsed.data.code,
+        parsed.data.newPassword,
+      );
+      res.locals["activityActorId"] = result.user.id;
+      setRefreshCookie(res, result.refreshToken);
+      res.status(200).json({ user: result.user, accessToken: result.accessToken });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async checkSession(req: Request, res: Response, next: NextFunction) {
     try {
       const authorization = req.headers.authorization;

@@ -14,6 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfileSession: (profile: UserProfileData) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  setSessionAfterPasswordReset: (session: UserSession) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,8 +102,12 @@ export function AuthProvider({children}: {children: ReactNode}){
       : currentSession);
   }
 
+  function setSessionAfterPasswordReset(nextSession: UserSession) {
+    setSession(nextSession);
+  }
+
   return (
-    <AuthContext.Provider value={{session, loading, login, refresh, logout, updateProfileSession, changePassword}}>
+    <AuthContext.Provider value={{session, loading, login, refresh, logout, updateProfileSession, changePassword, setSessionAfterPasswordReset}}>
       {children}
     </AuthContext.Provider>
 

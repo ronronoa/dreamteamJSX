@@ -15,6 +15,37 @@ export async function login(identifier: string, password: string): Promise<UserS
   return await res.json();
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await apiFetch("/auth/password-reset/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message ?? `Request failed (${response.status})`);
+  }
+}
+
+export async function completePasswordReset(input: {
+  email: string;
+  code: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<UserSession> {
+  const response = await apiFetch("/auth/password-reset/complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message ?? `Request failed (${response.status})`);
+  }
+  return result as UserSession;
+}
+
 export async function changePassword(accessToken: string, currentPassword: string, newPassword: string): Promise<string> {
   const response = await apiFetch("/auth/change-password", {
     method: "POST",

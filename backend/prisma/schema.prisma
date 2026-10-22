@@ -76,6 +76,7 @@ model User {
   updatedAt         DateTime  @updatedAt
 
   refreshTokens         RefreshToken[]
+  passwordResetCode     PasswordResetCode?
   submittedOperations   OperationLog[]               @relation("SubmittedBy")
   validatedOperations   OperationLog[]               @relation("ValidatedBy")
   submittedDispatches   VehicularDispatch[]          @relation("DispatchSubmitter")
@@ -112,6 +113,19 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model PasswordResetCode {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
 
 model ResponseTeam {
