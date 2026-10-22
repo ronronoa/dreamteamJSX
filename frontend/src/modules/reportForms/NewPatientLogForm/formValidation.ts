@@ -9,7 +9,7 @@ export function isFormEmpty(formData: PatientLogData): boolean {
     !responderDetails.typeOfRequest &&
     !responderDetails.caller.surname &&
     !responderDetails.caller.firstName &&
-    responderDetails.teamAssigned.length === 0 &&
+    !responderDetails.dispositionType &&
     responderDetails.responders.length === 0 &&
     !dispatch.from &&
     !dispatch.to &&
@@ -58,7 +58,7 @@ export const isStep1Complete = (formData: PatientLogData) => {
     responderDetails.typeOfRequest.trim() !== "" &&
     responderDetails.caller.surname.trim() !== "" &&
     responderDetails.caller.firstName.trim() !== "" &&
-    responderDetails.teamAssigned.some((transfer) => transfer === "Drop-Off" || transfer === "Pick-Up") &&
+    responderDetails.dispositionType !== "" &&
     responderDetails.responders.length > 0 &&
     dispatchIsComplete
   )

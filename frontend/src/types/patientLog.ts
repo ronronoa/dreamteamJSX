@@ -1,6 +1,7 @@
 import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
 
 export type Sex = "Male" | "Female" | ""
+export type TransferDisposition = "DROP_OFF" | "PICK_UP" | ""
 
 export type PersonName = {
   surname: string
@@ -22,7 +23,7 @@ export type ResponderDetails = {
   time: string
   typeOfRequest: string
   caller: PersonName
-  teamAssigned: string[]
+  dispositionType: TransferDisposition
   responders: string[]
 }
 
@@ -46,7 +47,7 @@ export const createEmptyResponderDetails = (): ResponderDetails => ({
   time: getCurrentTimeInputValue(),
   typeOfRequest: "",
   caller: createEmptyPersonName(),
-  teamAssigned: [],
+  dispositionType: "",
   responders: [],
 })
 

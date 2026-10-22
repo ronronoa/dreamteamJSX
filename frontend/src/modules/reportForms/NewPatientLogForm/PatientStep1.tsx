@@ -34,9 +34,9 @@ export default function PatientStep1({
   options,
   optionsLoading,
 }: PatientStep1Props) {
-  const selectTransfer = (transfer: "Drop-Off" | "Pick-Up") => {
+  const selectTransfer = (dispositionType: "DROP_OFF" | "PICK_UP") => {
     onResponderDetailsChange({
-      teamAssigned: [transfer],
+      dispositionType,
     })
   }
 
@@ -148,13 +148,13 @@ export default function PatientStep1({
             <div className="flex gap-8">
               <CommonCheckbox
                 label="Drop-Off"
-                checked={responderDetails.teamAssigned.includes("Drop-Off")}
-                onChange={() => selectTransfer("Drop-Off")}
+                checked={responderDetails.dispositionType === "DROP_OFF"}
+                onChange={() => selectTransfer("DROP_OFF")}
               />
               <CommonCheckbox
                 label="Pick-Up"
-                checked={responderDetails.teamAssigned.includes("Pick-Up")}
-                onChange={() => selectTransfer("Pick-Up")}
+                checked={responderDetails.dispositionType === "PICK_UP"}
+                onChange={() => selectTransfer("PICK_UP")}
               />
             </div>
           </div>

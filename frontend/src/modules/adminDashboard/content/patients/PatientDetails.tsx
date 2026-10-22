@@ -23,6 +23,15 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
   const responderDetails = reportData.responderDetails && typeof reportData.responderDetails === "object"
     ? reportData.responderDetails as Record<string, unknown>
     : {};
+  const legacyDisposition = Array.isArray(responderDetails.teamAssigned)
+    ? responderDetails.teamAssigned[0]
+    : responderDetails.teamAssigned;
+  const disposition = responderDetails.dispositionType ?? legacyDisposition;
+  const transferLabel = disposition === "PICK_UP" || disposition === "Pick-Up" || disposition === "pick-up"
+    ? "Pick-Up"
+    : disposition === "DROP_OFF" || disposition === "Drop-Off" || disposition === "drop-off"
+      ? "Drop-Off"
+      : "";
   const inventory = Array.isArray(reportData.inventory) ? reportData.inventory as Array<Record<string, unknown>> : [];
   const dispatch = record.dispatches[0];
 
@@ -49,7 +58,7 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
         <DetailsSection title="REPORT">
           <DetailsGrid fields={[
             ["Request Type", record.type_of_request.replaceAll("_", " ")], ["Caller", record.name_of_caller],
-            ["Transfer", Array.isArray(responderDetails.teamAssigned) ? responderDetails.teamAssigned.join(", ") : ""],
+            ["Transfer", transferLabel],
             ["Submitter", record.submitter?.name ?? record.submitter_name], ["Responders", record.responders.map(({ user }) => user.name).join(", ")],
             ["Medical Assessment", record.medical_assessment], ["First Aid Given", String(firstAid.firstAidGiven ?? "")],
             ["Waiver Description", record.waiver_description],

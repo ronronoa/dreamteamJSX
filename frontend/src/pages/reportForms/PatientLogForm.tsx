@@ -39,27 +39,43 @@ import { getCurrentDateInputValue, getCurrentTimeInputValue } from "@/utils/date
 const PATIENT_DRAFT_KEY = "reportForms.patient.draft"
 const PATIENT_LATEST_KEY = "reportForms.patient.latest"
 
+function normalizeDisposition(value: unknown): ResponderDetails["dispositionType"] {
+  if (Array.isArray(value)) {
+    return normalizeDisposition(value[0])
+  }
+
+  if (typeof value !== "string") return ""
+
+  const normalizedValue = value.toLowerCase().replaceAll("_", "-").trim()
+  if (normalizedValue === "pick-up") return "PICK_UP"
+  if (normalizedValue === "drop-off") return "DROP_OFF"
+  return ""
+}
+
 function normalizePatientReport(value: unknown): PatientLogData {
   const emptyReport = createEmptyPatientLogData()
   if (typeof value !== "object" || value === null) return emptyReport
 
-  const report = value as Partial<PatientLogData>
-  const savedTransfers = Array.isArray(report.responderDetails?.teamAssigned)
-    ? report.responderDetails.teamAssigned
-        .map((transfer) => transfer.toLowerCase())
-        .map((transfer) => transfer === "drop-off" ? "Drop-Off" : transfer === "pick-up" ? "Pick-Up" : "")
-        .filter((transfer): transfer is "Drop-Off" | "Pick-Up" => transfer !== "")
-    : []
+  const report = value as Partial<PatientLogData> & {
+    responderDetails?: Partial<ResponderDetails> & { teamAssigned?: unknown }
+  }
+  const {
+    teamAssigned: legacyTeamAssigned,
+    ...savedResponderDetails
+  } = report.responderDetails ?? {}
+  const dispositionType = normalizeDisposition(
+    savedResponderDetails.dispositionType || legacyTeamAssigned,
+  )
 
   return {
     ...emptyReport,
     ...report,
     responderDetails: {
       ...emptyReport.responderDetails,
-      ...report.responderDetails,
+      ...savedResponderDetails,
       date: getCurrentDateInputValue(),
       time: getCurrentTimeInputValue(),
-      teamAssigned: savedTransfers,
+      dispositionType,
     },
     dispatch: { ...emptyReport.dispatch, ...report.dispatch },
     patientDetails: {

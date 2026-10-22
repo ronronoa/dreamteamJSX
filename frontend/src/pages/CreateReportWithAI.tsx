@@ -11,6 +11,7 @@ export default function CreateReportWithAI() {
       <main className="h-screen grid grid-rows-1 lg:grid-cols-[1fr_0.7fr] gap-4 p-4">
         <section className="w-full  border-2">
           {/* <ImageUpload/> */}
+          {/* finishe this */}
         </section>
 
         <section className="flex flex-col gap-10 rounded-2xl py-4 bg-black/15 border border-purple-900">
@@ -129,11 +130,77 @@ export default function CreateReportWithAI() {
             </div>
 
             <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
-              <label className=" block text-lg font-bold text-slate-100">Gender</label>
+              <label className=" block text-lg font-bold text-slate-100">Type</label>
               <div className="flex gap-10 justify-start">
-                <CommonCheckbox label="MALE" labelClassName="text-slate-100 font-extrabold"/>
-                <CommonCheckbox label="FEMALE" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="DROP OFF" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="PICK UP" labelClassName="text-slate-100 font-extrabold"/>
               </div>
+            </div>
+
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
+              <label className="block text-lg font-bold text-slate-100 mt-1">Waiver</label>
+              <CommonTextarea placeholder="" variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className="block text-lg font-bold text-slate-100">Ambulance Driver</label>
+              <CommonInput placeholder="" variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className="block text-lg font-bold text-slate-100">Responder</label>
+              <CommonInput placeholder="" variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Barangay</label>
+
+              <div className="grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
+                <div className="flex gap-2 items-center">
+                  <label className=" block text-lg font-bold text-slate-100">OUT</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  <label className=" block text-lg font-bold text-slate-100">IN</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+
+                <div className="flex gap-2 items-center justify-end">
+                  <label className=" block text-lg font-bold text-slate-100">ODOMETER OUT</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Hospital</label>
+
+              <div className="grid grid-cols-[0.25fr_0.25fr_1fr] gap-3 items-center">
+                <div className="flex gap-2 items-center">
+                  <label className=" block text-lg font-bold text-slate-100">OUT</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  <label className=" block text-lg font-bold text-slate-100">IN</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+
+                <div className="flex gap-2 items-center justify-end">
+                  <label className=" block text-lg font-bold text-slate-100">ODOMETER IN</label>
+                  <CommonInput type="number" variant="compact"/>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.47fr_0.5fr_0.6fr_0.47fr] rounded-2xl gap-2 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Checked By</label>
+              <CommonInput variant="compact"/>
+
+              <label className=" block text-lg font-bold text-slate-100">Hospital Representative</label>
+              <CommonInput variant="compact"/>
             </div>
 
           </div>

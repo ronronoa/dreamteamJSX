@@ -664,7 +664,7 @@ export const reportFormsService = {
                 arrival_time: arrival,
                  odometer_in: typeof dispatch.odometerIn === "number" ? dispatch.odometerIn : null,
                  odometer_out: typeof dispatch.odometerOut === "number" ? dispatch.odometerOut : null,
-                dispatch_type: responderDetails.teamAssigned[0] === "Pick-Up" ? "PICK_UP" : "DROP_OFF",
+                dispatch_type: responderDetails.dispositionType,
               },
             },
           },
