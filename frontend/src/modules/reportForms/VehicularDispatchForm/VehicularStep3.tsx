@@ -32,6 +32,7 @@ export default function VehicularStep3({ formData, vehicleLabel, responderLabels
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={details.submitterName} />
             <SummaryField label="Date" value={details.date} />
+            <SummaryField label="Time" value={details.time} />
             <SummaryField label="Responders" value={responderLabels.join(", ")} />
             <SummaryField label="Transfer" value={details.transfers.join(", ")} />
           </div>

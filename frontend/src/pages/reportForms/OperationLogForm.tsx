@@ -55,7 +55,8 @@ function normalizeOperationReport(value: unknown): OperationLogData {
     operationDetails: {
       ...emptyReport.operationDetails,
       ...report.operationDetails,
-      date: emptyReport.operationDetails.date
+      date: emptyReport.operationDetails.date,
+      time: emptyReport.operationDetails.time,
     },
     dispatch: {
       ...emptyReport.dispatch,

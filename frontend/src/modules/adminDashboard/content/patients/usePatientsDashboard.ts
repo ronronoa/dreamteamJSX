@@ -65,7 +65,7 @@ export function usePatientsDashboard() {
     return allRows.filter((row) => {
       if (statusFilter !== "all" && row.status !== statusFilter) return false;
       if (!term) return true;
-      return [row.id, row.name, row.assessment, row.address, row.submittedBy, row.requestType]
+      return [row.id, row.name, row.assessment, row.waiverDescription, row.address, row.submittedBy, row.requestType]
         .some((value) => value.toLowerCase().includes(term));
     });
   }, [allRows, search, statusFilter]);

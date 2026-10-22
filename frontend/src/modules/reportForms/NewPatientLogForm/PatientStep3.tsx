@@ -3,6 +3,7 @@ import OperationInventorySection from "../component/OperationInventorySection"
 
 import type { InventoryItem, WaiverForm } from "@/types/patientLog"
 import ImageUpload, { addImageFiles, useImageDrag } from "../component/ImageUpload"
+import ReportAutocompleteTextarea from "../component/ReportAutocompleteTextarea"
 
 type PatientStep3Props = {
   waiverForm: WaiverForm
@@ -43,6 +44,23 @@ export default function PatientStep3({
     >
       <CommonFormSection title="WAIVER FORM">
         <div className="flex h-full flex-col">
+          <div className="mb-5">
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Description</span>
+            </label>
+
+            <ReportAutocompleteTextarea
+              formType="patients"
+              suggestionField="waiverForm.description"
+              variant="compact"
+              rows={6}
+              maxLength={10000}
+              placeholder="Add details about the waiver form"
+              value={waiverForm.description}
+              onChange={(e) => onWaiverFormChange({ description: e.target.value })}
+            />
+          </div>
+
           <ImageUpload
             images={waiverForm.images}
             onImagesChange={(images) => onWaiverFormChange({ images })}

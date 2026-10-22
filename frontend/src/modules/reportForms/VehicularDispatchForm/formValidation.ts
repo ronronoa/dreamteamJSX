@@ -6,6 +6,7 @@ import { formatDate } from "../../../utils/dateTime"
 export type VehicularDispatchErrors = Record<string, string>
 
 const TIME_PATTERN = /^(0[1-9]|1[0-2]):[0-5][0-9]$/
+const FORM_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export function validateStep(step: number, data: VehicularDispatchReportData): VehicularDispatchErrors {
   if (step === 1) return validateDispatchDetails(data)
@@ -29,6 +30,7 @@ function validateDispatchDetails(data: VehicularDispatchReportData): VehicularDi
   else if (details.submitterName.trim().length > 120) errors["details.submitterName"] = "Name must be 120 characters or fewer."
 
   if (!isValidDate(details.date) || details.date > today) errors["details.date"] = "Choose a valid date that is not in the future."
+  if (!FORM_TIME_PATTERN.test(details.time)) errors["details.time"] = "Enter a valid time."
   if (details.responders.length === 0) errors["details.responders"] = "Select at least one responder."
   if (details.responders.length > 50) errors["details.responders"] = "Select no more than 50 responders."
   if (details.transfers.length === 0) errors["details.transfers"] = "Select at least one transfer type."

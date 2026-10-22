@@ -10,6 +10,7 @@ const MAX_IMAGE_COUNT = 10;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const INVENTORY_QUANTITY_PATTERN = /^(\d+)(?:\s+[A-Za-z][A-Za-z0-9 _-]{0,39})?$/;
 const OPERATION_TIME_PATTERN = /^(0[1-9]|1[0-2]):[0-5][0-9]$/;
+const FORM_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export function isFormEmpty(formData: OperationLogData): boolean {
   const { operationDetails, dispatch, people, operationDescription, inventory } = formData;
@@ -42,6 +43,9 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   else if (submitterName.length > 120) errors["operationDetails.submitterName"] = "Name must be 120 characters or fewer.";
   if (!operationDetails.date || operationDetails.date > formatDate(new Date(), "YYYY-MM-DD")) {
     errors["operationDetails.date"] = "Choose a valid date that is not in the future.";
+  }
+  if (!FORM_TIME_PATTERN.test(operationDetails.time)) {
+    errors["operationDetails.time"] = "Enter a valid time.";
   }
   if (!options.operationNatures.some((nature) => nature.name === operationDetails.natureOfOperation)) {
     errors["operationDetails.natureOfOperation"] = "Choose an operation type.";

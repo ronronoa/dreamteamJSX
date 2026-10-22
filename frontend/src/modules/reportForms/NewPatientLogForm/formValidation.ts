@@ -31,6 +31,7 @@ export function isFormEmpty(formData: PatientLogData): boolean {
     !firstAidHospital.hospitalName &&
     !firstAidHospital.hospitalRepresentative.surname &&
     !firstAidHospital.hospitalRepresentative.firstName &&
+    !waiverForm.description &&
     waiverForm.images.length === 0 &&
     inventory.length === 0
   )
@@ -53,6 +54,7 @@ export const isStep1Complete = (formData: PatientLogData) => {
   return (
     responderDetails.submitterName.trim() !== "" &&
     responderDetails.date.trim() !== "" &&
+    responderDetails.time.trim() !== "" &&
     responderDetails.typeOfRequest.trim() !== "" &&
     responderDetails.caller.surname.trim() !== "" &&
     responderDetails.caller.firstName.trim() !== "" &&

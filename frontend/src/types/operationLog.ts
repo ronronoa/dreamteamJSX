@@ -1,4 +1,4 @@
-import { getCurrentDateInputValue } from "../utils/dateTime"
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
 
 export interface PendingOperationRequest {
   id: string;
@@ -37,6 +37,7 @@ export const createEmptyPersonName = (): PersonName => ({
 export type OperationDetails = {
   submitterName: string
   date: string
+  time: string
   natureOfOperation: string
   nameOfCaller: PersonName
   teamAssigned: string[]
@@ -60,6 +61,7 @@ export type VehicularDispatch = {
 export const createEmptyOperationDetails = (): OperationDetails => ({
   submitterName: "",
   date: getCurrentDateInputValue(),
+  time: getCurrentTimeInputValue(),
   natureOfOperation: "",
   nameOfCaller: createEmptyPersonName(),
   teamAssigned: [],

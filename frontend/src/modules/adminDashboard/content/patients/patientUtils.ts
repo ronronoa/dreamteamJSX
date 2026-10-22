@@ -11,6 +11,7 @@ export interface PatientRow {
   age: string;
   address: string;
   assessment: string;
+  waiverDescription: string;
   submittedBy: string;
   requestType: string;
   status: PatientLogStatus;
@@ -52,6 +53,7 @@ export function toPatientRow(record: PatientLogRecord): PatientRow {
     age: getPatientAge(record),
     address: getPatientAddress(record),
     assessment: record.medical_assessment ?? "—",
+    waiverDescription: record.waiver_description?.trim() || "—",
     submittedBy: record.submitter?.name ?? record.submitter_name ?? "Unknown submitter",
     requestType: record.type_of_request.replaceAll("_", " "),
     status: record.status,

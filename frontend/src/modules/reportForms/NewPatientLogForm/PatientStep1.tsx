@@ -11,9 +11,10 @@ import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 const CommonInput = createFormAutocomplete("patients")
 
 const PatientRequestType = [
+  { label: "TRANSPORT ASSISTANCE", value: "TRANSPORT_ASSISTANCE" },
+  { label: "EMERGENCY", value: "EMERGENCY" },
   { label: "INTER FACILITY TRANSFER", value: "INTER_FACILITY_TRANSFER" },
-  { label: "PICK UP", value: "PICK_UP" },
-  { label: "DROP OFF", value: "DROP_OFF" },
+  { label: "FIRST AID", value: "FIRST_AID" },
 ]
 
 type PatientStep1Props = {
@@ -51,17 +52,27 @@ export default function PatientStep1({
             onChange={(e) => onResponderDetailsChange({ submitterName: e.target.value })}
           />
 
-          <CommonInput
-            variant="compact"
-            type="date"
-            label="Date"
-            value={responderDetails.date}
-            onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CommonInput
+              variant="compact"
+              type="date"
+              label="Date"
+              value={responderDetails.date}
+              onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
+            />
+
+            <CommonInput
+              variant="compact"
+              type="time"
+              label="Time"
+              value={responderDetails.time}
+              onChange={(e) => onResponderDetailsChange({ time: e.target.value })}
+            />
+          </div>
 
           <CommonSelect
             variant="compact"
-            label="Type of Request"
+            label="Request For"
             placeholder="Dropdown Menu"
             options={PatientRequestType}
             value={responderDetails.typeOfRequest}

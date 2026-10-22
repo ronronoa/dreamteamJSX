@@ -1,5 +1,5 @@
 import type { OperationLogData } from "../types/operationLog";
-import { apiFetch } from "./apiFetch";
+import { apiFetch, apiFetchWithOptionalAuth } from "./apiFetch";
 
 export interface OperationFormOptions {
   operationNatures: Array<{ name: string }>;
@@ -62,7 +62,7 @@ export async function submitOperationLog(
     requestBody.append("images", image);
   });
 
-  const response = await apiFetch("/report-forms/operations", {
+  const response = await apiFetchWithOptionalAuth("/report-forms/operations", {
     method: "POST",
     body: requestBody,
   });

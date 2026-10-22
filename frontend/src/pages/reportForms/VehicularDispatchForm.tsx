@@ -12,7 +12,7 @@ import VehicularDispatchLastStep from "@/modules/reportForms/VehicularDispatchFo
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { ROUTES } from "../../routes"
-import { getCurrentDateInputValue } from "@/utils/dateTime"
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "@/utils/dateTime"
 import {
   fetchLatestVehicularDispatchReport,
   fetchVehicularDispatchFormOptions,
@@ -84,6 +84,7 @@ function normalizeReport(value: unknown): VehicularDispatchReportData {
     details: {
       submitterName: storedString(details.submitterName),
       date: getCurrentDateInputValue(),
+      time: getCurrentTimeInputValue(),
       responders: Array.isArray(details.responders)
         ? details.responders.filter((responder): responder is string => typeof responder === "string")
         : [],

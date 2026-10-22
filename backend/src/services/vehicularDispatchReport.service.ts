@@ -60,6 +60,10 @@ function getDateTime(date: string, time: string, period: "AM" | "PM") {
   return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`)
 }
 
+function getFormDateTime(date: string, time: string) {
+  return new Date(`${date}T${time}:00`)
+}
+
 function toDateInputValue(date: Date | null | undefined): string {
   if (!date) return ""
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
@@ -158,6 +162,7 @@ export const vehicularDispatchReportService = {
       details: {
         submitterName: dispatch.submitter_name ?? "",
         date: toDateInputValue(dispatch.dispatch_date),
+        time: `${String(dispatch.dispatch_date.getHours()).padStart(2, "0")}:${String(dispatch.dispatch_date.getMinutes()).padStart(2, "0")}`,
         responders: dispatch.responders.map((responder) => responder.user_id),
         transfers: dispatch.transfers.map((transfer) => transfer === "DROP_OFF" ? "Drop-Off" : "Pick-Up"),
       },
@@ -196,7 +201,7 @@ export const vehicularDispatchReportService = {
     }
   },
 
-  async create(form: VehicularDispatchReportInput) {
+  async create(form: VehicularDispatchReportInput, submittedBy: string | null) {
     const [vehicle, responders] = await Promise.all([
       form.dispatch.vehicle === "other" || form.dispatch.vehicle === "none"
         ? Promise.resolve(null)
@@ -234,12 +239,12 @@ export const vehicularDispatchReportService = {
 
       return transaction.vehicularDispatch.create({
       data: {
-        dispatch_date: new Date(`${form.details.date}T00:00:00`),
+        dispatch_date: getFormDateTime(form.details.date, form.details.time),
         submitter_name: form.details.submitterName,
         transfers: form.details.transfers.map((transfer) => transfer === "Drop-Off" ? "DROP_OFF" : "PICK_UP"),
         dispatch_type: form.details.transfers[0] === "Drop-Off" ? "DROP_OFF" : form.details.transfers[0] === "Pick-Up" ? "PICK_UP" : null,
         status: "PENDING",
-        submitted_by: null,
+        submitted_by: submittedBy,
         vehicle_id: vehicle?.vehicle_id ?? null,
         vehicle_name: form.dispatch.vehicle === "other" ? form.dispatch.vehicleOther?.trim() ?? null : null,
         driver_name: form.dispatch.vehicle === "none" ? null : form.dispatch.driver || null,

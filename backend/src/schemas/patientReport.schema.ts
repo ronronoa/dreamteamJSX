@@ -16,6 +16,12 @@ const addressSchema = z.object({
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);
 const dispatchTimeSchema = z.preprocess((value) => value === "" ? "12:00" : value, timeSchema);
+const formTimeSchema = z.preprocess(
+  (value) => value === "" || value === undefined
+    ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
+    : value,
+  z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+);
 const odometerSchema = z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().nonnegative());
 const optionalOdometerSchema = z.union([odometerSchema, z.literal("")]);
 const transferSelectionSchema = z
@@ -37,7 +43,13 @@ export const PatientReportSchema = z.object({
   responderDetails: z.object({
     submitterName: z.string().trim().min(1).max(120),
     date: z.iso.date(),
-    typeOfRequest: z.enum(["INTER_FACILITY_TRANSFER", "PICK_UP", "DROP_OFF"]),
+    time: formTimeSchema,
+    typeOfRequest: z.enum([
+      "TRANSPORT_ASSISTANCE",
+      "EMERGENCY",
+      "INTER_FACILITY_TRANSFER",
+      "FIRST_AID",
+    ]),
     caller: personNameSchema,
     teamAssigned: transferSelectionSchema,
     responders: z.array(z.uuid()).min(1).max(50),
@@ -84,6 +96,9 @@ export const PatientReportSchema = z.object({
     hospitalOutTime: timeSchema,
     hospitalOutPeriod: z.enum(["AM", "PM"]),
   }),
+  waiverForm: z.object({
+    description: z.string().trim().max(10000).default(""),
+  }).default({ description: "" }),
   inventory: z.array(z.object({
     id: z.string().max(100),
     itemName: z.string().trim().min(1).max(120),

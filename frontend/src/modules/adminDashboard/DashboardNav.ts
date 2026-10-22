@@ -33,7 +33,7 @@ const activityItem  = { label: "Activity Logs",  href: D.ACTIVITYLOGS,  icon: Ro
 const reportsItem  = { label: "TODO:Reports",       href: D.REPORTS,  icon: FileText };
 const settingsItem = { label: "Settings",      href: D.SETTINGS, icon: Settings };
 const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Users };
-const vehiclesItem = { label: "Vehicle Fleet", href: D.VEHICLES, icon: Truck };
+// const vehiclesItem = { label: "Vehicle Fleet", href: D.VEHICLES, icon: Truck };
 
 const defaultSections: DashboardSidebarSection[] = [];
 
@@ -41,7 +41,8 @@ const superAdminSections: DashboardSidebarSection[] = [
   { label: "Main", items: [dashboardItem] },
   {
     label: "Administration",
-    items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],
+    // items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],
+    items: [usersItem, activityItem, profileItem, settingsItem],
   },
 ];
 

@@ -47,6 +47,7 @@ export default function OperationStep4({ formData, options }: OperationStep4Prop
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={operationDetails.submitterName} />
             <SummaryField label="Date" value={operationDetails.date} />
+            <SummaryField label="Time" value={operationDetails.time} />
             <SummaryField label="Nature of Operation" value={operationDetails.natureOfOperation} />
             <SummaryField label="Caller" value={formatPersonName(operationDetails.nameOfCaller)} />
             <SummaryField label="Team Assigned" value={teamNames.join(", ")} />

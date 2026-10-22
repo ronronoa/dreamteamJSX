@@ -43,24 +43,26 @@ export default function ManageUsers() {
         confirmLabel={teamSubmitting ? "Deleting…" : "Delete team"}
         variant="danger"
       />
-      {modalOpen && <EditUserModal
-        open={modalOpen}
-        user={selectedUser}
-        teams={teams}
-        submitting={submitting}
-        error={modalError}
-        onClose={() => setModalOpen(false)}
-        onSubmit={saveUser}
+      {modalOpen && 
+        <EditUserModal
+          open={modalOpen}
+          user={selectedUser}
+          teams={teams}
+          submitting={submitting}
+          error={modalError}
+          onClose={() => setModalOpen(false)}
+          onSubmit={saveUser}
       />}
-      {teamModalOpen && <TeamModal
-        key={teamToEdit?.team_id ?? "new-team"}
-        open={teamModalOpen}
-        team={teamToEdit}
-        submitting={teamSubmitting}
-        error={teamError}
-        onClose={() => { setTeamModalOpen(false); setTeamToEdit(null); setTeamError(""); }}
-        onSubmit={saveTeam}
-      />}
+      {teamModalOpen && 
+        <TeamModal
+          key={teamToEdit?.team_id ?? "new-team"}
+          open={teamModalOpen}
+          team={teamToEdit}
+          submitting={teamSubmitting}
+          error={teamError}
+          onClose={() => { setTeamModalOpen(false); setTeamToEdit(null); setTeamError(""); }}
+          onSubmit={saveTeam}
+        />}
       <div className="space-y-7">
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

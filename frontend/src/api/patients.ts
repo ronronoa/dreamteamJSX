@@ -17,6 +17,7 @@ export interface PatientLogRecord {
   spo2: string | null;
   temp: string | null;
   medical_assessment: string | null;
+  waiver_description: string | null;
   report_data: unknown;
   hospital_name: string | null;
   hospital_representative: string | null;

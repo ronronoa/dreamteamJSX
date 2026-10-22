@@ -55,6 +55,7 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={responderDetails.submitterName} />
             <SummaryField label="Date" value={responderDetails.date} />
+            <SummaryField label="Time" value={responderDetails.time} />
             <SummaryField label="Type of Request" value={responderDetails.typeOfRequest} />
             <SummaryField label="Caller" value={formatPersonName(responderDetails.caller)} />
             <SummaryField label="Transfer" value={selectedTransfers.join(", ")} />
@@ -168,6 +169,13 @@ export default function PatientStep4({ formData, options }: PatientStep4Props) {
           className="w-full sm:min-h-0"
         >
           <div className="space-y-2">
+            <div className="mb-5">
+              <p className="mb-1 text-sm font-semibold text-slate-700">Description</p>
+              <p className="whitespace-pre-wrap rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-slate-900">
+                {waiverForm.description || "—"}
+              </p>
+            </div>
+
             {waiverForm.images.map((file, index) => (
               <button
                 key={`${file.name}-${index}`}

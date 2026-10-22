@@ -243,7 +243,7 @@ ADMIN rejects     → REJECTED
 // POST /api/patients/:id/logs
 // Body: {
 //   logDate: string (ISO datetime),
-//   typeOfRequest: "INTER_FACILITY_TRANSFER" | "PICK_UP" | "DROP_OFF",
+//   typeOfRequest: "TRANSPORT_ASSISTANCE" | "EMERGENCY" | "INTER_FACILITY_TRANSFER" | "FIRST_AID",
 //   nameOfCaller?: string,
 //   bp?: string,
 //   pr?: string,

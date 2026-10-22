@@ -138,7 +138,7 @@ export const reportFormsController = {
         throw new ValidationError("Review the operation report fields and try again.", fields);
       }
       const files = (req.files ?? []) as Express.Multer.File[];
-      const record = await reportFormsService.createOperation(parsedForm.data, files);
+      const record = await reportFormsService.createOperation(parsedForm.data, files, req.user?.userId ?? null);
       res.locals["activityActorName"] = parsedForm.data.operationDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ operation: record });
     } catch (error) {
@@ -161,7 +161,7 @@ export const reportFormsController = {
         throw new ValidationError("Review the patient report fields and try again.", fields);
       }
       const files = (req.files ?? []) as Express.Multer.File[];
-      const record = await reportFormsService.createPatient(parsedForm.data, files);
+      const record = await reportFormsService.createPatient(parsedForm.data, files, req.user?.userId ?? null);
       res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ patientLog: record });
     } catch (error) {

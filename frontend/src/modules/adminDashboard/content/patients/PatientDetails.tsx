@@ -52,6 +52,7 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
             ["Transfer", Array.isArray(responderDetails.teamAssigned) ? responderDetails.teamAssigned.join(", ") : ""],
             ["Submitter", record.submitter?.name ?? record.submitter_name], ["Responders", record.responders.map(({ user }) => user.name).join(", ")],
             ["Medical Assessment", record.medical_assessment], ["First Aid Given", String(firstAid.firstAidGiven ?? "")],
+            ["Waiver Description", record.waiver_description],
           ]} />
         </DetailsSection>
       </section>

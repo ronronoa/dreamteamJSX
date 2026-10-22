@@ -1,4 +1,4 @@
-import { getCurrentDateInputValue } from "../utils/dateTime"
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
 
 export type Sex = "Male" | "Female" | ""
 
@@ -19,6 +19,7 @@ export const createEmptyPersonName = (): PersonName => ({
 export type ResponderDetails = {
   submitterName: string
   date: string
+  time: string
   typeOfRequest: string
   caller: PersonName
   teamAssigned: string[]
@@ -42,6 +43,7 @@ export type VehicularDispatch = {
 export const createEmptyResponderDetails = (): ResponderDetails => ({
   submitterName: "",
   date: getCurrentDateInputValue(),
+  time: getCurrentTimeInputValue(),
   typeOfRequest: "",
   caller: createEmptyPersonName(),
   teamAssigned: [],
@@ -135,10 +137,12 @@ export { calculateAge } from "../utils/dateTime"
 // step3 waiver form & inventory
 
 export type WaiverForm = {
+  description: string
   images: File[]
 }
 
 export const createEmptyWaiverForm = (): WaiverForm => ({
+  description: "",
   images: [],
 })
 

@@ -81,6 +81,7 @@ export function createPatientPdf(records: PatientLogRecord[]) {
     addSection("Assessment and care");
     addLine("Assessment", record.medical_assessment);
     addLine("First aid", firstAid.firstAidGiven);
+    addLine("Waiver description", record.waiver_description);
     addLine("Blood pressure", record.bp);
     addLine("Pulse", record.pr);
     addLine("SpO₂", record.spo2);

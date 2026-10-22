@@ -1,6 +1,12 @@
 import { z } from "zod"
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/)
+const formTimeSchema = z.preprocess(
+  (value) => value === "" || value === undefined
+    ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
+    : value,
+  z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+)
 const odometerSchema = z.string()
   .regex(/^\d+$/)
   .transform(Number)
@@ -44,6 +50,7 @@ export const VehicularDispatchReportSchema = z.object({
     date: z.iso.date().refine((date) => date <= getTodayDateInputValue(), {
       message: "Dispatch date cannot be in the future.",
     }),
+    time: formTimeSchema,
     responders: z.array(z.uuid()).min(1).max(50),
     transfers: z.array(z.enum(["Drop-Off", "Pick-Up"])).min(1).max(2),
   }),

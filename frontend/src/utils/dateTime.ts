@@ -20,6 +20,10 @@ export function getCurrentDateInputValue() {
   return dayjs().format("YYYY-MM-DD");
 }
 
+export function getCurrentTimeInputValue() {
+  return dayjs().format("HH:mm");
+}
+
 export function formatTime(value: DateTimeValue, pattern = "h:mm A") {
   return formatDateTimeValue(value, pattern);
 }

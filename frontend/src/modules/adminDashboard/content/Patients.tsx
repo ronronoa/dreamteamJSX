@@ -90,6 +90,10 @@ export default function Patients() {
                 { label: "Age", accessor: "age" },
                 { label: "Address", accessor: "address" },
                 { label: "Assessment", accessor: "assessment" },
+                {
+                  label: "Waiver Description",
+                  render: (row) => <span className="block max-w-56 truncate" title={row.waiverDescription}>{row.waiverDescription}</span>,
+                },
                 { label: "Submitted by", accessor: "submittedBy" },
                 { label: "Status", render: (row) => <PatientStatusBadge status={row.status} /> },
                 {
@@ -146,6 +150,10 @@ export default function Patients() {
                 { label: "Age", accessor: "age" },
                 { label: "Address", accessor: "address" },
                 { label: "Assessment", accessor: "assessment" },
+                {
+                  label: "Waiver Description",
+                  render: (row) => <span className="block max-w-56 truncate" title={row.waiverDescription}>{row.waiverDescription}</span>,
+                },
                 { label: "Submitted by", accessor: "submittedBy" },
                 { label: "Status", render: (row) => <PatientStatusBadge status={row.status} /> },
                 { label: "Actions", align: "right", render: (row) => <button type="button" aria-label={`View ${row.id}`} title="View report" onClick={() => dashboard.setSelectedRecord(row.record)} className="text-gray-400 hover:text-gray-700"><ChevronRight size={16} /></button> },

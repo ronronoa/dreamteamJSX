@@ -48,3 +48,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   }
   return fetch(url, opts);
 }
+
+/** Fetch a public endpoint with the current user attached when a session exists. */
+export async function apiFetchWithOptionalAuth(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers);
+  const accessToken = await refreshAccessToken();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  return apiFetch(path, { ...options, headers });
+}

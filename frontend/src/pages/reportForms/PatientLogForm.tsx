@@ -34,7 +34,7 @@ import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
 import { hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
-import { getCurrentDateInputValue } from "@/utils/dateTime"
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "@/utils/dateTime"
 
 const PATIENT_DRAFT_KEY = "reportForms.patient.draft"
 const PATIENT_LATEST_KEY = "reportForms.patient.latest"
@@ -58,6 +58,7 @@ function normalizePatientReport(value: unknown): PatientLogData {
       ...emptyReport.responderDetails,
       ...report.responderDetails,
       date: getCurrentDateInputValue(),
+      time: getCurrentTimeInputValue(),
       teamAssigned: savedTransfers,
     },
     dispatch: { ...emptyReport.dispatch, ...report.dispatch },
@@ -80,7 +81,10 @@ function normalizePatientReport(value: unknown): PatientLogData {
         ...report.firstAidHospital?.hospitalRepresentative,
       },
     },
-    waiverForm: { images: [] },
+    waiverForm: {
+      description: typeof report.waiverForm?.description === "string" ? report.waiverForm.description : "",
+      images: [],
+    },
     inventory: [],
   }
 }

@@ -4,13 +4,14 @@ import {
   type Person,
   type VehicularDispatch,
 } from "./operationLog"
-import { getCurrentDateInputValue } from "../utils/dateTime"
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
 
 export type DispatchTransfer = "Drop-Off" | "Pick-Up"
 
 export type VehicularDispatchDetails = {
   submitterName: string
   date: string
+  time: string
   responders: string[]
   transfers: DispatchTransfer[]
 }
@@ -25,6 +26,7 @@ export const createEmptyVehicularDispatchReport = (): VehicularDispatchReportDat
   details: {
     submitterName: "",
     date: getCurrentDateInputValue(),
+    time: getCurrentTimeInputValue(),
     responders: [],
     transfers: [],
   },

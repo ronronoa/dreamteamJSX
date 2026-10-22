@@ -43,9 +43,12 @@ enum VehicleStatus {
 }
 
 enum PatientRequestType {
+  TRANSPORT_ASSISTANCE
+  EMERGENCY
   INTER_FACILITY_TRANSFER
-  PICK_UP
-  DROP_OFF
+  FIRST_AID
+  // PICK_UP
+  // DROP_OFF
 }
 
 enum DispatchType {
@@ -394,6 +397,7 @@ model PatientLog {
   spo2                    String?
   temp                    String?
   medical_assessment      String?
+  waiver_description      String?
   report_data             Json?
   hospital_name           String?
   hospital_representative String?

@@ -102,7 +102,7 @@ export const vehicularDispatchReportController = {
         throw new ValidationError("Review the vehicular dispatch fields and try again.", fields)
       }
 
-      const dispatch = await vehicularDispatchReportService.create(parsedForm.data)
+      const dispatch = await vehicularDispatchReportService.create(parsedForm.data, req.user?.userId ?? null)
       res.locals["activityActorName"] = parsedForm.data.details.submitterName
       res.status(201).json({ dispatch })
     } catch (error) {

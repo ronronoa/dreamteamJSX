@@ -44,14 +44,25 @@ export default function VehicularStep1({
             errorMessage={errors["details.submitterName"]}
           />
 
-          <CommonInput
-            variant="compact"
-            type="date"
-            label="Date"
-            value={details.date}
-            onChange={(e) => onDetailsChange({ date: e.target.value })}
-            errorMessage={errors["details.date"]}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CommonInput
+              variant="compact"
+              type="date"
+              label="Date"
+              value={details.date}
+              onChange={(e) => onDetailsChange({ date: e.target.value })}
+              errorMessage={errors["details.date"]}
+            />
+
+            <CommonInput
+              variant="compact"
+              type="time"
+              label="Time"
+              value={details.time}
+              onChange={(e) => onDetailsChange({ time: e.target.value })}
+              errorMessage={errors["details.time"]}
+            />
+          </div>
 
           <CommonSearchSelect
             variant="compact"

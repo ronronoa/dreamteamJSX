@@ -1,5 +1,5 @@
 import type { PatientLogData } from "../types/patientLog";
-import { apiFetch } from "./apiFetch";
+import { apiFetch, apiFetchWithOptionalAuth } from "./apiFetch";
 
 export interface PatientFormOptions {
   teams: Array<{ team_id: string; team_name: string }>;
@@ -36,7 +36,7 @@ export async function submitPatientLog(
     formdata.append("images", file);
   });
 
-  const response = await apiFetch("/report-forms/patients", {
+  const response = await apiFetchWithOptionalAuth("/report-forms/patients", {
     method: "POST",
     body: formdata,
   });

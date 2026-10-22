@@ -82,6 +82,10 @@ function getDateTime(date: string, time: string, period: "AM" | "PM") {
   return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`);
 }
 
+function getFormDateTime(date: string, time: string) {
+  return new Date(`${date}T${time}:00`);
+}
+
 function formatAddress(address: OperationReportInput["people"][number]["address"]) {
   return [
     address.phase && `Phase ${address.phase}`,
@@ -103,6 +107,11 @@ function getTimeInputValue(date: Date | null | undefined) {
     time: `${String(hour % 12 || 12).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
     period: hour >= 12 ? "PM" as const : "AM" as const,
   };
+}
+
+function getClockInputValue(date: Date | null | undefined) {
+  if (!date) return "";
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 function splitPersonName(fullName: string | null | undefined) {
@@ -262,6 +271,7 @@ export const reportFormsService = {
       operationDetails: {
         submitterName: operation.submitter_name ?? "",
         date: getDateInputValue(operation.operation_date),
+        time: getClockInputValue(operation.operation_date),
         natureOfOperation: operation.nature_of_operation,
         nameOfCaller: splitPersonName(operation.name_of_caller),
         teamAssigned: operation.teamAssignments.map((assignment) => assignment.team_id),
@@ -415,7 +425,7 @@ export const reportFormsService = {
     return { teams, responders, vehicles, operationNatures };
   },
 
-  async createOperation(form: OperationReportInput, files: UploadedFile[]) {
+  async createOperation(form: OperationReportInput, files: UploadedFile[], submittedBy: string | null) {
     const teamIds = form.operationDetails.teamAssigned;
     const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
     const [teams, responders, linkedInventoryItems] = await Promise.all([
@@ -497,11 +507,11 @@ export const reportFormsService = {
       const operation = await transaction.operationLog.create({
         data: {
           team_id: teamId,
-          operation_date: new Date(`${form.operationDetails.date}T00:00:00`),
+          operation_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
           name_of_caller: formatPersonName(form.operationDetails.nameOfCaller),
           nature_of_operation: form.operationDetails.natureOfOperation,
           event_description: form.operationDescription.description,
-          submitted_by: null,
+          submitted_by: submittedBy,
           submitter_name: form.operationDetails.submitterName.trim(),
           teamAssignments: {
             create: teamIds.map((teamId) => ({ team_id: teamId })),
@@ -533,8 +543,8 @@ export const reportFormsService = {
           },
           dispatches: {
             create: {
-              dispatch_date: new Date(`${form.operationDetails.date}T00:00:00`),
-              submitted_by: null,
+              dispatch_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
+              submitted_by: submittedBy,
               vehicle_id: vehicle?.vehicle_id ?? null,
               vehicle_name: form.dispatch.vehicle === "other" ? form.dispatch.vehicleOther?.trim() ?? null : null,
               driver_name: form.dispatch.vehicle === "none" ? null : form.dispatch.driver || null,
@@ -563,7 +573,7 @@ export const reportFormsService = {
     });
   },
 
-  async createPatient(form: PatientReportInput, files: UploadedFile[]) {
+  async createPatient(form: PatientReportInput, files: UploadedFile[], submittedBy: string | null) {
     const [responders, vehicle] = await Promise.all([
       prisma.user.findMany({
         where: {
@@ -586,10 +596,11 @@ export const reportFormsService = {
       throw new NotFoundError("Available vehicle", form.dispatch.vehicle);
     }
 
-    const { patientDetails, responderDetails, firstAidHospital, dispatch } = form;
+    const { patientDetails, responderDetails, firstAidHospital, waiverForm, dispatch } = form;
     const patientFullName = formatPersonName(patientDetails.name);
     const contactFullName = formatPersonName(patientDetails.contactPerson);
     const reportDate = responderDetails.date;
+    const reportDateTime = getFormDateTime(reportDate, responderDetails.time);
     const departure = getDateTime(reportDate, dispatch.departTime, dispatch.departPeriod);
     const arrival = getDateTime(reportDate, dispatch.arrivalTime, dispatch.arrivalPeriod);
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
@@ -619,8 +630,9 @@ export const reportFormsService = {
         lot: patientDetails.address.lot || null,
         patientLogs: {
           create: {
-            log_date: new Date(`${reportDate}T00:00:00`),
+            log_date: reportDateTime,
             type_of_request: responderDetails.typeOfRequest,
+            submitted_by: submittedBy,
             submitter_name: responderDetails.submitterName,
             status: "PENDING",
             name_of_caller: formatPersonName(responderDetails.caller) || null,
@@ -629,6 +641,7 @@ export const reportFormsService = {
             spo2: firstAidHospital.spo2 || null,
             temp: firstAidHospital.temp || null,
             medical_assessment: firstAidHospital.medicalAssessment || null,
+            waiver_description: waiverForm.description || null,
             hospital_name: firstAidHospital.hospitalName || null,
             hospital_representative: formatPersonName(firstAidHospital.hospitalRepresentative) || null,
             hospital_in_time: hospitalIn,
@@ -639,7 +652,9 @@ export const reportFormsService = {
             },
             dispatches: {
               create: {
-                dispatch_date: new Date(`${reportDate}T00:00:00`),
+                dispatch_date: reportDateTime,
+                submitted_by: submittedBy,
+                submitter_name: responderDetails.submitterName,
                  vehicle_id: vehicle?.vehicle_id ?? null,
                  vehicle_name: dispatch.vehicle === "other" ? dispatch.vehicleOther?.trim() ?? null : null,
                  driver_name: dispatch.vehicle === "none" ? null : dispatch.driver || null,
@@ -649,7 +664,7 @@ export const reportFormsService = {
                 arrival_time: arrival,
                  odometer_in: typeof dispatch.odometerIn === "number" ? dispatch.odometerIn : null,
                  odometer_out: typeof dispatch.odometerOut === "number" ? dispatch.odometerOut : null,
-                dispatch_type: responderDetails.typeOfRequest === "PICK_UP" ? "PICK_UP" : "DROP_OFF",
+                dispatch_type: responderDetails.teamAssigned[0] === "Pick-Up" ? "PICK_UP" : "DROP_OFF",
               },
             },
           },

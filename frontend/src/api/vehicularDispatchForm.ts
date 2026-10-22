@@ -1,5 +1,5 @@
 import type { VehicularDispatchReportData } from "../types/vehicularDispatchReport"
-import { apiFetch } from "./apiFetch"
+import { apiFetch, apiFetchWithOptionalAuth } from "./apiFetch"
 
 export interface VehicularDispatchFormOptions {
   vehicles: Array<{ vehicle_id: string; vehicle_name: string; plate_number: string; current_odometer: number }>
@@ -37,7 +37,7 @@ export async function fetchLatestVehicularDispatchReport(): Promise<VehicularDis
 }
 
 export async function submitVehicularDispatchReport(pin: string, formData: VehicularDispatchReportData) {
-  return readResponse<{ dispatch: unknown }>(await apiFetch("/report-forms/vehicular-dispatches", {
+  return readResponse<{ dispatch: unknown }>(await apiFetchWithOptionalAuth("/report-forms/vehicular-dispatches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pinNumber: pin, formData }),

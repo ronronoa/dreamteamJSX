@@ -60,14 +60,25 @@ export default function OperationStep1({
             errorMessage={errors["operationDetails.submitterName"]}
           />
 
-          <CommonInput
-            variant="compact"
-            type="date"
-            label="Date"
-            value={operationDetails.date}
-            onChange={(e) => onOperationDetailsChange({ date: e.target.value })}
-            errorMessage={errors["operationDetails.date"]}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CommonInput
+              variant="compact"
+              type="date"
+              label="Date"
+              value={operationDetails.date}
+              onChange={(e) => onOperationDetailsChange({ date: e.target.value })}
+              errorMessage={errors["operationDetails.date"]}
+            />
+
+            <CommonInput
+              variant="compact"
+              type="time"
+              label="Time"
+              value={operationDetails.time}
+              onChange={(e) => onOperationDetailsChange({ time: e.target.value })}
+              errorMessage={errors["operationDetails.time"]}
+            />
+          </div>
 
           <CommonSelect
             variant="compact"
