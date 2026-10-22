@@ -11,6 +11,11 @@ import { scanPatientLogImage, type PatientLogOcrResult } from "@/api/patientForm
 
 const MAX_OCR_IMAGE_BYTES = 8 * 1024 * 1024;
 
+type CreateReportWithAIProps = {
+  onProceed: (scanResult: PatientLogOcrResult, sourceImage: File | null) => void;
+  proceedDisabled?: boolean;
+};
+
 function createEmptyScanResult(): PatientLogOcrResult {
   return {
     requestFor: "",
@@ -47,7 +52,7 @@ function createEmptyScanResult(): PatientLogOcrResult {
   };
 }
 
-export default function CreateReportWithAI() {
+export default function CreateReportWithAI({ onProceed, proceedDisabled = false }: CreateReportWithAIProps) {
   const [image, setImage] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<PatientLogOcrResult>(createEmptyScanResult);
   const [isScanning, setIsScanning] = useState(false);
@@ -410,6 +415,9 @@ export default function CreateReportWithAI() {
             <div className="w-full p-2">
               <CommonButton
                 className="w-full"
+                type="button"
+                disabled={!image || isScanning || Boolean(scanError) || proceedDisabled}
+                onClick={() => onProceed(scanResult, image)}
               >
                 Proceed
               </CommonButton>

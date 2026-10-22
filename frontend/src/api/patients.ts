@@ -23,6 +23,7 @@ export interface PatientLogRecord {
   hospital_representative: string | null;
   hospital_in_time: string | null;
   hospital_out_time: string | null;
+  form_image: string | null;
   createdAt: string;
   patient: {
     patient_id: string;

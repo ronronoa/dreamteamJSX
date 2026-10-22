@@ -8,8 +8,11 @@ import { PatientReportSchema } from "@/schemas/patientReport.schema";
 import { unlink } from "node:fs/promises";
 
 async function removeUploadedFiles(req: Request) {
-  const files = req.files as Express.Multer.File[] | undefined;
-  if (!files) return;
+  const uploadedFiles = req.files;
+  const files = Array.isArray(uploadedFiles)
+    ? uploadedFiles
+    : Object.values(uploadedFiles ?? {}).flat();
+  if (files.length === 0) return;
 
   await Promise.all(files.map(async (file) => {
     try {
@@ -160,8 +163,15 @@ export const reportFormsController = {
         }
         throw new ValidationError("Review the patient report fields and try again.", fields);
       }
-      const files = (req.files ?? []) as Express.Multer.File[];
-      const record = await reportFormsService.createPatient(parsedForm.data, files, req.user?.userId ?? null);
+      const uploadedFiles = (req.files ?? {}) as Record<string, Express.Multer.File[]>;
+      const files = uploadedFiles.images ?? [];
+      const formImage = uploadedFiles.formImage?.[0] ?? null;
+      const record = await reportFormsService.createPatient(
+        parsedForm.data,
+        files,
+        req.user?.userId ?? null,
+        formImage,
+      );
       res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
       res.status(201).json({ patientLog: record });
     } catch (error) {

@@ -98,10 +98,14 @@ export async function fetchLatestPatientReport(): Promise<PatientLogData | null>
 export async function submitPatientLog(
   pin: string,
   formData: PatientLogData,
+  formImage: File | null = null,
 ) {
   const formdata = new FormData();
   formdata.append("pinNumber", pin);
   formdata.append("formData", JSON.stringify(formData));
+  if (formImage) {
+    formdata.append("formImage", formImage);
+  }
   formData.waiverForm.images.forEach((file) => {
     formdata.append("images", file);
   });

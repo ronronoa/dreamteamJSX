@@ -573,7 +573,12 @@ export const reportFormsService = {
     });
   },
 
-  async createPatient(form: PatientReportInput, files: UploadedFile[], submittedBy: string | null) {
+  async createPatient(
+    form: PatientReportInput,
+    files: UploadedFile[],
+    submittedBy: string | null,
+    formImage: UploadedFile | null = null,
+  ) {
     const [responders, vehicle] = await Promise.all([
       prisma.user.findMany({
         where: {
@@ -646,6 +651,7 @@ export const reportFormsService = {
             hospital_representative: formatPersonName(firstAidHospital.hospitalRepresentative) || null,
             hospital_in_time: hospitalIn,
             hospital_out_time: hospitalOut,
+            form_image: formImage ? imageUrl(formImage) : null,
             report_data: reportPayload,
             responders: {
               create: responderDetails.responders.map((userId) => ({ user_id: userId })),

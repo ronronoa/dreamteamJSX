@@ -191,8 +191,8 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
 
   return (
     <>
-      <CommonFormSection title="INVENTORY">
-        <div className="flex h-full flex-col">
+      <CommonFormSection title="INVENTORY" standardHeight={false} className="max-w-[800px] mx-auto">
+        <div className="flex h-full flex-col justify-between min-h-[500px]">
           <div className="mb-2 grid grid-cols-[1fr_140px_28px] gap-2">
             <span className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-bold text-slate-900">
               Item
@@ -223,19 +223,19 @@ export default function InventorySection({ inventory, onInventoryChange, errors 
             ))}
           </div>
 
-          <CommonButton
-            type="button"
-            variant="orange"
-            className="mt-4 flex w-full items-center justify-center gap-2"
-            onClick={openAddModal}
-            disabled={itemsLoading || Boolean(itemsError) || availableItems.length === 0}
-          >
-            {itemsLoading ? "Loading inventory…" : "Add Item"}
-            <PackagePlus size={18} />
-          </CommonButton>
-          {!itemsLoading && !itemsError && availableItems.length === 0 && (
-            <p className="mt-2 text-center text-xs text-slate-500">No stock items are available to add.</p>
-          )}
+            <CommonButton
+              type="button"
+              variant="orange"
+              className="mt-4 flex w-full items-center justify-center gap-2"
+              onClick={openAddModal}
+              disabled={itemsLoading || Boolean(itemsError) || availableItems.length === 0}
+            >
+              {itemsLoading ? "Loading inventory…" : "Add Item"}
+              <PackagePlus size={18} />
+            </CommonButton>
+            {!itemsLoading && !itemsError && availableItems.length === 0 && (
+              <p className="mt-2 text-center text-xs text-slate-500">No stock items are available to add.</p>
+            )}
         </div>
       </CommonFormSection>
 

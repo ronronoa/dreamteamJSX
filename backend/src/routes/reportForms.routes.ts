@@ -13,6 +13,10 @@ import rateLimit from "express-rate-limit";
 
 const uploadReportImages = createReportFormUpload();
 const parseReportImages = uploadReportImages.array("images", 10);
+const parsePatientReportImages = uploadReportImages.fields([
+  { name: "images", maxCount: 10 },
+  { name: "formImage", maxCount: 1 },
+]);
 const uploadOcrImage = createOcrImageUpload().single("file");
 const reportFormPinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -62,6 +66,19 @@ function parseImages(req: Request, res: Response, next: NextFunction) {
   });
 }
 
+function parsePatientImages(req: Request, res: Response, next: NextFunction) {
+  parsePatientReportImages(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      const message = error.code === "LIMIT_FILE_SIZE"
+        ? "Each patient log image must be 8 MB or smaller."
+        : "Attach up to 10 report images and one scanned form image.";
+      next(new ValidationError(message, { images: [message] }));
+      return;
+    }
+    next(error);
+  });
+}
+
 function parseOcrImage(req: Request, res: Response, next: NextFunction) {
   uploadOcrImage(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError) {
@@ -84,7 +101,7 @@ reportFormsRoutes.get("/report-forms/operations/latest", reportFormsController.g
 reportFormsRoutes.get("/report-forms/patients/latest", reportFormsController.getLatestPatientReport);
 reportFormsRoutes.post("/report-forms/patients/scan", optionalAuth, parseOcrImage, ocrController.scanPatientLogImage);
 reportFormsRoutes.post("/report-forms/operations", optionalAuth, reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
-reportFormsRoutes.post("/report-forms/patients", optionalAuth, reportFormPinLimiter, parseImages, reportFormsController.submitPatient);
+reportFormsRoutes.post("/report-forms/patients", optionalAuth, reportFormPinLimiter, parsePatientImages, reportFormsController.submitPatient);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/options", vehicularDispatchReportController.getOptions);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/latest", vehicularDispatchReportController.getLatest);
 reportFormsRoutes.post("/report-forms/vehicular-dispatches", optionalAuth, reportFormPinLimiter, vehicularDispatchReportController.submit);

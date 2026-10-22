@@ -13,7 +13,7 @@ import OperationLogForm from "./pages/reportForms/OperationLogForm"
 import PatientLogForm from "./pages/reportForms/PatientLogForm"
 import VehicularDispatchForm from "./pages/reportForms/VehicularDispatchForm"
 
-import CreateReportWithAI from "./pages/CreateReportWithAI"
+import CreateReportWithAIPatients from "./pages/reportForms/CreateReportWithAIPatients"
 
 import TestComponent from "./pages/TestComponent"
 import LoadingScreen from "./components/common/LoadingScreen"
@@ -78,7 +78,7 @@ function App() {
         <Route path={ROUTES.PATIENTLOG_FORM} element={<PatientLogForm/>}/>
         <Route path={ROUTES.VEHICULARDISPATCH_FORM} element={<VehicularDispatchForm/>} />
 
-        <Route path={ROUTES.SCAN} element={<CreateReportWithAI/>} />
+        <Route path={ROUTES.SCAN} element={<CreateReportWithAIPatients/>} />
 
 
         <Route

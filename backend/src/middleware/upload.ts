@@ -89,7 +89,8 @@ export function createReportFormUpload() {
 
   return multer({
     storage,
-    limits: { fileSize: 8 * 1024 * 1024, files: 10 },
+    // A patient report can include 10 attachments plus its scanned source form.
+    limits: { fileSize: 8 * 1024 * 1024, files: 11 },
     fileFilter: (_req, file, callback) => {
       if (!extensionsByMimeType[file.mimetype]) {
         callback(new ValidationError("Report attachments must be JPG, PNG, or WebP images.", {

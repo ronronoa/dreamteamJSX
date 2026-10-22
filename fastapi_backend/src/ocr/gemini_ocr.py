@@ -10,7 +10,6 @@ from src.ocr.patient_log_schema import PatientLogOCR
 class GeminiOCR:
     _MODEL_NAME = "gemini-3.5-flash-lite"
     _GOOGLE_API_KEY = GOOGLE_API_KEY
-    # Gemini scans can take 30–45 seconds for a full patient log image.
     _GEMINI_TIMEOUT_SECONDS = 120
     _client = None
 
