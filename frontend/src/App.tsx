@@ -13,6 +13,8 @@ import OperationLogForm from "./pages/reportForms/OperationLogForm"
 import PatientLogForm from "./pages/reportForms/PatientLogForm"
 import VehicularDispatchForm from "./pages/reportForms/VehicularDispatchForm"
 
+import CreateReportWithAI from "./pages/CreateReportWithAI"
+
 import TestComponent from "./pages/TestComponent"
 import LoadingScreen from "./components/common/LoadingScreen"
 import { useEffect } from "react"
@@ -75,6 +77,8 @@ function App() {
         <Route path={ROUTES.OPERATIONLOG_FORM} element={<OperationLogForm/>}/>
         <Route path={ROUTES.PATIENTLOG_FORM} element={<PatientLogForm/>}/>
         <Route path={ROUTES.VEHICULARDISPATCH_FORM} element={<VehicularDispatchForm/>} />
+
+        <Route path={ROUTES.SCAN} element={<CreateReportWithAI/>} />
 
 
         <Route

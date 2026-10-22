@@ -19,4 +19,7 @@ export const ROUTES = {
     SETTINGS: "/dashboard/settings",
     ACTIVITYLOGS: "/dashboard/activity",
   },
+
+
+  SCAN: "/scan/patientslogform"
 } as const;

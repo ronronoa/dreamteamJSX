@@ -26,7 +26,7 @@ export default function Title(){
       <CommonButton
         variant="someKindOfUniquePurpleToOrange"
         className="text-xl"
-        disabled
+        onClick={() => navigate(ROUTES.SCAN)}
       >
         Create Report with AI
       </CommonButton>

@@ -1,0 +1,145 @@
+import CommonBackground from "@/components/common/background/CommonBackground";
+import CommonCheckbox from "@/components/common/widgets/CommonCheckbox";
+import CommonInput from "@/components/common/widgets/CommonInput";
+import CommonTextarea from "@/components/common/widgets/CommonTextarea";
+import ImageUpload from "@/modules/reportForms/component/ImageUpload";
+import { Maximize } from "lucide-react";
+
+export default function CreateReportWithAI() {
+  return (
+    <CommonBackground className="h-screen">
+      <main className="h-screen grid grid-rows-1 lg:grid-cols-[1fr_0.7fr] gap-4 p-4">
+        <section className="w-full  border-2">
+          {/* <ImageUpload/> */}
+        </section>
+
+        <section className="flex flex-col gap-10 rounded-2xl py-4 bg-black/15 border border-purple-900">
+
+          <div className="flex items-center gap-2 p-4">
+            <div className="p-2 rounded-2xl bg-slate-500/10">
+              <Maximize size={36} className="text-purple-600/80"/>
+            </div>
+
+            <span className="flex flex-col  text-slate-100">
+              <h1 className="text-lg font-extrabold">
+                AI Scan Results
+              </h1>
+              <p className="text-sm text-slate-300/50">
+                Structured data extraction result
+              </p>
+            </span>
+          </div>
+
+          <div className="px-4 flex flex-col gap-4">
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Request for</label>
+              <div className="flex gap-4 justify-between">
+                <CommonCheckbox label="T/A" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="EMERGENCY" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="IFT" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="FIRST AID" labelClassName="text-slate-100 font-extrabold"/>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.57fr_1fr_0.1fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Date</label>
+              <CommonInput variant="compact"/>
+
+              <label className=" block text-lg font-bold text-slate-100">Time</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">From</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">To</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Patient Name</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Gender</label>
+              <div className="flex gap-10 justify-start">
+                <CommonCheckbox label="MALE" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="FEMALE" labelClassName="text-slate-100 font-extrabold"/>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Birthday</label>
+              <CommonInput type="date" variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Address</label>
+
+              <div className="flex gap-4 items-center">
+                <label className=" block text-lg font-bold text-slate-100">PHASE</label>
+                <CommonInput type="number" variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">PACKAGE</label>
+                <CommonInput type="number" variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">BLOCK</label>
+                <CommonInput type="number" variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">LOT</label>
+                <CommonInput type="number" variant="compact"/>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Contact Person</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Contact No.</label>
+              <CommonInput variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-start bg-black/10 p-3">
+              <label className="block text-lg font-bold text-slate-100 mt-1">Assessment</label>
+              <CommonTextarea placeholder="(Patient's Condition)" variant="compact"/>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Vitals</label>
+
+              <div className="flex gap-4 items-center">
+                <label className=" block text-lg font-bold text-slate-100">BP</label>
+                <CommonInput variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">PR</label>
+                <CommonInput variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">SPO2</label>
+                <CommonInput variant="compact"/>
+
+                <label className=" block text-lg font-bold text-slate-100">TEMP</label>
+                <CommonInput variant="compact"/>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[0.25fr_1fr] rounded-2xl gap-4 items-center bg-black/10 p-3">
+              <label className=" block text-lg font-bold text-slate-100">Gender</label>
+              <div className="flex gap-10 justify-start">
+                <CommonCheckbox label="MALE" labelClassName="text-slate-100 font-extrabold"/>
+                <CommonCheckbox label="FEMALE" labelClassName="text-slate-100 font-extrabold"/>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+      </main>
+    </CommonBackground>
+  )
+}
