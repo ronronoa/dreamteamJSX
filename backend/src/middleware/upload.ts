@@ -101,3 +101,25 @@ export function createReportFormUpload() {
     },
   });
 }
+
+export function createOcrImageUpload() {
+  const supportedMimeTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ]);
+
+  return multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024, files: 1 },
+    fileFilter: (_req, file, callback) => {
+      if (!supportedMimeTypes.has(file.mimetype)) {
+        callback(new ValidationError("Upload a JPG, PNG, or WebP image.", {
+          file: ["Upload a JPG, PNG, or WebP image."],
+        }));
+        return;
+      }
+      callback(null, true);
+    },
+  });
+}

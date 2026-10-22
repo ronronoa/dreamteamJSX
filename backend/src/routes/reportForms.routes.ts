@@ -2,8 +2,9 @@ import { reportFormsController } from "@/controllers/reportForms.controller";
 import { operationController } from "@/controllers/operation.controller";
 import { patientLogController } from "@/controllers/patientLog.controller";
 import { vehicularDispatchReportController } from "@/controllers/vehicularDispatchReport.controller";
+import { ocrController } from "@/controllers/ocr.controller";
 import { optionalAuth, requireAuth, requireRole } from "@/middleware/auth.middleware";
-import { createReportFormUpload } from "@/middleware/upload";
+import { createOcrImageUpload, createReportFormUpload } from "@/middleware/upload";
 import { ValidationError } from "@/shared/errors";
 import { Router } from "express";
 import multer from "multer";
@@ -12,6 +13,7 @@ import rateLimit from "express-rate-limit";
 
 const uploadReportImages = createReportFormUpload();
 const parseReportImages = uploadReportImages.array("images", 10);
+const uploadOcrImage = createOcrImageUpload().single("file");
 const reportFormPinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
@@ -60,6 +62,19 @@ function parseImages(req: Request, res: Response, next: NextFunction) {
   });
 }
 
+function parseOcrImage(req: Request, res: Response, next: NextFunction) {
+  uploadOcrImage(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      const message = error.code === "LIMIT_FILE_SIZE"
+        ? "The image must be 8 MB or smaller."
+        : "Upload one JPG, PNG, or WebP image.";
+      next(new ValidationError(message, { file: [message] }));
+      return;
+    }
+    next(error);
+  });
+}
+
 // no requireAuth for this, any member/non signed-in users can submit
 reportFormsRoutes.get("/report-forms/operations/options", reportFormsController.getOperationOptions);
 reportFormsRoutes.get("/report-forms/:formType/suggestions", reportFormsController.getReportFormSuggestions);
@@ -67,6 +82,7 @@ reportFormsRoutes.get("/report-forms/patients/options", reportFormsController.ge
 reportFormsRoutes.get("/report-forms/inventory/last-selection", reportFormsController.getLastInventorySelection);
 reportFormsRoutes.get("/report-forms/operations/latest", reportFormsController.getLatestOperationReport);
 reportFormsRoutes.get("/report-forms/patients/latest", reportFormsController.getLatestPatientReport);
+reportFormsRoutes.post("/report-forms/patients/scan", optionalAuth, parseOcrImage, ocrController.scanPatientLogImage);
 reportFormsRoutes.post("/report-forms/operations", optionalAuth, reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
 reportFormsRoutes.post("/report-forms/patients", optionalAuth, reportFormPinLimiter, parseImages, reportFormsController.submitPatient);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/options", vehicularDispatchReportController.getOptions);

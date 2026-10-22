@@ -59,10 +59,11 @@ function normalizePatientReport(value: unknown): PatientLogData {
   const report = value as Partial<PatientLogData> & {
     responderDetails?: Partial<ResponderDetails> & { teamAssigned?: unknown }
   }
+  const savedResponderData: Partial<ResponderDetails> & { teamAssigned?: unknown } = report.responderDetails ?? {};
   const {
     teamAssigned: legacyTeamAssigned,
     ...savedResponderDetails
-  } = report.responderDetails ?? {}
+  } = savedResponderData
   const dispositionType = normalizeDisposition(
     savedResponderDetails.dispositionType || legacyTeamAssigned,
   )

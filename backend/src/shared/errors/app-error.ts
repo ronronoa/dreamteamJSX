@@ -63,6 +63,15 @@ export class InternalError extends AppError {
   }
 }
 
+export class BadGatewayError extends AppError {
+  readonly code = "UPSTREAM_SERVICE_ERROR";
+  readonly statusCode = 502;
+
+  constructor(message = "The OCR service could not process this image.") {
+    super(message);
+  }
+}
+
 export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError;
 }

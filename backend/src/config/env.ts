@@ -6,6 +6,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   ACCESS_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_SECRET: z.string().min(32),
+  OCR_BACKEND_URL: z.string().url(),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

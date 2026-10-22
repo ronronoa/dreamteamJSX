@@ -10,7 +10,8 @@ from src.ocr.patient_log_schema import PatientLogOCR
 class GeminiOCR:
     _MODEL_NAME = "gemini-3.5-flash-lite"
     _GOOGLE_API_KEY = GOOGLE_API_KEY
-    _GEMINI_TIMEOUT_SECONDS = 20
+    # Gemini scans can take 30–45 seconds for a full patient log image.
+    _GEMINI_TIMEOUT_SECONDS = 120
     _client = None
 
     _PROMPT = """
@@ -134,5 +135,7 @@ the image:
             response_data = json.loads(response.text)
         except json.JSONDecodeError as error:
             raise RuntimeError("Gemini returned invalid JSON for the patient log.") from error
+
+        print(json.dumps(response_data, indent=4))
 
         return PatientLogOCR.model_validate(response_data)
