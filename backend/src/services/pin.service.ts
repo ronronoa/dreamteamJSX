@@ -7,6 +7,16 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 15;
 
 export const pinService = {
+  async setGlobalPin(userId: string, pin: string) {
+    const pinHash = await argon2.hash(pin)
+    await prisma.systemSetting.upsert({
+      where: { setting_key: "security.globalPinHash" },
+      create: { setting_key: "security.globalPinHash", value: pinHash, updated_by: userId },
+      update: { value: pinHash, updated_by: userId },
+    })
+    return { success: true }
+  },
+
   async setPin(userId: string, data: SetPinInput) {
     const pinHash = await argon2.hash(data.pin);
 
@@ -82,5 +92,45 @@ export const pinService = {
     });
 
     return { valid: true };
+  },
+
+  async verifyReportFormPin(data: VerifyPinInput) {
+    const globalPinSetting = await prisma.systemSetting.findUnique({
+      where: { setting_key: "security.globalPinHash" },
+      select: { value: true },
+    })
+    if (globalPinSetting) {
+      if (await argon2.verify(globalPinSetting.value, data.pin)) return { valid: true }
+      throw new UnauthorizedError("Invalid global PIN.")
+    }
+
+    const pinOwners = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { not: "MEMBER" },
+        pinHash: { not: null },
+        OR: [{ pinLockedUntil: null }, { pinLockedUntil: { lte: new Date() } }],
+      },
+      select: { user_id: true, pinHash: true },
+    });
+    if (pinOwners.length === 0) {
+      throw new UnauthorizedError("A report PIN has not been set by an administrator yet.");
+    }
+
+    for (const pinOwner of pinOwners) {
+      if (pinOwner.pinHash && await argon2.verify(pinOwner.pinHash, data.pin)) {
+        await prisma.systemSetting.upsert({
+          where: { setting_key: "security.globalPinHash" },
+          create: {
+            setting_key: "security.globalPinHash",
+            value: pinOwner.pinHash,
+            updated_by: pinOwner.user_id,
+          },
+          update: {},
+        });
+        return { valid: true };
+      }
+    }
+    throw new UnauthorizedError("Invalid report PIN.");
   },
 };

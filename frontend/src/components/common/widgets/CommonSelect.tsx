@@ -32,6 +32,7 @@ interface CommonSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string
   options: CommonSelectOption[]
   variant?: CommonSelectVariant
+  errorMessage?: string
 }
 
 export default function CommonSelect({
@@ -40,6 +41,7 @@ export default function CommonSelect({
   options,
   variant = "default",
   className = "",
+  errorMessage,
   ...props
 }: CommonSelectProps) {
   const { label: labelClass, select: selectClass } = styles[variant]
@@ -47,17 +49,21 @@ export default function CommonSelect({
   return (
     <div>
       {label && (
-        <label htmlFor={props.id} className={labelClass}>
-          {label}
+        <label htmlFor={props.id} className={`${labelClass} flex flex-wrap items-baseline justify-between gap-x-2`}>
+          <span>{label}</span>
+          {errorMessage && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
         </label>
       )}
 
       <select
         {...props}
+        aria-invalid={Boolean(errorMessage)}
+        aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
         className={`
           w-full px-2 outline-none
           ${!props.value ? "text-gray-400" : ""}
           ${selectClass}
+          ${errorMessage ? "border-red-500 ring-2 ring-red-500" : ""}
           ${className}
         `}
       >

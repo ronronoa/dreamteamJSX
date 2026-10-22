@@ -1,21 +1,7 @@
-export interface PendingPatientRecord {
-  id: string;
-  date: Date;
-  nameOfPatient: string;
-  age: string;
-  address: string;
-  assessment: string;
-  submittedBy: string;
-}
-
-export interface PatientLogRecord extends PendingPatientRecord {
-  time: string;
-}
-
-// --------------------------------------------------------------
-// step1 responderDetails
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
 
 export type Sex = "Male" | "Female" | ""
+export type TransferDisposition = "DROP_OFF" | "PICK_UP" | ""
 
 export type PersonName = {
   surname: string
@@ -34,16 +20,19 @@ export const createEmptyPersonName = (): PersonName => ({
 export type ResponderDetails = {
   submitterName: string
   date: string
+  time: string
   typeOfRequest: string
   caller: PersonName
-  teamAssigned: string[]
+  dispositionType: TransferDisposition
   responders: string[]
+  otherResponders: string[]
 }
 
 export type VehicularDispatch = {
   from: string
   to: string
   vehicle: string
+  vehicleOther?: string
   driver: string
   departTime: string
   departPeriod: "AM" | "PM"
@@ -55,11 +44,13 @@ export type VehicularDispatch = {
 
 export const createEmptyResponderDetails = (): ResponderDetails => ({
   submitterName: "",
-  date: "",
+  date: getCurrentDateInputValue(),
+  time: getCurrentTimeInputValue(),
   typeOfRequest: "",
   caller: createEmptyPersonName(),
-  teamAssigned: [],
+  dispositionType: "",
   responders: [],
+  otherResponders: [],
 })
 
 export const createEmptyVehicularDispatch = (): VehicularDispatch => ({
@@ -143,27 +134,18 @@ export const createEmptyFirstAidHospital = (): FirstAidHospitalDetails => ({
   hospitalOutPeriod: "AM",
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-  const birth = new Date(birthdate)
-  if (Number.isNaN(birth.getTime())) return ""
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const hadBirthday =
-    today.getMonth() > birth.getMonth() ||
-    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate())
-  if (!hadBirthday) age -= 1
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 waiver form & inventory
 
 export type WaiverForm = {
+  description: string
   images: File[]
 }
 
 export const createEmptyWaiverForm = (): WaiverForm => ({
+  description: "",
   images: [],
 })
 
@@ -171,6 +153,8 @@ export type InventoryItem = {
   id: string
   itemName: string
   quantity: string
+  inventoryItemId?: string
+  unit?: string
 }
 
 export const createEmptyInventoryItem = (): InventoryItem => ({

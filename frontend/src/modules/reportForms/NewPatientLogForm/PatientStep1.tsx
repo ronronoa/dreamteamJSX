@@ -1,30 +1,22 @@
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonSelect from "../../../components/common/widgets/CommonSelect"
-import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
-import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
+import type { PatientFormOptions } from "@/api/patientForm"
 
 import type { ResponderDetails, VehicularDispatch } from "@/types/patientLog"
+import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
+import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
+import OtherRespondersInput from "../component/OtherRespondersInput"
+import { getCurrentDateInputValue } from "@/utils/dateTime"
+
+const CommonInput = createFormAutocomplete("patients")
 
 const PatientRequestType = [
+  { label: "TRANSPORT ASSISTANCE", value: "TRANSPORT_ASSISTANCE" },
+  { label: "EMERGENCY", value: "EMERGENCY" },
   { label: "INTER FACILITY TRANSFER", value: "INTER_FACILITY_TRANSFER" },
-  { label: "PICK UP", value: "PICK_UP" },
-  { label: "DROP OFF", value: "DROP_OFF" },
-  { label: "Other", value: "other" },
-]
-
-const TRANSFER_OPTIONS = ["Drop-off", "Pick-up"]
-
-const RESPONDER_OPTIONS = [
-  { label: "Responder 1", value: "responder-1" },
-  { label: "Responder 2", value: "responder-2" },
-]
-
-const VEHICLE_OPTIONS = [
-  { label: "Vehicle 1", value: "vehicle-1" },
-  { label: "Vehicle 2", value: "vehicle-2" },
-  { label: "Other", value: "other" },
+  { label: "FIRST AID", value: "FIRST_AID" },
 ]
 
 type PatientStep1Props = {
@@ -32,6 +24,9 @@ type PatientStep1Props = {
   onResponderDetailsChange: (patch: Partial<ResponderDetails>) => void
   dispatch: VehicularDispatch
   onDispatchChange: (patch: Partial<VehicularDispatch>) => void
+  options: PatientFormOptions
+  optionsLoading: boolean
+  errors: Record<string, string>
 }
 
 export default function PatientStep1({
@@ -39,20 +34,19 @@ export default function PatientStep1({
   onResponderDetailsChange,
   dispatch,
   onDispatchChange,
+  options,
+  optionsLoading,
+  errors,
 }: PatientStep1Props) {
-
-  const toggleTeam = (team: string) => {
-    const isSelected = responderDetails.teamAssigned.includes(team)
+  const selectTransfer = (dispositionType: "DROP_OFF" | "PICK_UP") => {
     onResponderDetailsChange({
-      teamAssigned: isSelected
-        ? responderDetails.teamAssigned.filter((t) => t !== team)
-        : [...responderDetails.teamAssigned, team],
+      dispositionType,
     })
   }
 
   return (
-    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
-      <CommonFormSection title="RESPONDER  DETAILS">
+    <div className="flex w-full flex-col justify-between gap-4 lg:flex-row min-h-[650px]">
+      <CommonFormSection title="RESPONDER  DETAILS" standardHeight={false}>
         <div className="space-y-4">
           <CommonInput
             variant="compact"
@@ -60,23 +54,40 @@ export default function PatientStep1({
             placeholder="Place holder"
             value={responderDetails.submitterName}
             onChange={(e) => onResponderDetailsChange({ submitterName: e.target.value })}
+            errorMessage={errors.submitterName}
           />
 
-          <CommonInput
-            variant="compact"
-            type="date"
-            label="Date"
-            value={responderDetails.date}
-            onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <CommonInput
+                variant="compact"
+                type="date"
+                label="Date"
+                value={responderDetails.date}
+                max={getCurrentDateInputValue()}
+                onChange={(e) => onResponderDetailsChange({ date: e.target.value })}
+                errorMessage={errors.date}
+              />
+            </div>
+
+            <CommonInput
+              variant="compact"
+              type="time"
+              label="Time"
+              value={responderDetails.time}
+              onChange={(e) => onResponderDetailsChange({ time: e.target.value })}
+              errorMessage={errors.time}
+            />
+          </div>
 
           <CommonSelect
             variant="compact"
-            label="Type of Request"
+            label="Request For"
             placeholder="Dropdown Menu"
             options={PatientRequestType}
             value={responderDetails.typeOfRequest}
             onChange={(e) => onResponderDetailsChange({ typeOfRequest: e.target.value })}
+            errorMessage={errors.typeOfRequest}
           />
 
           <div>
@@ -87,6 +98,7 @@ export default function PatientStep1({
                 variant="compact"
                 placeholder="Surname"
                 value={responderDetails.caller.surname}
+                errorMessage={errors.callerSurname}
                 onChange={(e) =>
                   onResponderDetailsChange({
                     caller: { ...responderDetails.caller, surname: e.target.value },
@@ -98,6 +110,7 @@ export default function PatientStep1({
                 variant="compact"
                 placeholder="First Name"
                 value={responderDetails.caller.firstName}
+                errorMessage={errors.callerFirstName}
                 onChange={(e) =>
                   onResponderDetailsChange({
                     caller: { ...responderDetails.caller, firstName: e.target.value },
@@ -133,32 +146,52 @@ export default function PatientStep1({
             variant="compact"
             label="Responders"
             placeholder="Search responder..."
-            options={RESPONDER_OPTIONS}
+            options={options.responders.map((responder) => ({ label: responder.name, value: responder.user_id }))}
             value={responderDetails.responders}
             onChange={(vals) => onResponderDetailsChange({ responders: vals })}
+            disabled={optionsLoading}
+            errorMessage={errors.responders}
           />
 
-          <div>
-            <label className="mb-1 block text-lg font-medium text-slate-900">Transfer</label>
+          <OtherRespondersInput
+            value={responderDetails.otherResponders}
+            onChange={(otherResponders) => onResponderDetailsChange({ otherResponders })}
+          />
+
+
+          <div className={errors.transfer ? "rounded-md border border-red-400 bg-red-50 p-2" : ""}>
+            <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+              <span>Transfer</span>
+            </label>
 
             <div className="flex gap-8">
-              {TRANSFER_OPTIONS.map((team) => (
-                <CommonCheckbox
-                  key={team}
-                  label={team}
-                  checked={responderDetails.teamAssigned.includes(team)}
-                  onChange={() => toggleTeam(team)}
-                />
-              ))}
+              <CommonCheckbox
+                label="Drop-Off"
+                checked={responderDetails.dispositionType === "DROP_OFF"}
+                onChange={() => selectTransfer("DROP_OFF")}
+              />
+              <CommonCheckbox
+                label="Pick-Up"
+                checked={responderDetails.dispositionType === "PICK_UP"}
+                onChange={() => selectTransfer("PICK_UP")}
+              />
             </div>
+            {errors.transfer && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{errors.transfer}</p>}
           </div>
         </div>
       </CommonFormSection>
 
       <VehicularDispatchSection
+        formType="patients"
         dispatch={dispatch}
         onDispatchChange={onDispatchChange}
-        vehicleOptions={VEHICLE_OPTIONS}
+        errors={errors}
+        vehicleOptions={options.vehicles.map((vehicle) => ({
+          label: `${vehicle.vehicle_name} (${vehicle.plate_number})`,
+          value: vehicle.vehicle_id,
+          currentOdometer: vehicle.current_odometer,
+        }))}
+        optionsLoading={optionsLoading}
       />
     </div>
   )

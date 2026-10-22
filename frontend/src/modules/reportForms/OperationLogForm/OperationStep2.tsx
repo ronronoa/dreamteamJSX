@@ -2,31 +2,48 @@ import { useState } from "react"
 import { Trash, UserRoundPlus } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
-import CommonInput from "../../../components/common/widgets/CommonInput"
+import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
+import { validatePerson, type FormErrors } from "./formValidation"
+import { calculateBirthdateFromAge, getCurrentDateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
+
+const CommonInput = createFormAutocomplete("operations")
 
 type OperationStep2Props = {
   people: Person[]
   onPeopleChange: (people: Person[]) => void
+  errors: FormErrors
 }
 
-export default function OperationStep2({ people, onPeopleChange }: OperationStep2Props) {
+export default function OperationStep2({ people, onPeopleChange, errors }: OperationStep2Props) {
   const [draft, setDraft] = useState<Person>(createEmptyPerson())
+  const draftErrors = validatePerson(draft)
+
+  function formatGroupedErrors(fields: Array<[string, string]>) {
+    return fields.filter(([, message]) => Boolean(message)).map(([label, message]) => `${label}: ${message}`).join(" ")
+  }
 
   const updateDraft = (patch: Partial<Person>) => {
-    setDraft((current) => ({ ...current, ...patch }))
+    const updatedDraft = { ...draft, ...patch }
+    setDraft(updatedDraft)
   }
 
   const handleBirthdateChange = (birthdate: string) => {
     updateDraft({ birthdate, age: calculateAge(birthdate) })
   }
 
+  const handleAgeChange = (value: string) => {
+    const birthdate = calculateBirthdateFromAge(value)
+    updateDraft({ birthdate, age: birthdate ? Number(value) : "" })
+  }
+
   const addPerson = () => {
-    if (!draft.name.surname || !draft.name.firstName) return
+    const validationErrors = validatePerson(draft)
+    if (Object.keys(validationErrors).length > 0) return
 
     onPeopleChange([...people, { ...draft, id: crypto.randomUUID() }])
     setDraft(createEmptyPerson())
@@ -51,13 +68,27 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       <CommonFormSection title="PEOPLE INVOLVED">
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Full Name</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Full Name</span>
+            {formatGroupedErrors([
+              ["Surname", draftErrors["name.surname"] ?? ""],
+              ["First name", draftErrors["name.firstName"] ?? ""],
+              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
+              ["Suffix", draftErrors["name.suffix"] ?? ""],
+            ]) && <span role="alert" className="text-xs font-medium text-red-700">{formatGroupedErrors([
+              ["Surname", draftErrors["name.surname"] ?? ""],
+              ["First name", draftErrors["name.firstName"] ?? ""],
+              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
+              ["Suffix", draftErrors["name.suffix"] ?? ""],
+            ])}</span>}
+          </label>
 
           <div className="grid grid-cols-[1fr_1fr_85px_85px] gap-1.5">
             <CommonInput
               variant="compact"
               placeholder="Surname"
               value={draft.name.surname}
+              errorMessage={draftErrors["name.surname"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, surname: e.target.value } })}
             />
 
@@ -65,6 +96,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               variant="compact"
               placeholder="First Name"
               value={draft.name.firstName}
+              errorMessage={draftErrors["name.firstName"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, firstName: e.target.value } })}
             />
 
@@ -73,6 +105,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="px-1"
               placeholder="M.I"
               value={draft.name.middleInitial}
+              errorMessage={draftErrors["name.middleInitial"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: e.target.value } })}
             />
 
@@ -81,6 +114,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="px-1"
               placeholder="Sfx"
               value={draft.name.suffix}
+              errorMessage={draftErrors["name.suffix"]}
               onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
             />
           </div>
@@ -92,20 +126,26 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
             type="date"
             label="Birthdate"
             value={draft.birthdate}
+            max={getCurrentDateInputValue()}
             onChange={(e) => handleBirthdateChange(e.target.value)}
+            errorMessage={draftErrors.birthdate}
           />
 
           <CommonInput
             variant="compact"
+            type="number"
             label="Age"
             value={draft.age === "" ? "" : String(draft.age)}
-            placeholder="69"
-            readOnly
+            min={0}
+            max={MAX_REASONABLE_AGE}
+            onChange={(e) => handleAgeChange(e.target.value)}
           />
         </div>
-
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Sex</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Sex</span>
+            {draftErrors.gender && <span role="alert" className="text-xs font-medium text-red-700">{draftErrors.gender}</span>}
+          </label>
 
           <div className="flex gap-10">
             <CommonCheckbox
@@ -130,11 +170,25 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
             placeholder="09123456789"
             value={draft.contactNumber}
             onChange={(e) => updateDraft({ contactNumber: e.target.value })}
+            errorMessage={draftErrors.contactNumber}
           />
         </div>
 
         <div className="mb-5">
-          <label className="mb-1 block text-lg font-medium text-slate-900">Full Address</label>
+          <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+            <span>Full Address</span>
+            {formatGroupedErrors([
+              ["Phase", draftErrors["address.phase"] ?? ""],
+              ["Package", draftErrors["address.package"] ?? ""],
+              ["Block", draftErrors["address.block"] ?? ""],
+              ["Lot", draftErrors["address.lot"] ?? ""],
+            ]) && <span role="alert" className="text-xs font-medium text-red-700">{formatGroupedErrors([
+              ["Phase", draftErrors["address.phase"] ?? ""],
+              ["Package", draftErrors["address.package"] ?? ""],
+              ["Block", draftErrors["address.block"] ?? ""],
+              ["Lot", draftErrors["address.lot"] ?? ""],
+            ])}</span>}
+          </label>
 
           <div className="flex items-center gap-2 text-sm">
             <span>Phase</span>
@@ -143,6 +197,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="w-9 px-1 text-center"
               placeholder="9"
               value={draft.address.phase}
+              errorMessage={draftErrors["address.phase"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, phase: e.target.value } })}
             />
 
@@ -152,6 +207,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="w-9 px-1 text-center"
               placeholder="3"
               value={draft.address.package}
+              errorMessage={draftErrors["address.package"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, package: e.target.value } })}
             />
 
@@ -161,6 +217,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="w-9 px-1 text-center"
               placeholder="25"
               value={draft.address.block}
+              errorMessage={draftErrors["address.block"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, block: e.target.value } })}
             />
 
@@ -170,6 +227,7 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
               className="w-9 px-1 text-center"
               placeholder="16"
               value={draft.address.lot}
+              errorMessage={draftErrors["address.lot"]}
               onChange={(e) => updateDraft({ address: { ...draft.address, lot: e.target.value } })}
             />
           </div>
@@ -189,6 +247,11 @@ export default function OperationStep2({ people, onPeopleChange }: OperationStep
       </CommonFormSection>
 
       <CommonFormSection padded={false}>
+        {errors.people && (
+          <p role="alert" className="px-3 pt-3 text-sm font-medium text-red-700">
+            {errors.people}
+          </p>
+        )}
         <div className="h-full overflow-x-auto min-h-21.25">
           <table className="w-full border-collapse text-sm">
             <thead>

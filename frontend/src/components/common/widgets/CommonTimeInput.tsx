@@ -1,7 +1,9 @@
 // deepseek +10 credit score 🔥🔥🗿🗿 
 // got no idea how this works
 
-import { Fragment, useEffect, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
+import { InputBase } from "@/components/base/input/input"
+import { useEscapeKey } from "@/hooks/useModalKeys"
 
 interface CommonTimeInputProps {
   label: string
@@ -9,6 +11,7 @@ interface CommonTimeInputProps {
   period: "AM" | "PM"
   onTimeChange: (value: string) => void
   onPeriodChange: (value: "AM" | "PM") => void
+  errorMessage?: string
 }
 
 type Digits = [string, string, string, string]
@@ -73,8 +76,10 @@ export default function CommonTimeInput({
   period,
   onTimeChange,
   onPeriodChange,
+  errorMessage,
 }: CommonTimeInputProps) {
   const [digits, setDigits] = useState<Digits>(() => toDigits(time))
+  const [isEditing, setIsEditing] = useState(false)
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
 
   // Remembers the last value we pushed up so we can tell our own updates
@@ -82,12 +87,20 @@ export default function CommonTimeInput({
   const lastEmitted = useRef(time)
 
   useEffect(() => {
-    if (time === lastEmitted.current) return
+    if (time === lastEmitted.current) {
+      // Restored form data can match the parent's value while this input
+      // still has its initial empty digit state.
+      setDigits((current) => {
+        const restoredDigits = toDigits(time)
+        return current.join("") === restoredDigits.join("") ? current : restoredDigits
+      })
+      return
+    }
     lastEmitted.current = time
     setDigits(toDigits(time))
   }, [time])
 
-  const commit = (next: Digits) => {
+  const commit = useCallback((next: Digits) => {
     const { value, periodOverride } = toTimeValue(next)
 
     lastEmitted.current = value
@@ -96,7 +109,7 @@ export default function CommonTimeInput({
     if (periodOverride && periodOverride !== period) {
       onPeriodChange(periodOverride)
     }
-  }
+  }, [onTimeChange, onPeriodChange, period])
 
   const updateDigit = (index: number, rawValue: string) => {
     const digit = rawValue.replace(/\D/g, "").slice(-1)
@@ -105,7 +118,6 @@ export default function CommonTimeInput({
     next[index] = digit
 
     setDigits(next)
-    commit(next)
 
     if (digit && index < next.length - 1) {
       inputRefs.current[index + 1]?.focus()
@@ -121,7 +133,6 @@ export default function CommonTimeInput({
       const next = [...digits] as Digits
       next[index - 1] = ""
       setDigits(next)
-      commit(next)
       inputRefs.current[index - 1]?.focus()
       return
     }
@@ -139,27 +150,51 @@ export default function CommonTimeInput({
 
   // Snap stray values like "23" or "00" back to something valid
   // once the user leaves the field entirely.
-  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
-
+  const finalizeInput = useCallback(() => {
     // Nothing was typed — leave the field visually empty instead of
     // silently snapping it to a fake default.
     const isEmpty = digits.every((digit) => digit === "")
-    if (isEmpty) return
+    if (isEmpty) {
+      lastEmitted.current = ""
+      onTimeChange("")
+      setIsEditing(false)
+      return
+    }
 
     const { value } = toTimeValue(digits)
     const next = toDigits(value)
     setDigits(next)
     commit(next)
+    setIsEditing(false)
+  }, [digits, onTimeChange, commit])
+
+  const handleEscape = useCallback(() => {
+    const activeInput = inputRefs.current.find((input) => input === document.activeElement)
+    if (activeInput) {
+      activeInput.blur()
+      return
+    }
+    finalizeInput()
+  }, [finalizeInput])
+
+  useEscapeKey({
+    open: isEditing,
+    onClose: handleEscape,
+  })
+
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    finalizeInput()
   }
 
   return (
     <div>
-      <label className="mb-1 block text-lg font-medium text-slate-900">
-        {label}
+      <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
+        <span>{label}</span>
+        {errorMessage && <span role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
       </label>
 
-      <div className="flex" onBlur={handleBlur}>
+      <div className={`flex rounded-md ${errorMessage ? "border-2 border-red-500" : ""}`} onBlur={handleBlur}>
         <div className="flex h-10 items-center rounded-l-md border border-gray-300 bg-gray-100">
           {digits.map((digit, index) => (
             <Fragment key={index}>
@@ -169,7 +204,7 @@ export default function CommonTimeInput({
                 </span>
               )}
 
-              <input
+              <InputBase
                 ref={(el) => {
                   inputRefs.current[index] = el
                 }}
@@ -181,18 +216,13 @@ export default function CommonTimeInput({
                 aria-label={`${label} ${index < 2 ? "hour" : "minute"} digit`}
                 onChange={(e) => updateDigit(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                onFocus={(e) => e.target.select()}
+                onFocus={(e) => {
+                  setIsEditing(true)
+                  e.target.select()
+                }}
                 onClick={(e) => e.currentTarget.select()}
-                className="
-                border border-gray-300
-                h-8 w-12 md:w-8
-                rounded-full md:rounded
-                mx-1 md:mx-0.5
-                bg-transparent
-                text-center text-lg text-slate-900
-                outline-none
-                focus:bg-white focus:ring-1 focus:ring-orange-500
-                "
+                wrapperClassName="mx-1 h-8 w-12 rounded-full border border-gray-300 bg-transparent shadow-none ring-0 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-500 md:mx-0.5 md:w-8 md:rounded"
+                inputClassName="h-full w-full rounded-[inherit] p-0 text-center text-lg text-slate-900 outline-none"
               />
             </Fragment>
           ))}

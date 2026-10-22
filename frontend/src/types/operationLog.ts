@@ -1,3 +1,5 @@
+import { getCurrentDateInputValue, getCurrentTimeInputValue } from "../utils/dateTime"
+
 export interface PendingOperationRequest {
   id: string;
   date: Date;
@@ -35,16 +37,19 @@ export const createEmptyPersonName = (): PersonName => ({
 export type OperationDetails = {
   submitterName: string
   date: string
+  time: string
   natureOfOperation: string
   nameOfCaller: PersonName
   teamAssigned: string[]
   responders: string[]
+  otherResponders: string[]
 }
 export type VehicularDispatch = {
   from: string
 
   to: string
   vehicle: string
+  vehicleOther?: string;
   driver: string
   departTime: string
   departPeriod: "AM" | "PM"
@@ -56,11 +61,13 @@ export type VehicularDispatch = {
 
 export const createEmptyOperationDetails = (): OperationDetails => ({
   submitterName: "",
-  date: "",
+  date: getCurrentDateInputValue(),
+  time: getCurrentTimeInputValue(),
   natureOfOperation: "",
   nameOfCaller: createEmptyPersonName(),
   teamAssigned: [],
   responders: [],
+  otherResponders: [],
 })
 
 export const createEmptyVehicularDispatch = (): VehicularDispatch => ({
@@ -106,23 +113,7 @@ export const createEmptyPerson = (): Person => ({
   address: { phase: "", package: "", block: "", lot: "" },
 })
 
-export const calculateAge = (birthdate: string): number | "" => {
-  if (!birthdate) return ""
-
-  const birthDate = new Date(birthdate)
-  if (Number.isNaN(birthDate.getTime())) return ""
-
-  const today = new Date()
-  let age = today.getFullYear() - birthDate.getFullYear()
-
-  const hasHadBirthdayThisYear =
-    today.getMonth() > birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
-
-  if (!hasHadBirthdayThisYear) age -= 1
-
-  return age
-}
+export { calculateAge } from "../utils/dateTime"
 
 // --------------------------------------------------------------
 // step3 operationDesc & inventory
@@ -136,6 +127,8 @@ export type InventoryItem = {
   id: string
   itemName: string
   quantity: string
+  inventoryItemId?: string
+  unit?: string
 }
 
 export const createEmptyOperationDescription = (): OperationDescription => ({

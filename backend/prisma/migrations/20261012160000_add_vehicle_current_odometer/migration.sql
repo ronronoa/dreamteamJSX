@@ -1,0 +1,2 @@
+ALTER TABLE "Vehicle"
+ADD COLUMN "current_odometer" INTEGER NOT NULL DEFAULT 0;

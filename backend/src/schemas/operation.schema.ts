@@ -1,14 +1,13 @@
 import { z } from "zod"
 
-const OperationStatusEnum = z.enum(["PENDING", "TO_REVIEW" ,"VALIDATED", "REJECTED", "ARCHIVED"])
 const GenderEnum = z.enum(["MALE", "FEMALE"])
 
 export const CreateTeamSchema = z.object({
-    team_name: z.string().min(1).max(100)
+    team_name: z.string().trim().min(1, "Team name is required.").max(100)
 })
 
 export const UpdateTeamSchema = z.object({
-    team_name: z.string().min(1).max(100)
+    team_name: z.string().trim().min(1, "Team name is required.").max(100)
 })
 
 export const TeamIdParamSchema = z.object({
@@ -51,14 +50,6 @@ export const UpdateOperationSchema = z.object({
 
 export const OperationIdParamSchema = z.object({
     id: z.uuid()
-})
-
-export const OperatioStatusSchema = z.object({
-    status: OperationStatusEnum
-})
-
-export const SetOperationStatusSchema = z.object({
-    status: z.enum(["VALIDATED", "REJECTED"])
 })
 
 export const OperationImageSchema = z.object({
@@ -148,7 +139,8 @@ export const ValidateOperationSchema = z.object({
 })
 
 export const RejectOperationSchema = z.object({
-    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
+    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits."),
+    rejected_reason: z.string().trim().min(1, "A rejection reason is required.").max(1000),
 })
 
 export type OperationLogsFormType = z.infer<typeof operationLogsFormSchema>;

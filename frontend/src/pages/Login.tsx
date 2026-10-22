@@ -6,6 +6,7 @@ import LoginCard from "../modules/login/component/LoginCard";
 import ForgotPasswordModal from "../components/common/modals/ForgetPassModal";
 import ContactAdminModal from "../components/common/modals/ContactAdminModal";
 import CommonBackground from "../components/common/background/CommonBackground";
+import { useTitle } from "@/hooks/useTitle";
 
 export default function Login() {
   const [
@@ -18,6 +19,7 @@ export default function Login() {
     setIsContactAdminModalOpen,
   ] = useState(false);
 
+  useTitle("Sign In")
   return (
     <>
       <ForgotPasswordModal open={isForgotPassModalOpen} onClose={() => setIsForgotPassModalOpen(false)} />

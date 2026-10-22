@@ -3,6 +3,7 @@ import { PackagePlus, Trash } from "lucide-react"
 import CommonButton from "../../../components/common/widgets/CommonButton"
 import CommonInput from "../../../components/common/widgets/CommonInput"
 import CommonFormSection from "./CommonFormSection"
+import FieldError from "./FieldError"
 
 type InventoryItem = {
   id: string
@@ -14,12 +15,14 @@ type InventorySectionProps<T extends InventoryItem> = {
   inventory: T[]
   onInventoryChange: (inventory: T[]) => void
   createEmptyItem: () => T
+  errors?: Record<string, string>
 }
 
 export default function InventorySection<T extends InventoryItem>({
   inventory,
   onInventoryChange,
   createEmptyItem,
+  errors = {},
 }: InventorySectionProps<T>) {
   const updateItem = (id: string, patch: Partial<InventoryItem>) => {
     onInventoryChange(inventory.map((item) => (item.id === id ? { ...item, ...patch } : item)))
@@ -33,34 +36,41 @@ export default function InventorySection<T extends InventoryItem>({
     <CommonFormSection title="INVENTORY">
       <div className="flex h-full flex-col">
         <div className="mb-2 grid grid-cols-[1fr_140px_28px] gap-2">
-          <span className="text-lg font-bold text-slate-900">Item Name</span>
+          <span className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-bold text-slate-900">
+            Item Name
+            {errors.inventory && <span role="alert" className="text-xs font-medium text-red-700">{errors.inventory}</span>}
+          </span>
           <span className="text-lg font-bold text-slate-900">Quantity</span>
           <span />
         </div>
 
         <div className="flex-1 space-y-2">
-          {inventory.map((item) => (
-            <div key={item.id} className="grid grid-cols-[1fr_140px_28px] items-center gap-2">
-              <CommonInput
-                variant="compact"
-                value={item.itemName}
-                onChange={(event) => updateItem(item.id, { itemName: event.target.value })}
-              />
-              <CommonInput
-                variant="compact"
-                className="text-right"
-                placeholder="Quantity & Type"
-                value={item.quantity}
-                onChange={(event) => updateItem(item.id, { quantity: event.target.value })}
-              />
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                className="text-red-500 transition hover:text-red-700"
-                aria-label={`Remove ${item.itemName || "item"}`}
-              >
-                <Trash size={16} />
-              </button>
+          {inventory.map((item, index) => (
+            <div key={item.id}>
+              <div className="grid grid-cols-[1fr_140px_28px] items-center gap-2">
+                <CommonInput
+                  variant="compact"
+                  value={item.itemName}
+                  onChange={(event) => updateItem(item.id, { itemName: event.target.value })}
+                  errorMessage={errors[`inventory.${index}.itemName`]}
+                />
+                <CommonInput
+                  variant="compact"
+                  className="text-right"
+                  placeholder="e.g. 4 boxes"
+                  value={item.quantity}
+                  onChange={(event) => updateItem(item.id, { quantity: event.target.value })}
+                  errorMessage={errors[`inventory.${index}.quantity`]}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.id)}
+                  className="text-red-500 transition hover:text-red-700"
+                  aria-label={`Remove ${item.itemName || "item"}`}
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -75,6 +85,7 @@ export default function InventorySection<T extends InventoryItem>({
           <PackagePlus size={18} />
         </CommonButton>
       </div>
+      {errors.inventory && <FieldError message={errors.inventory} />}
     </CommonFormSection>
   )
 }
