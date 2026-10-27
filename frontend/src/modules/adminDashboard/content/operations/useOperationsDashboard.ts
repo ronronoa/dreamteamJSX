@@ -107,6 +107,7 @@ export function useOperationsDashboard() {
     [matchingRows],
   );
   const selectedRows = reviewedRows.filter((row) => selectedIds.includes(row.operationId));
+  const pdfSelectedRows = matchingRows.filter((row) => selectedIds.includes(row.operationId));
   const selectedPendingRows = pendingRows.filter((row) => selectedIds.includes(row.operationId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * OPERATION_PAGE_SIZE, pendingPage * OPERATION_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * OPERATION_PAGE_SIZE, reviewedPage * OPERATION_PAGE_SIZE);
@@ -225,14 +226,14 @@ export function useOperationsDashboard() {
       : [...current, operationId]);
   }
 
-  function printSelectedRecords() {
-    if (selectedRows.length === 0) return;
+  async function printSelectedRecords() {
+    if (pdfSelectedRows.length === 0) return;
 
     try {
-      createOperationPdf(selectedRows.map((row) => row.record));
+      await createOperationPdf(pdfSelectedRows.map((row) => row.record));
       setPdfConfirmationOpen(false);
       setSelectedIds([]);
-      setSuccessMessage(`${selectedRows.length} operation record${selectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
+      setSuccessMessage(`${pdfSelectedRows.length} operation record${pdfSelectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Could not create the PDF.");
     }
@@ -284,6 +285,7 @@ export function useOperationsDashboard() {
     pendingPageCount: getPageCount(pendingRows.length, OPERATION_PAGE_SIZE),
     reviewedRows,
     selectedRows,
+    pdfSelectedRows,
     selectedPendingRows,
     visiblePendingRows,
     visibleReviewedRows,

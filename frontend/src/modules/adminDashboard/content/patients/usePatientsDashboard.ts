@@ -96,6 +96,7 @@ export function usePatientsDashboard() {
   const pendingRows = useMemo(() => matchingRows.filter((row) => row.status === "PENDING"), [matchingRows]);
   const reviewedRows = useMemo(() => matchingRows.filter((row) => row.status === "VALIDATED" || row.status === "REJECTED"), [matchingRows]);
   const selectedRows = reviewedRows.filter((row) => selectedIds.includes(row.patientLogId));
+  const pdfSelectedRows = matchingRows.filter((row) => selectedIds.includes(row.patientLogId));
   const selectedPendingRows = pendingRows.filter((row) => selectedIds.includes(row.patientLogId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * PATIENT_PAGE_SIZE, pendingPage * PATIENT_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * PATIENT_PAGE_SIZE, reviewedPage * PATIENT_PAGE_SIZE);
@@ -204,13 +205,13 @@ export function usePatientsDashboard() {
       : [...current, patientLogId]);
   }
 
-  function printSelectedRecords() {
-    if (selectedRows.length === 0) return;
+  async function printSelectedRecords() {
+    if (pdfSelectedRows.length === 0) return;
     try {
-      createPatientPdf(selectedRows.map((row) => row.record));
+      await createPatientPdf(pdfSelectedRows.map((row) => row.record));
       setPdfConfirmationOpen(false);
       setSelectedIds([]);
-      setSuccessMessage(`${selectedRows.length} patient record${selectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
+      setSuccessMessage(`${pdfSelectedRows.length} patient record${pdfSelectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Could not create the patient report PDF.");
     }
@@ -252,7 +253,7 @@ export function usePatientsDashboard() {
     role, loading, loadRecords, busy, pageError, successMessage, search, fromDate, toDate, statusFilter, filterOpen,
     pendingPage, reviewedPage, selectedIds, selectedRecord, reviewTarget, pinError,
     pdfConfirmationOpen, archiveConfirmationOpen, stats, pendingRows, reviewedRows,
-    selectedRows, selectedPendingRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,
+    selectedRows, pdfSelectedRows, selectedPendingRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,
     bulkReviewAction,
     pendingPageCount: getPageCount(pendingRows.length, PATIENT_PAGE_SIZE),
     reviewedPageCount: getPageCount(reviewedRows.length, PATIENT_PAGE_SIZE),

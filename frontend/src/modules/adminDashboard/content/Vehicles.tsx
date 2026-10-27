@@ -155,7 +155,7 @@ export default function Vehicles() {
         onClose={() => dashboard.setPdfConfirmationOpen(false)}
         onConfirm={dashboard.printSelectedRecords}
         title="Create PDF for selected records?"
-        description={`${dashboard.selectedRows.length} vehicle record${dashboard.selectedRows.length === 1 ? "" : "s"} will be included in the PDF.`}
+        description={`${dashboard.pdfSelectedRows.length} vehicle record${dashboard.pdfSelectedRows.length === 1 ? "" : "s"} will be included in the PDF.`}
         confirmLabel="Confirm"
       />
       <AreYouSureModal
@@ -267,7 +267,7 @@ export default function Vehicles() {
               <div className="flex items-center gap-2">
                 {dashboard.canArchive && <CommonButton compact variant="gray" disabled={dashboard.busy || dashboard.selectedRows.length === 0} onClick={() => dashboard.setArchiveConfirmationOpen(true)}>Archive</CommonButton>}
                 <CommonButton compact variant="gray" disabled={dashboard.selectedIds.length === 0 || dashboard.busy} onClick={() => dashboard.setSelectedIds([])}>Cancel</CommonButton>
-                <CommonButton compact variant="orange" disabled={dashboard.dispatchLoading || dashboard.busy || dashboard.selectedRows.length === 0} onClick={() => dashboard.setPdfConfirmationOpen(true)}>Print PDF</CommonButton>
+                <CommonButton compact variant="orange" disabled={dashboard.dispatchLoading || dashboard.busy || dashboard.pdfSelectedRows.length === 0} onClick={() => dashboard.setPdfConfirmationOpen(true)}>Print PDF</CommonButton>
               </div>
             </div>
           </div>

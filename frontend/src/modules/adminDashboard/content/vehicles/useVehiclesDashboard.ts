@@ -120,6 +120,7 @@ export function useVehiclesDashboard() {
     [matchingRows],
   );
   const selectedRows = reviewedRows.filter((record) => selectedIds.includes(record.dispatchId));
+  const pdfSelectedRows = matchingRows.filter((record) => selectedIds.includes(record.dispatchId));
   const selectedPendingRows = pendingRows.filter((record) => selectedIds.includes(record.dispatchId));
   const visiblePendingRows = pendingRows.slice((pendingPage - 1) * VEHICLE_PAGE_SIZE, pendingPage * VEHICLE_PAGE_SIZE);
   const visibleReviewedRows = reviewedRows.slice((reviewedPage - 1) * VEHICLE_PAGE_SIZE, reviewedPage * VEHICLE_PAGE_SIZE);
@@ -224,13 +225,13 @@ export function useVehiclesDashboard() {
       : [...currentIds, dispatchId]);
   }
 
-  function printSelectedRecords() {
-    if (selectedRows.length === 0) return;
+  async function printSelectedRecords() {
+    if (pdfSelectedRows.length === 0) return;
     try {
-      createVehiclePdf(selectedRows.map((record) => record.record));
+      await createVehiclePdf(pdfSelectedRows.map((record) => record.record));
       setPdfConfirmationOpen(false);
       setSelectedIds([]);
-      setSuccessMessage(`${selectedRows.length} vehicle record${selectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
+      setSuccessMessage(`${pdfSelectedRows.length} vehicle record${pdfSelectedRows.length === 1 ? "" : "s"} downloaded as PDF.`);
     } catch (error) {
       setDispatchError(error instanceof Error ? error.message : "Could not create the vehicle dispatch PDF.");
     }
@@ -407,6 +408,7 @@ export function useVehiclesDashboard() {
     visibleReviewedRows,
     selectedIds,
     selectedRows,
+    pdfSelectedRows,
     selectedPendingRows,
     canReview,
     canReject,

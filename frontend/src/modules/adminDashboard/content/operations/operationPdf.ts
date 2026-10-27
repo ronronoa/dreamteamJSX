@@ -2,6 +2,8 @@ import { jsPDF } from "jspdf";
 import type { OperationRecord } from "@/api/operations";
 import { formatDate, formatDateTime, formatTime } from "@/utils/dateTime";
 import { formatOperationId, formatPersonAddress } from "./operationUtils";
+import { addAttachmentImages } from "../reportPdfImages";
+import { drawLogFooter, drawLogPdfHeader, prepareLogPdfHeader } from "../logPdfStyle";
 
 type PdfLayout = {
   document: jsPDF;
@@ -174,33 +176,11 @@ function addTable(layout: PdfLayout, columns: PdfColumn[], rows: string[][]) {
   layout.y += 4;
 }
 
-function addPageChrome(layout: PdfLayout) {
-  const { document } = layout;
-  const pageCount = document.getNumberOfPages();
-
-  for (let page = 1; page <= pageCount; page += 1) {
-    document.setPage(page);
-    document.setDrawColor(...COLORS.border);
-    document.setLineWidth(0.4);
-    document.line(PAGE_MARGIN, 22, layout.pageWidth - PAGE_MARGIN, 22);
-    document.setFont("helvetica", "bold");
-    document.setFontSize(7);
-    document.setTextColor(...COLORS.purple);
-    document.text("BARANGAY 176-E DRRMO", PAGE_MARGIN, 17);
-    document.setFont("helvetica", "normal");
-    document.setTextColor(...COLORS.muted);
-    document.text("OPERATION LOG REPORT", layout.pageWidth - PAGE_MARGIN, 17, { align: "right" });
-    document.line(PAGE_MARGIN, layout.pageHeight - 13, layout.pageWidth - PAGE_MARGIN, layout.pageHeight - 13);
-    document.setFontSize(7);
-    document.text("Generated from the operation records dashboard", PAGE_MARGIN, layout.pageHeight - 8);
-    document.text(`Page ${page} of ${pageCount}`, layout.pageWidth - PAGE_MARGIN, layout.pageHeight - 8, { align: "right" });
-  }
-}
-
-export function createOperationPdf(records: OperationRecord[]) {
+export async function createOperationPdf(records: OperationRecord[]) {
   if (records.length === 0) return;
 
   const document = new jsPDF();
+  const logo = await prepareLogPdfHeader();
   const layout: PdfLayout = {
     document,
     pageWidth: document.internal.pageSize.getWidth(),
@@ -210,23 +190,18 @@ export function createOperationPdf(records: OperationRecord[]) {
     y: TOP_CONTENT,
   };
 
-  records.forEach((record, index) => {
+  for (const [index, record] of records.entries()) {
     if (index > 0) {
       document.addPage();
       layout.y = TOP_CONTENT;
     }
 
-    addText(layout, `OPERATION LOG  /  ${formatOperationId(record.operation_id)}`, {
-      bold: true,
-      size: 15,
-      color: COLORS.purple,
+    layout.y = drawLogPdfHeader(document, logo, {
+      category: "OPERATION LOG REPORT",
+      reportNumber: formatOperationId(record.operation_id),
+      reportDate: formatDateTime(record.operation_date),
+      status: record.status,
     });
-    addText(layout, record.nature_of_operation || "Operation report", { bold: true, size: 12 });
-    addText(layout, `Submitted ${formatDateTime(record.operation_date)}`, {
-      size: 8,
-      color: COLORS.muted,
-    });
-    layout.y += 4;
 
     addSection(layout, "Operation details");
     addInfoCards(layout, [
@@ -278,13 +253,10 @@ export function createOperationPdf(records: OperationRecord[]) {
       : [["No inventory recorded", ""]]);
 
     if (record.images.length > 0) {
-      addText(layout, `${record.images.length} image attachment${record.images.length === 1 ? "" : "s"} on file.`, {
-        size: 8,
-        color: COLORS.muted,
-      });
+      await addAttachmentImages(document, record.images.map((image) => image.image_url), layout.y);
     }
-  });
+  }
 
-  addPageChrome(layout);
+  drawLogFooter(document, "Operation log");
   document.save(`operation-logs-${formatDate(new Date(), "YYYY-MM-DD")}.pdf`);
 }

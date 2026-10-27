@@ -49,6 +49,7 @@ export default function Operations() {
     pendingRows,
     reviewedRows,
     selectedRows,
+    pdfSelectedRows,
     selectedPendingRows,
     visiblePendingRows,
     visibleReviewedRows,
@@ -100,7 +101,7 @@ export default function Operations() {
         onClose={() => setPdfConfirmationOpen(false)}
         onConfirm={printSelectedRecords}
         title="Create PDF for selected records?"
-        description={`${selectedRows.length} operation record${selectedRows.length === 1 ? "" : "s"} will be included in the PDF.`}
+        description={`${pdfSelectedRows.length} operation record${pdfSelectedRows.length === 1 ? "" : "s"} will be included in the PDF.`}
         confirmLabel="Confirm"
       />
       <AreYouSureModal
@@ -265,7 +266,7 @@ export default function Operations() {
                 <CommonButton compact variant="gray" disabled={busy || selectedIds.length === 0} onClick={() => setSelectedIds([])}>
                   Cancel
                 </CommonButton>
-                <CommonButton compact variant="orange" disabled={loading || busy || selectedRows.length === 0} onClick={() => setPdfConfirmationOpen(true)}>
+                  <CommonButton compact variant="orange" disabled={loading || busy || pdfSelectedRows.length === 0} onClick={() => setPdfConfirmationOpen(true)}>
                   <Printer size={13} /> Print PDF
                 </CommonButton>
               </div>
