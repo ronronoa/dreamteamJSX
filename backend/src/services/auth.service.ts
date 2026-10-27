@@ -156,7 +156,7 @@ export const authService = {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await prisma.$transaction(async (transaction) => {
-      await transaction.user.update({ where: { user_id: userId }, data: { passwordHash } });
+      await transaction.user.update({ where: { user_id: userId }, data: { passwordHash, mustChangePassword: false } });
       await transaction.refreshToken.deleteMany({ where: { userId } });
       await transaction.refreshToken.create({
         data: { userId, tokenHash, expiresAt },

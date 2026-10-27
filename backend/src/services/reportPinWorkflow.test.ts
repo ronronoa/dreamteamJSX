@@ -99,16 +99,16 @@ describe("personal report PINs", () => {
   });
 
   it("requires a team while allowing a server-generated PIN when adding a user", () => {
-    const user = { name: "Member", username: "newmember", password: "test-password", role: "MEMBER" };
+    const user = { name: "Ana Santos", lastName: "Santos", username: "newmember", role: "MEMBER" };
     expect(CreateUserSchema.safeParse(user).success).toBe(false);
     expect(CreateUserSchema.safeParse({ ...user, team_id: teamId }).success).toBe(true);
   });
 
-  it("finds an active member PIN owner instead of consulting a shared PIN", async () => {
-    db.user.findUnique.mockResolvedValue({ user_id: "owner-id", name: "Member", role: "MEMBER", isActive: true });
+  it("finds an active team leader PIN owner instead of consulting a shared PIN", async () => {
+    db.user.findUnique.mockResolvedValue({ user_id: "owner-id", name: "Leader", role: "TEAM_LEADER", isActive: true });
     const verify = vi.spyOn(pinService, "verifyPin").mockResolvedValue({ valid: true });
     const owner = await pinService.verifyReportFormPin({ pin: "0482" });
-    expect(owner.ownerRole).toBe("MEMBER");
+    expect(owner.ownerRole).toBe("TEAM_LEADER");
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { pinLookupHash: getPinLookupHash("0482") },
       select: { user_id: true, name: true, role: true, isActive: true },
@@ -123,6 +123,13 @@ describe("personal report PINs", () => {
       await expect(pinService.verifyReportFormPin({ pin: "0482" })).rejects.toThrow("Invalid report PIN");
     }
     expect(verify).not.toHaveBeenCalled();
+  });
+
+  it("rejects a legacy Member PIN and prevents assigning a Member PIN", async () => {
+    db.user.findUnique.mockResolvedValue({ user_id: "member-id", role: "MEMBER", isActive: true });
+    await expect(pinService.verifyReportFormPin({ pin: "0482" })).rejects.toThrow("Invalid report PIN");
+    await expect(pinService.setPin("member-id", { pin: "0482" })).rejects.toThrow("Members do not have report PINs");
+    await expect(pinService.revealPin("member-id")).rejects.toThrow("Members do not have report PINs");
   });
 
   it("honors account PIN lockout", async () => {

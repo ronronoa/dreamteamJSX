@@ -46,7 +46,7 @@ export function useAuth() {
   async function changePassword(currentPassword: string, newPassword: string) {
     if (!session) throw new Error("You must be signed in to change your password.");
     const accessToken = await apiChangePassword(session.accessToken, currentPassword, newPassword);
-    dispatch(setSession({ ...session, accessToken }));
+    dispatch(setSession({ ...session, accessToken, user: { ...session.user, mustChangePassword: false } }));
   }
 
   function setSessionAfterPasswordReset(nextSession: UserSession) {

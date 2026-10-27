@@ -139,7 +139,9 @@ export function useManageUsersDashboard() {
         setSuccessMessage("User account updated.");
       } else {
         const result = await createManagedUser(accessToken, values);
-        setIssuedPin({ name: result.user.name, pin: result.generatedPin });
+        if (result.generatedPin) {
+          setIssuedPin({ name: result.user.name, pin: result.generatedPin });
+        }
         setSuccessMessage("User account created.");
       }
       setModalOpen(false);

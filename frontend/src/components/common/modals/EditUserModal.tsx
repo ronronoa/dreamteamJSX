@@ -55,15 +55,16 @@ export default function EditUserModal({
   const [username, setUsername] = useState(user?.username ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<Role>(user?.role ?? "MEMBER");
-  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [phone, setPhone] = useState(() => (user?.phone ?? "").replace(/[^0-9]/g, ""));
   const [teamId, setTeamId] = useState(user?.team_id ?? "");
   const [isActive, setIsActive] = useState(user?.isActive ?? true);
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
-  const passwordRequired = role !== "MEMBER" && (!user || user.role === "MEMBER");
 
   function changeName(field: keyof typeof nameParts, value: string) {
-    const next = { ...nameParts, [field]: value };
+    const isNameField = field === "firstName" || field === "lastName";
+    const cleanValue = isNameField ? value.replace(/[^\p{L}\p{M} ]/gu, "") : value;
+    const next = { ...nameParts, [field]: cleanValue };
     setNameParts(next);
     if (!usernameEdited) setUsername(suggestUsername(next.firstName, next.lastName));
   }
@@ -93,8 +94,8 @@ export default function EditUserModal({
       phone: phone.trim() || null,
       team_id: teamId || null,
       isActive,
-      ...(role !== "MEMBER" && password ? { password } : {}),
-      ...(user && pin ? { pin } : {}),
+      ...(user && password ? { password } : {}),
+      ...(user && role !== "MEMBER" && pin ? { pin } : {}),
     });
   }
 
@@ -108,7 +109,7 @@ export default function EditUserModal({
     : roleOptions.filter((option) => option.value !== "SUPER_ADMIN");
 
   return (
-    <Modal open={open} onClose={onClose} dismissable={!submitting}>
+    <Modal open={open} onClose={onClose} dismissable={!submitting} className="sm:max-w-3xl">
       <div className="w-full bg-white">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -123,15 +124,17 @@ export default function EditUserModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_2fr_1fr_1fr]">
             <CommonInput id="user-last-name" label="Last name" value={nameParts.lastName} onChange={(event) => changeName("lastName", event.target.value)} required={!user || Boolean(user.lastName)} maxLength={80} className={inputClassName} />
             <CommonInput id="user-first-name" label="First name" value={nameParts.firstName} onChange={(event) => changeName("firstName", event.target.value)} required maxLength={80} className={inputClassName} />
             <CommonInput id="user-middle-initial" label="MI (optional)" value={nameParts.middleInitial} onChange={(event) => changeName("middleInitial", event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={1} className={inputClassName} />
             <CommonInput id="user-suffix" label="Suffix (optional)" value={nameParts.suffix} onChange={(event) => changeName("suffix", event.target.value)} maxLength={20} placeholder="Jr., Sr., III" className={inputClassName} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CommonInput id="user-username" label="Username" value={username} onChange={(event) => { setUsername(event.target.value); setUsernameEdited(Boolean(event.target.value)); }} required minLength={3} maxLength={50} pattern="[a-zA-Z0-9._-]+" className={inputClassName} />
             <CommonInput id="user-email" label="Email (optional)" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" className={inputClassName} />
             <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => { setRole(event.target.value as Role); setPassword(""); }} options={availableRoleOptions} />
-            <CommonInput id="user-phone" label="Mobile" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={20} pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}" placeholder="09171234567 or +639171234567" className={inputClassName} />
+            <CommonInput id="user-phone" label="Mobile" type="tel" inputMode="numeric" value={phone} onChange={(event) => setPhone(event.target.value.replace(/[^0-9]/g, ""))} maxLength={12} pattern="(?:63|0)9[0-9]{9}" title="Enter a valid mobile number using digits only, such as 09171234567 or 639171234567." placeholder="09171234567 or 639171234567" className={inputClassName} />
             <CommonSelect id="user-team" required label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
             {user && <CommonSelect
               id="user-status"
@@ -140,7 +143,7 @@ export default function EditUserModal({
               onChange={(event) => setIsActive(event.target.value === "active")}
               options={[{ label: "Active", value: "active" }, { label: "Inactive", value: "inactive" }]}
             />}
-            {user && <div className="sm:col-span-2 space-y-2">
+            {user && user.role !== "MEMBER" && role !== "MEMBER" && <div className="sm:col-span-2 space-y-2">
               <CommonButton type="button" variant="gray" compact onClick={() => void showCurrentPin()} disabled={pinLoading || submitting}>
                 {pinLoading ? "Loading PIN…" : pinVisible ? "Hide current PIN" : "View current PIN"}
               </CommonButton>
@@ -164,25 +167,24 @@ export default function EditUserModal({
               />
               <p className="mt-1 text-xs text-gray-600">{REPORT_PIN_HINT} This PIN must not belong to another user.</p>
             </div>}
-            {!user && <p className="text-xs text-gray-600 sm:col-span-2">A unique, random four-digit report PIN will be generated after saving. You can view it again by editing this user.</p>}
-            {role !== "MEMBER" && <div className="sm:col-span-2">
+            {(!user || user.role === "MEMBER") && role !== "MEMBER" && <p className="text-xs text-gray-600 sm:col-span-2">A unique, random four-digit report PIN will be generated after saving. You can view it again by editing this user.</p>}
+            {role === "MEMBER" && <p className="text-xs text-gray-600 sm:col-span-2">Members do not have report PINs.</p>}
+            {!user && <p className="text-xs text-gray-600 sm:col-span-2">The default password is the user's last name in uppercase (for example, Santos → SANTOS).</p>}
+            {user && <div className="sm:col-span-2">
               <CommonInput
                 id="user-password"
-                label={passwordRequired ? "Account password" : "Set a new password (optional)"}
+                label="Set a new password (optional)"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                required={passwordRequired}
                 minLength={8}
                 maxLength={64}
                 autoComplete="new-password"
                 showPasswordToggle
                 className={inputClassName}
               />
-              {!user && <p className="mt-1 text-xs text-gray-500">The user will use this password to sign in. They can contact an administrator if they need it reset.</p>}
-              {user && !passwordRequired && <p className="mt-1 text-xs text-gray-500">Leave blank to keep the current password. Passwords must be 8–64 characters.</p>}
+              <p className="mt-1 text-xs text-gray-500">Leave blank to keep the current password. New passwords must be 8–64 characters.</p>
             </div>}
-            {role === "MEMBER" && <p className="text-xs text-gray-600 sm:col-span-2">Members submit reports using their personal PIN. They do not need a portal password.</p>}
           </div>
 
           {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

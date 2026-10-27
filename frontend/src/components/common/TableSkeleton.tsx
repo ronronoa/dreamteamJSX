@@ -5,7 +5,7 @@ interface TableSkeletonProps {
 
 export default function TableSkeleton({ rows = 5, columns }: TableSkeletonProps) {
   return (
-    <tbody>
+    <>
       {Array.from({ length: rows }).map((_, r) => (
         <tr key={r} className="border-b border-gray-100">
           {Array.from({ length: columns }).map((_, c) => (
@@ -15,6 +15,6 @@ export default function TableSkeleton({ rows = 5, columns }: TableSkeletonProps)
           ))}
         </tr>
       ))}
-    </tbody>
+    </>
   );
 }

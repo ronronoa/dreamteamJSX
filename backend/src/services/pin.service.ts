@@ -47,7 +47,8 @@ export const pinService = {
   },
 
   async revealPin(userId: string) {
-    const user = await prisma.user.findUnique({ where: { user_id: userId }, select: { pinEncrypted: true } });
+    const user = await prisma.user.findUnique({ where: { user_id: userId }, select: { pinEncrypted: true, role: true } });
+    if (user?.role === "MEMBER") throw new ValidationError("Members do not have report PINs.");
     if (!user?.pinEncrypted) throw new ValidationError("This older PIN cannot be viewed. Assign a new PIN to this user.");
     return decryptPin(user.pinEncrypted);
   },
@@ -55,6 +56,7 @@ export const pinService = {
   async setPin(userId: string, data: SetPinInput) {
     const user = await prisma.user.findUnique({ where: { user_id: userId } });
     if (!user?.isActive) throw new UnauthorizedError("This account is inactive or no longer exists.");
+    if (user.role === "MEMBER") throw new ValidationError("Members do not have report PINs.");
     const credentials = await this.preparePin(data.pin);
     try {
       await prisma.user.update({ where: { user_id: userId }, data: credentials });
@@ -72,12 +74,16 @@ export const pinService = {
       where: { user_id: userId },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.role === "MEMBER") {
       throw new UnauthorizedError("User not found");
     }
 
     if (!user.pinHash || !user.pinLookupHash) {
       throw new UnauthorizedError("PIN not set. Please set a PIN first.");
+    }
+
+    if (user.mustChangePassword) {
+      throw new UnauthorizedError("Sign in and change your default password before using your report PIN.");
     }
 
     if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
@@ -136,7 +142,7 @@ export const pinService = {
       where: { pinLookupHash: getPinLookupHash(pin.data) },
       select: { user_id: true, name: true, role: true, isActive: true },
     });
-    if (!owner?.isActive) throw new UnauthorizedError("Invalid report PIN.");
+    if (!owner?.isActive || owner.role === "MEMBER") throw new UnauthorizedError("Invalid report PIN.");
     await this.verifyPin(owner.user_id, { pin: pin.data });
     return {
       valid: true,

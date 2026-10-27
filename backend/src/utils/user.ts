@@ -14,6 +14,7 @@ export function toSafeUser(user: User) {
     phone: user.phone,
     profileImageUrl: user.profileImageUrl,
     isActive: user.isActive,
+    mustChangePassword: user.mustChangePassword,
     team_id: user.team_id,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

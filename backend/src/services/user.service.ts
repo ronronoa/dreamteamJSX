@@ -92,16 +92,17 @@ export const userService = {
             throw new ForbiddenError("Department Heads cannot create Super Admin accounts.");
         }
 
-        if (data.role !== "MEMBER" && !data.password) throw new ValidationError("A password is required for this role.");
-        const hashedPassword = data.role === "MEMBER" ? null : await hashPassword(data.password!);
+        const lastName = data.lastName.trim();
+        if (!lastName) throw new ValidationError("Last name is required to create the default password.");
+        const hashedPassword = await hashPassword(lastName.toUpperCase());
         if (data.team_id) {
             const team = await prisma.responseTeam.findFirst({ where: { team_id: data.team_id, isArchived: false } });
             if (!team) throw new NotFoundError("Response team", data.team_id);
         }
 
         for (let attempt = 0; attempt < MAX_PIN_ASSIGNMENT_ATTEMPTS; attempt += 1) {
-          const generatedPin = await pinService.generatePin();
-          const pinCredentials = await pinService.preparePin(generatedPin);
+          const generatedPin = data.role === "MEMBER" ? null : await pinService.generatePin();
+          const pinCredentials = generatedPin ? await pinService.preparePin(generatedPin) : {};
           try {
             const user = await prisma.user.create({
                 data: {
@@ -113,6 +114,7 @@ export const userService = {
                     username: data.username,
                     email: data.email ?? null,
                     passwordHash: hashedPassword,
+                    mustChangePassword: true,
                     ...pinCredentials,
                     role: data.role,
                     ...(data.phone !== undefined && { phone: data.phone }),
@@ -167,9 +169,15 @@ export const userService = {
                     await this.ensureAnotherActiveSuperAdmin(userId, transaction);
                 }
 
-                const pinCredentials = pin
-                    ? await pinService.preparePin(pin)
-                    : {};
+                const nextRole = data.role ?? existing.role;
+                if (nextRole === "MEMBER" && pin) {
+                    throw new ValidationError("Members do not have report PINs.");
+                }
+                const needsGeneratedPin = nextRole !== "MEMBER" && existing.role === "MEMBER";
+                const nextPin = needsGeneratedPin ? await pinService.generatePin() : pin;
+                const pinCredentials = nextRole === "MEMBER"
+                    ? { pinHash: null, pinLookupHash: null, pinEncrypted: null, pinFailedAttempts: 0, pinLockedUntil: null }
+                    : nextPin ? await pinService.preparePin(nextPin) : {};
                 if (data.firstName !== undefined || data.lastName !== undefined || data.middleInitial !== undefined || data.suffix !== undefined) {
                     const firstName = data.firstName ?? existing.firstName ?? existing.name;
                     const lastName = data.lastName ?? existing.lastName ?? "";
@@ -177,12 +185,9 @@ export const userService = {
                     const suffix = data.suffix ?? existing.suffix ?? "";
                     filteredData["name"] = [firstName, middleInitial ? `${middleInitial}.` : "", lastName, suffix].filter(Boolean).join(" ");
                 }
-                const nextRole = data.role ?? existing.role;
-                const needsPassword = nextRole !== "MEMBER" && (existing.role === "MEMBER" || !existing.passwordHash);
+                const needsPassword = nextRole !== "MEMBER" && !existing.passwordHash;
                 if (needsPassword && !password) throw new ValidationError("Set a password when promoting a member to a portal role.");
-                const passwordHash = nextRole === "MEMBER"
-                    ? null
-                    : password ? await hashPassword(password) : existing.passwordHash;
+                const passwordHash = password ? await hashPassword(password) : existing.passwordHash;
                 if (passwordHash !== existing.passwordHash) {
                     await transaction.refreshToken.deleteMany({ where: { userId } });
                 }

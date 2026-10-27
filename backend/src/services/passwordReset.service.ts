@@ -151,7 +151,7 @@ export const passwordResetService = {
 
       const updated = await transaction.user.update({
         where: { user_id: user.user_id },
-        data: { passwordHash, last_active_at: new Date() },
+        data: { passwordHash, mustChangePassword: false, last_active_at: new Date() },
       });
       await transaction.refreshToken.deleteMany({ where: { userId: user.user_id } });
       await transaction.refreshToken.create({

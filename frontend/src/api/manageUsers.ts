@@ -67,7 +67,7 @@ export async function deleteTeam(accessToken: string, teamId: string) {
 }
 
 export async function createManagedUser(accessToken: string, input: ManagedUserInput) {
-  return request<{ user: ManagedUser; generatedPin: string }>("/users", accessToken, {
+  return request<{ user: ManagedUser; generatedPin: string | null }>("/users", accessToken, {
     method: "POST",
     body: JSON.stringify(input),
   });

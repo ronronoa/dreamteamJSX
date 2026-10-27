@@ -39,6 +39,7 @@ export interface ManagedUser {
 
 export interface UserSession {
   user: {
+    mustChangePassword: boolean;
     id: string;
     name: string;
     username: string;
