@@ -3,6 +3,7 @@ import type { OperationLogData, Person } from "../../../types/operationLog";
 import { calculateAge } from "../../../types/operationLog";
 import { formatDate, isValidDateInputNotInFuture } from "../../../utils/dateTime";
 import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules";
+import { getOperationNature } from "@/utils/operationNature";
 
 export type FormErrors = Record<string, string>;
 
@@ -49,8 +50,14 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   if (!FORM_TIME_PATTERN.test(operationDetails.time)) {
     errors["operationDetails.time"] = "Enter a valid time.";
   }
-  if (!options.operationNatures.some((nature) => nature.name === operationDetails.natureOfOperation)) {
+  if (!operationDetails.natureOfOperation.trim()) {
     errors["operationDetails.natureOfOperation"] = "Choose an operation type.";
+  }
+  const nature = getOperationNature(operationDetails);
+  if (operationDetails.natureOfOperation === "Other" && !nature) {
+    errors["operationDetails.natureOfOperationOther"] = "Specify the nature of operation.";
+  } else if (nature.length > 100) {
+    errors["operationDetails.natureOfOperationOther"] = "Use 100 characters or fewer.";
   }
   validateOptionalNamePart(operationDetails.nameOfCaller.surname, 80, "Surname must be 80 characters or fewer.", "operationDetails.nameOfCaller.surname", errors);
   validateOptionalNamePart(operationDetails.nameOfCaller.firstName, 80, "First name must be 80 characters or fewer.", "operationDetails.nameOfCaller.firstName", errors);

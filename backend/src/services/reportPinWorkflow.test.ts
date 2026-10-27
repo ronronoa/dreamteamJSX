@@ -9,14 +9,17 @@ import { getPinLookupHash } from "@/utils/report-pin";
 
 const db = vi.hoisted(() => ({
   responseTeam: { findMany: vi.fn(), findFirst: vi.fn() },
+  vehicle: { findMany: vi.fn() },
   user: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
   inventoryItem: { findMany: vi.fn(), updateMany: vi.fn() },
   operationInventoryEntry: { findMany: vi.fn() },
-  inventoryTransaction: { create: vi.fn() },
-  operationLog: { create: vi.fn() },
+  inventoryTransaction: { create: vi.fn(), findFirst: vi.fn() },
+  $queryRaw: vi.fn(),
+  operationLog: { create: vi.fn(), findMany: vi.fn() },
   operationLogEdit: { create: vi.fn() },
   patient: { create: vi.fn() },
-  vehicularDispatch: { create: vi.fn() },
+  vehicularDispatch: { create: vi.fn(), findMany: vi.fn() },
+  patientLog: { findMany: vi.fn() },
   $transaction: vi.fn(),
 }));
 vi.mock("@/config/env", () => ({ env: { REPORT_PIN_ENCRYPTION_KEY: "11".repeat(32) } }));
@@ -71,11 +74,49 @@ beforeEach(() => {
   vi.resetAllMocks();
   db.responseTeam.findMany.mockResolvedValue([{ team_id: teamId }]);
   db.user.findMany.mockResolvedValue([]);
+  db.vehicle.findMany.mockResolvedValue([]);
   db.inventoryItem.findMany.mockResolvedValue([]);
+  db.inventoryItem.updateMany.mockResolvedValue({ count: 1 });
+  db.inventoryTransaction.findFirst.mockResolvedValue(null);
+  db.$queryRaw.mockResolvedValue([]);
   db.operationInventoryEntry.findMany.mockResolvedValue([]);
   db.operationLog.create.mockResolvedValue({ operation_id: "operation-id" });
   db.patient.create.mockResolvedValue({ patientLogs: [{ patient_log_id: "patient-id" }] });
   db.$transaction.mockImplementation((callback) => callback(db));
+});
+
+describe("report form choices and suggestions", () => {
+  it("returns the requested operation categories in order", async () => {
+    const options = await reportFormsService.getOperationFormOptions();
+    expect(options.operationNatures.map((nature) => nature.name)).toEqual([
+      "Prevention and Mitigation", "Disaster Preparedness", "Disaster Response",
+      "Rehabilitation and Recovery", "Other",
+    ]);
+  });
+
+  it.each(["operations", "patients", "vehicular-dispatches"] as const)("suggests account names instead of past submitters for %s", async (formType) => {
+    db.user.findMany.mockResolvedValue([{ name: "Ana Santos" }, { name: " ana santos " }, { name: "José Reyes" }]);
+    const records = [{
+      submitter_name: "Old non-account name", dispatches: [], personsInvolved: [], passengers: [],
+      patient: { full_name: null, contact_person: null, contact_number: null },
+    }];
+    db.operationLog.findMany.mockResolvedValue(records);
+    db.patientLog.findMany.mockResolvedValue(records);
+    db.vehicularDispatch.findMany.mockResolvedValue(records);
+    const suggestions = await reportFormsService.getReportFormSuggestions(formType);
+    const field = formType === "patients" ? "responderDetails.submitterName" : "details.submitterName";
+    expect(suggestions[field]).toEqual(["Ana Santos", "José Reyes"]);
+    expect(db.user.findMany).toHaveBeenCalledWith({ where: { isActive: true }, orderBy: { name: "asc" }, select: { name: true } });
+  });
+
+  it("requires details for Other and stores the supplied operation text", () => {
+    const withOther = { ...operation, operationDetails: { ...operation.operationDetails, natureOfOperation: "Other" } };
+    expect(OperationReportSchema.safeParse(withOther).success).toBe(false);
+    const parsed = OperationReportSchema.parse({
+      ...withOther, operationDetails: { ...withOther.operationDetails, natureOfOperationOther: "  Community assistance  " },
+    });
+    expect(parsed.operationDetails.natureOfOperation).toBe("Community assistance");
+  });
 });
 
 describe("personal report PINs", () => {
@@ -157,6 +198,26 @@ describe.each<Role>(["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER", 
     await reportFormsService.createPatient(patient, [], owner);
     const data = db.patient.create.mock.calls[0]![0].data.patientLogs.create;
     expect(data).toMatchObject({ status, submitted_by: "owner-id", submitter_name: "Verified owner", dispatches: { create: { status } } });
+  });
+
+  it("deducts linked patient supplies on validated submissions only", async () => {
+    const inventory = [{
+      id: "entry-id", itemName: "Alcohol", quantity: "12 units", unit: "units",
+      inventoryItemId: "00000000-0000-4000-8000-000000000002",
+    }];
+    await reportFormsService.createPatient({ ...patient, inventory }, [], owner);
+    if (role === "MEMBER") {
+      expect(db.inventoryItem.updateMany).not.toHaveBeenCalled();
+      expect(db.inventoryTransaction.create).not.toHaveBeenCalled();
+      return;
+    }
+    expect(db.inventoryItem.updateMany).toHaveBeenCalledWith({
+      where: { item_id: inventory[0]!.inventoryItemId, archive: null, stock_quantity: { gte: 12 } },
+      data: { stock_quantity: { decrement: 12 } },
+    });
+    expect(db.inventoryTransaction.create.mock.calls[0]![0].data).toMatchObject({
+      transaction_type: "STOCK_OUT", quantity: 12, reason: "Used in patient report patient-id",
+    });
   });
 
   it("assigns standalone dispatch status from the PIN owner", async () => {

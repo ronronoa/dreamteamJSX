@@ -1,6 +1,7 @@
 import type { ReportPinOwner } from "./pin.service";
 import { getSubmissionStatus } from "./reportReviewWorkflow";
 import { decrementOperationInventory } from "./operation.service";
+import { deductPatientInventory } from "./patientInventory.service";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors";
 import { Prisma } from "@/generated/prisma/client";
@@ -12,6 +13,13 @@ type UploadedFile = Express.Multer.File;
 
 const REPORT_IMAGE_DIRECTORY = "/uploads/report-forms/";
 const SUGGESTION_RECORD_LIMIT = 300;
+const OPERATION_NATURES = [
+  "Prevention and Mitigation",
+  "Disaster Preparedness",
+  "Disaster Response",
+  "Rehabilitation and Recovery",
+  "Other",
+];
 
 type ReportSuggestions = Record<string, string[]>;
 
@@ -136,6 +144,16 @@ function splitPersonName(fullName: string | null | undefined) {
 export const reportFormsService = {
   async getReportFormSuggestions(formType: "operations" | "patients" | "vehicular-dispatches") {
     const suggestions: ReportSuggestions = {};
+    const accounts = await prisma.user.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { name: true },
+    });
+    const accountSuggestions: ReportSuggestions = {};
+    const submitterField = formType === "patients" ? "responderDetails.submitterName" : "details.submitterName";
+    for (const account of accounts) {
+      addSuggestion(accountSuggestions, submitterField, account.name);
+    }
 
     if (formType === "operations") {
       const records = await prisma.operationLog.findMany({
@@ -168,7 +186,7 @@ export const reportFormsService = {
           addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
         }
       }
-      return suggestions;
+      return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
     }
 
     if (formType === "patients") {
@@ -207,7 +225,7 @@ export const reportFormsService = {
         }
         addSavedFormSuggestions(suggestions, record.report_data);
       }
-      return suggestions;
+      return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
     }
 
     const records = await prisma.vehicularDispatch.findMany({
@@ -235,7 +253,7 @@ export const reportFormsService = {
         addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
       }
     }
-    return suggestions;
+    return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
   },
 
   async getLatestOperationReport() {
@@ -404,7 +422,7 @@ export const reportFormsService = {
   },
 
   async getOperationFormOptions() {
-    const [teams, responders, vehicles, operationNatures] = await Promise.all([
+    const [teams, responders, vehicles] = await Promise.all([
       prisma.responseTeam.findMany({
         where: { isArchived: false },
         orderBy: { team_name: "asc" },
@@ -420,14 +438,9 @@ export const reportFormsService = {
         orderBy: { vehicle_name: "asc" },
         select: { vehicle_id: true, vehicle_name: true, plate_number: true, current_odometer: true },
       }),
-      prisma.operationNature.findMany({
-        where: { isActive: true },
-        orderBy: { name: "asc" },
-        select: { name: true },
-      }),
     ]);
 
-    return { teams, responders, vehicles, operationNatures };
+    return { teams, responders, vehicles, operationNatures: OPERATION_NATURES.map((name) => ({ name })) };
   },
 
   async createOperation(form: OperationReportInput, files: UploadedFile[], owner: ReportPinOwner) {
@@ -641,7 +654,7 @@ export const reportFormsService = {
        if (vehicle && typeof dispatch.odometerIn === "number" && typeof dispatch.odometerOut === "number") {
          await saveVehicleOdometerFromDispatch(transaction, vehicle.vehicle_id, dispatch.odometerIn, dispatch.odometerOut);
        }
-      return transaction.patient.create({
+      const patientRecord = await transaction.patient.create({
       data: {
         full_name: patientFullName,
         birthday: new Date(`${patientDetails.birthdate}T00:00:00`),
@@ -703,6 +716,12 @@ export const reportFormsService = {
       },
       include: { patientLogs: true, images: true },
       });
+      const patientLog = patientRecord.patientLogs[0];
+      if (!patientLog) throw new ConflictError("Patient report could not be created.");
+      if (status === "VALIDATED") {
+        await deductPatientInventory(transaction, patientLog.patient_log_id, form.inventory, submittedBy);
+      }
+      return patientRecord;
     });
 
     const patientLog = record.patientLogs[0];

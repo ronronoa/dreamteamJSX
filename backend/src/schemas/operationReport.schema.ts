@@ -52,12 +52,20 @@ export const OperationReportSchema = z.object({
       }),
     ),
     time: formTime,
-    natureOfOperation: z.string().trim().max(100),
+    natureOfOperation: z.string().trim().min(1, "Choose an operation type.").max(100),
+    natureOfOperationOther: z.string().trim().max(100).optional(),
     nameOfCaller: personNameSchema,
     teamAssigned: z.array(z.uuid()).max(10),
     responders: z.array(z.uuid()).max(50),
     otherResponders: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
-  }),
+  }).superRefine((details, context) => {
+    if (details.natureOfOperation === "Other" && !details.natureOfOperationOther) {
+      context.addIssue({ code: "custom", path: ["natureOfOperationOther"], message: "Specify the nature of operation." });
+    }
+  }).transform((details) => ({
+    ...details,
+    natureOfOperation: details.natureOfOperation === "Other" ? details.natureOfOperationOther! : details.natureOfOperation,
+  })),
   dispatch: z.object({
     from: z.string().trim().max(200),
     to: z.string().trim().max(200),

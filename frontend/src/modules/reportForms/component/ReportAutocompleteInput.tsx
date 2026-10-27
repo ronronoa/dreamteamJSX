@@ -19,6 +19,7 @@ async function loadSuggestions(formType: ReportFormType): Promise<SuggestionMap>
       return result as SuggestionMap
     })
     .catch(() => ({}))
+    .finally(() => suggestionRequests.delete(formType))
   suggestionRequests.set(formType, request)
   return request
 }
