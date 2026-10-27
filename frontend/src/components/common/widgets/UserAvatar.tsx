@@ -1,4 +1,6 @@
+import { ROUTES } from "@/routes";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 type Size = "sm" | "md" | "lg" | "xl";
 type Tone = "orange" | "purple";
@@ -68,9 +70,12 @@ export default function UserAvatar({
   const hasText = Boolean(name || role);
   const stacked = orientation === "vertical";
 
+  const navigate = useNavigate();
+
   return (
     <div
-      className={`flex items-center ${
+      onClick={() => navigate(ROUTES.DASHBOARD.PROFILE)}
+      className={`flex items-center cursor-pointer active:scale-95 ${
         stacked ? "flex-col text-center gap-3" : "gap-2"
       } ${className}`}
     >

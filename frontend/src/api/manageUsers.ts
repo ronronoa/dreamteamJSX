@@ -43,7 +43,7 @@ export async function fetchTeams(accessToken: string) {
 }
 
 export async function createTeam(accessToken: string, teamName: string) {
-  return request<{ team: TeamOption }>("/teams", accessToken, {
+  return request<{ team: TeamOption; restored: boolean }>("/teams", accessToken, {
     method: "POST",
     body: JSON.stringify({ team_name: teamName }),
   });

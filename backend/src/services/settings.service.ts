@@ -7,7 +7,7 @@ const DEFAULT_WORKSPACE_SETTINGS = {
   systemName: "Barangay 176-E DRRMO Operation Logistics Management System",
   officeName: "Disaster Risk Reduction and Management Office",
   officeHotline: "(02) 8241 1760",
-  archiveRetention: "1-year",
+  archiveRetention: "Never",
 }
 
 const WORKSPACE_SETTING_KEYS = {

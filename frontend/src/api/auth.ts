@@ -3,6 +3,16 @@ import { apiFetch } from "./apiFetch";
 import { refreshSession } from "./refreshSession";
 import type { UserSession } from "../types/auth";
 
+export class SignInRateLimitError extends Error {
+  readonly retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super("Too many sign-in attempts.");
+    this.name = "SignInRateLimitError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 export async function login(identifier: string, password: string): Promise<UserSession | null>{
   const res = await fetch(`${API_URL}/auth/signin`, {
     method: "POST",
@@ -10,6 +20,22 @@ export async function login(identifier: string, password: string): Promise<UserS
     credentials: "include",
     body: JSON.stringify({identifier, password}),
   });
+
+  if (res.status === 429) {
+    const result = await res.json().catch(() => ({})) as { retryAfterSeconds?: number };
+    const bodyRetryAfter = result.retryAfterSeconds;
+    const headerRetryAfter = Number(res.headers.get("Retry-After"));
+    let retryAfterSeconds = 60;
+
+    if (typeof bodyRetryAfter === "number" && Number.isFinite(bodyRetryAfter) && bodyRetryAfter > 0) {
+      retryAfterSeconds = bodyRetryAfter;
+    } else if (Number.isFinite(headerRetryAfter) && headerRetryAfter > 0) {
+      retryAfterSeconds = headerRetryAfter;
+    }
+
+    throw new SignInRateLimitError(retryAfterSeconds);
+  }
+
   if (!res.ok) return null;
   return await res.json();
 }

@@ -15,7 +15,7 @@ import { useManageUsersDashboard } from "./manageUsers/useManageUsersDashboard";
 
 export default function ManageUsers() {
   const {
-    session, users, teams, loading, pageError, successMessage, search, setSearch,
+    session, isDepartmentHead, users, teams, loading, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
     modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
@@ -40,7 +40,7 @@ export default function ManageUsers() {
         onClose={() => setTeamToDelete(null)}
         onConfirm={removeTeam}
         title={`Delete ${teamToDelete?.team_name ?? "this team"}?`}
-        description="Teams assigned to users or referenced by operation records cannot be deleted."
+        description="This permanently deletes the team. Reassign its users first; teams referenced by operation records cannot be deleted."
         confirmLabel={teamSubmitting ? "Deleting…" : "Delete team"}
         variant="danger"
       />
@@ -49,6 +49,7 @@ export default function ManageUsers() {
           open={modalOpen}
           user={selectedUser}
           teams={teams}
+          allowSuperAdminRole={!isDepartmentHead}
           submitting={submitting}
           error={modalError}
           onClose={() => setModalOpen(false)}
@@ -80,7 +81,7 @@ export default function ManageUsers() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-bold text-gray-900">Response teams</h2>
-              <p className="mt-1 text-xs text-gray-500">Teams available for user assignment.</p>
+              <p className="mt-1 text-xs text-gray-500">Active teams available for user and operation assignment.</p>
             </div>
             {canManageTeams && <CommonButton compact onClick={() => { setTeamToEdit(null); setTeamError(""); setTeamModalOpen(true); }}>
               <span className="inline-flex items-center gap-1"><Plus size={14} /> Add team</span>
@@ -154,6 +155,10 @@ export default function ManageUsers() {
                 { label: "Status", render: (user) => <TableStatus variant={user.isActive ? "active" : "inactive"} /> },
                 { label: "Actions", align: "center", render: (user) => {
                   const blockReason = getDeactivationBlockReason(user, session?.user.id, administratorCount);
+                  const cannotManageAccount = isDepartmentHead && user.role === "SUPER_ADMIN";
+                  if (cannotManageAccount) {
+                    return <span className="text-xs text-gray-400" title="Department Heads cannot edit Super Admin accounts">Protected</span>;
+                  }
                   return (
                     <div className="flex items-center justify-center gap-3">
                       <button type="button" aria-label={`Edit ${user.name}`} title="Edit user" onClick={() => openEditModal(user)} className="text-purple-700 hover:text-purple-900"><Pencil size={16} /></button>

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/store/useAuth";
+import { SignInRateLimitError } from "@/api/auth";
 import { ROUTES } from "../../../routes";
 import CommonInput from "../../../components/common/widgets/CommonInput";
 import CommonButton from "../../../components/common/widgets/CommonButton";
@@ -25,12 +26,24 @@ export default function LoginCard({
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  useEffect(() => {
+    if (cooldownSeconds === 0) return;
+
+    const countdown = window.setInterval(() => {
+      setCooldownSeconds((remainingSeconds) => Math.max(0, remainingSeconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(countdown);
+  }, [cooldownSeconds]);
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
+    if (cooldownSeconds > 0) return;
     setError("");
     setSubmitting(true);
 
@@ -44,8 +57,12 @@ export default function LoginCard({
       }
 
       navigate(ROUTES.ROOT);
-    } catch {
-      setError("Unable to sign in. Please try again.");
+    } catch (requestError) {
+      if (requestError instanceof SignInRateLimitError) {
+        setCooldownSeconds(requestError.retryAfterSeconds);
+      } else {
+        setError("Unable to sign in. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -94,9 +111,11 @@ export default function LoginCard({
         <div className="flex justify-between">
 
           <div>
-            {error && (
+            {(error || cooldownSeconds > 0) && (
               <p className="text-sm text-red-600">
-                {error}
+                {cooldownSeconds > 0
+                  ? `Too many sign-in attempts. Try again in ${cooldownSeconds} seconds.`
+                  : error}
               </p>
             )}
           </div>
@@ -118,14 +137,16 @@ export default function LoginCard({
 
         <CommonButton
           type="submit"
-          disabled={submitting}
+          disabled={submitting || cooldownSeconds > 0}
           className="w-full flex items-center justify-center gap-2"
         >
           <Lock size={16} />
 
           {submitting
             ? "Signing in..."
-            : "Sign In"
+            : cooldownSeconds > 0
+              ? `Try again in ${cooldownSeconds}s`
+              : "Sign In"
           }
         </CommonButton>
 

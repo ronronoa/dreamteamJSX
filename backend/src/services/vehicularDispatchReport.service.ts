@@ -101,8 +101,8 @@ function formatPassengerAddress(person: VehicularDispatchReportInput["passengers
 export const vehicularDispatchReportService = {
   async list() {
     const dispatches = await prisma.vehicularDispatch.findMany({
-      // where: { operation_id: null, patient_log_id: null, archive: null },
-      where: { archive: null },
+      where: { operation_id: null, patient_log_id: null, archive: null },
+      // where: { archive: null },
       orderBy: [{ dispatch_date: "desc" }, { createdAt: "desc" }],
       include: dispatchRecordInclude,
     })

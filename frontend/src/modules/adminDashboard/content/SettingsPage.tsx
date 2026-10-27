@@ -109,9 +109,29 @@ export default function SettingsPage() {
         <Row label="Approval notifications" hint="Notify when new reports are submitted." isLast><Toggle label="Approval notifications" checked={settings.preferences.approvalNotifications} disabled={saving} onChange={(checked) => void savePreferences({ approvalNotifications: checked })} /></Row>
       </SettingsSection>
 
-      <SettingsSection icon={FileText} title="Reports & records" description="Control report settings and retention policy.">
-        <Row label="Archive retention" hint="Saved policy preference; this does not automatically delete records." isLast>
-          <Select disabled={!canManageWorkspace || saving} value={settings.workspace.archiveRetention} onChange={(archiveRetention) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, archiveRetention } }))} options={[{ value: "6-months", label: "6 months" }, { value: "1-year", label: "1 year" }, { value: "3-years", label: "3 years" }, { value: "5-years", label: "5 years" }]} />
+      <SettingsSection
+        icon={FileText}
+        title="Reports & records"
+        description="Control report settings and retention policy."
+      >
+        <Row
+          label="Archive retention"
+          hint="Saved policy preference; this does not automatically delete records."
+          isLast
+        >
+          <Select
+            disabled={!canManageWorkspace || saving}
+            value={settings.workspace.archiveRetention}
+            onChange={(archiveRetention) => setSettings((current) => ({
+              ...current, workspace: { ...current.workspace, archiveRetention } }
+            ))} options={[{ value: "6-months", label: "6 months" },
+              { value: "1-year", label: "1 year" },
+              { value: "3-years", label: "3 years" },
+              { value: "5-years", label: "5 years" },
+              { value: "10-years", label: "10 years" },
+              { value: "Never", label: "Never" }
+            ]}
+          />
         </Row>
         {canManageWorkspace && <div className="flex justify-end"><CommonButton compact disabled={saving} onClick={() => void saveWorkspace()}>{saving ? "Saving…" : "Save retention policy"}</CommonButton></div>}
       </SettingsSection>

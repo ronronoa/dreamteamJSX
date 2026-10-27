@@ -1,4 +1,4 @@
-import { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, PersonInvolvedIdSchema, PersonInvolvedSchema, RejectOperationSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema";
+import { AuthorizeOperationSchema, CreateOperationSchema, CreateTeamSchema, OperationIdParamSchema, OperationImageSchema, OperationResponderSchema, PersonInvolvedSchema, RejectOperationSchema, TeamIdParamSchema, UpdateOperationSchema, UpdateTeamSchema, ValidateOperationSchema } from "@/schemas/operation.schema";
 import { operationService } from "@/services/operation.service";
 import { validate, validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
@@ -28,8 +28,8 @@ export const operationController = {
     async createTeam(req: Request, res: Response, next: NextFunction) {
         try {
             const data = validateOrThrow(CreateTeamSchema.safeParse(req.body))
-            const team = await operationService.createTeam(data)
-            res.status(201).json({team})
+            const result = await operationService.createTeam(data)
+            res.status(result.restored ? 200 : 201).json(result)
         } catch (err) {
             next(err)
         }
@@ -153,16 +153,6 @@ export const operationController = {
     //     }
     // },
 
-    async delete(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
-            const result = await operationService.delete(id)
-            res.status(200).json(result)
-        } catch (err) {
-            next(err)
-        }
-    },
-
     // Person Involved
 
     async addPerson(req: Request, res: Response, next: NextFunction) {
@@ -171,16 +161,6 @@ export const operationController = {
             const data = validateOrThrow(PersonInvolvedSchema.safeParse(req.body))
             const person = await operationService.addPerson(id, data) 
             res.status(200).json({person})
-        } catch (err) {
-            next(err)
-        }
-    },
-
-    async removePerson(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { personId } = req.params as { personId: string }
-            const result = await operationService.removePerson(personId)
-            res.status(200).json(result)
         } catch (err) {
             next(err)
         }
@@ -199,16 +179,6 @@ export const operationController = {
         }
     },
 
-    async removeResponder(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id, userId } = req.params as { id: string, userId: string }
-            const result = await operationService.removeResponder(id, userId)
-            res.status(200).json(result)
-        } catch (err) {
-            next(err)
-        }
-    },
-
     // Image Attachments
 
     async addImage(req: Request, res: Response, next: NextFunction) {
@@ -221,16 +191,5 @@ export const operationController = {
             next(err)
         }
     },
-
-    async removeImage(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { attachmentId } = req.params as { attachmentId: string }
-            const result = await operationService.removeImage(attachmentId)
-            res.status(200).json(result)
-        } catch (err) {
-            next(err)            
-        }
-    }
-
 
 }

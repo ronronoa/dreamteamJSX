@@ -72,7 +72,7 @@ export default function DashboardHeader({
         <button
           type="button"
           onClick={onMenuClick}
-          className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 md:hidden cursor-pointer"
         >
           <Menu size={20} />
         </button>
@@ -99,7 +99,7 @@ export default function DashboardHeader({
             aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
             aria-expanded={notificationsOpen}
             onClick={toggleNotifications}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#21142d]"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#21142d] hover:bg-white/50 active:scale-90 cursor-pointer"
           >
             <Bell size={17} />
             {unreadCount > 0 && (

@@ -81,6 +81,7 @@ export function useManageUsersDashboard() {
   const activeCount = users.filter((user) => user.isActive).length;
   const administratorCount = users.filter((user) => user.isActive && user.role === "SUPER_ADMIN").length;
   const canManageTeams = session?.user.role === "SUPER_ADMIN" || session?.user.role === "DEPARTMENT_HEAD";
+  const isDepartmentHead = session?.user.role === "DEPARTMENT_HEAD";
 
   function openCreateModal() {
     setSelectedUser(null);
@@ -89,6 +90,7 @@ export function useManageUsersDashboard() {
   }
 
   function openEditModal(user: ManagedUser) {
+    if (isDepartmentHead && user.role === "SUPER_ADMIN") return;
     setSelectedUser(user);
     setModalError("");
     setModalOpen(true);
@@ -96,6 +98,10 @@ export function useManageUsersDashboard() {
 
   async function saveUser(values: UserFormValues) {
     if (!accessToken) return;
+    if (isDepartmentHead && (selectedUser?.role === "SUPER_ADMIN" || values.role === "SUPER_ADMIN")) {
+      setModalError("Department Heads cannot create, promote, or edit Super Admin accounts.");
+      return;
+    }
     if (selectedUser?.id === session?.user.id && !values.isActive) {
       setModalError("You cannot deactivate your own account.");
       return;
@@ -154,9 +160,14 @@ export function useManageUsersDashboard() {
     setPageError("");
     setSuccessMessage("");
     try {
-      const { team } = teamToEdit
-        ? await updateTeam(accessToken, teamToEdit.team_id, teamName)
-        : await createTeam(accessToken, teamName);
+      let team: TeamOption;
+
+      if (teamToEdit) {
+        ({ team } = await updateTeam(accessToken, teamToEdit.team_id, teamName));
+      } else {
+        ({ team } = await createTeam(accessToken, teamName));
+      }
+
       setTeams((currentTeams) => {
         const updatedTeams = teamToEdit
           ? currentTeams.map((currentTeam) => currentTeam.team_id === team.team_id ? team : currentTeam)
@@ -167,7 +178,10 @@ export function useManageUsersDashboard() {
       });
       setTeamModalOpen(false);
       setTeamToEdit(null);
-      setSuccessMessage(teamToEdit ? `${team.team_name} team was updated.` : `${team.team_name} team was created.`);
+      const successText = teamToEdit
+        ? `${team.team_name} team was updated.`
+        : `${team.team_name} team was created.`;
+      setSuccessMessage(successText);
     } catch (error) {
       setTeamError(error instanceof Error ? error.message : "Could not save this team.");
     } finally {
@@ -194,7 +208,7 @@ export function useManageUsersDashboard() {
   }
 
   return {
-    session, users, teams, loading, pageError, successMessage, search, setSearch,
+    session, isDepartmentHead, users, teams, loading, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
     modalOpen, setModalOpen, submitting, modalError, setModalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,

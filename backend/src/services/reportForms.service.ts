@@ -389,7 +389,7 @@ export const reportFormsService = {
 
   async getPatientFormOptions() {
     const [teams, responders, vehicles] = await Promise.all([
-      prisma.responseTeam.findMany({ orderBy: { team_name: "asc" }, select: { team_id: true, team_name: true } }),
+      prisma.responseTeam.findMany({ where: { isArchived: false }, orderBy: { team_name: "asc" }, select: { team_id: true, team_name: true } }),
       prisma.user.findMany({
         where: { isActive: true },
         orderBy: { name: "asc" },
@@ -403,6 +403,7 @@ export const reportFormsService = {
   async getOperationFormOptions() {
     const [teams, responders, vehicles, operationNatures] = await Promise.all([
       prisma.responseTeam.findMany({
+        where: { isArchived: false },
         orderBy: { team_name: "asc" },
         select: { team_id: true, team_name: true },
       }),
@@ -431,7 +432,7 @@ export const reportFormsService = {
     const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
     const [teams, responders, linkedInventoryItems] = await Promise.all([
       prisma.responseTeam.findMany({
-        where: { team_id: { in: teamIds } },
+        where: { team_id: { in: teamIds }, isArchived: false },
         select: { team_id: true },
       }),
       prisma.user.findMany({
@@ -467,7 +468,7 @@ export const reportFormsService = {
     }
 
     const fallbackTeam = teamIds.length === 0
-      ? await prisma.responseTeam.findFirst({ orderBy: { team_name: "asc" }, select: { team_id: true } })
+      ? await prisma.responseTeam.findFirst({ where: { isArchived: false }, orderBy: { team_name: "asc" }, select: { team_id: true } })
       : null;
     const teamId = teamIds[0] ?? fallbackTeam?.team_id;
     if (!teamId) {

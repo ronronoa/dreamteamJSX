@@ -32,7 +32,6 @@ reportFormsRoutes.get("/operations", requireAuth, operationController.list);
 reportFormsRoutes.get("/operations/:id", requireAuth, operationController.getById);
 reportFormsRoutes.post("/operations", requireAuth, operationController.create);
 reportFormsRoutes.patch("/operations/:id", requireAuth, operationController.update);
-reportFormsRoutes.delete("/operations/:id", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.delete);
 
 reportFormsRoutes.post("/operations/:id/submit", requireAuth, operationController.submit);
 reportFormsRoutes.post("/operations/:id/authorize", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), operationController.authorize);
@@ -40,11 +39,8 @@ reportFormsRoutes.post("/operations/:id/validate", requireAuth, requireRole("TEA
 reportFormsRoutes.post("/operations/:id/reject", requireAuth, requireRole("TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject);
 
 reportFormsRoutes.post("/operations/:id/persons", requireAuth, operationController.addPerson);
-reportFormsRoutes.delete("/operations/:id/persons/:personId", requireAuth, operationController.removePerson);
 reportFormsRoutes.post("/operations/:id/responders", requireAuth, operationController.addResponder);
-reportFormsRoutes.delete("/operations/:id/responders/:userId", requireAuth, operationController.removeResponder);
 reportFormsRoutes.post("/operations/:id/images", requireAuth, operationController.addImage);
-reportFormsRoutes.delete("/operations/:id/images/:attachmentId", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD"), operationController.removeImage);
 
 reportFormsRoutes.get("/patient-logs", requireAuth, patientLogController.list);
 reportFormsRoutes.get("/patient-logs/:id", requireAuth, patientLogController.getById);

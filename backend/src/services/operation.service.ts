@@ -55,7 +55,10 @@ export const operationService = {
 
   // Response Team
   async findAllTeams() {
-    return prisma.responseTeam.findMany({orderBy: {createdAt: "desc"}})
+    return prisma.responseTeam.findMany({
+      where: { isArchived: false },
+      orderBy: { createdAt: "desc" },
+    })
   },
 
   async findTeamById(teamId: string) {
@@ -65,11 +68,63 @@ export const operationService = {
   },
 
   async createTeam(data: CreateTeamInput) {
-    return prisma.responseTeam.create({data})
+    const teamName = data.team_name.trim();
+
+    return prisma.$transaction(async (transaction) => {
+      const archivedTeam = await transaction.responseTeam.findFirst({
+        where: {
+          team_name: { equals: teamName, mode: "insensitive" },
+          isArchived: true,
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+
+      if (archivedTeam) {
+        const activeDuplicates = await transaction.responseTeam.findMany({
+          where: {
+            team_name: { equals: teamName, mode: "insensitive" },
+            isArchived: false,
+          },
+          select: { team_id: true },
+        });
+        const activeDuplicateIds = activeDuplicates.map((team) => team.team_id);
+
+        if (activeDuplicateIds.length > 0) {
+          await transaction.user.updateMany({
+            where: { team_id: { in: activeDuplicateIds } },
+            data: { team_id: archivedTeam.team_id },
+          });
+          await transaction.responseTeam.updateMany({
+            where: { team_id: { in: activeDuplicateIds } },
+            data: { isArchived: true },
+          });
+        }
+
+        const team = await transaction.responseTeam.update({
+          where: { team_id: archivedTeam.team_id },
+          data: { isArchived: false },
+        });
+        return { team, restored: true };
+      }
+
+      const activeTeam = await transaction.responseTeam.findFirst({
+        where: {
+          team_name: { equals: teamName, mode: "insensitive" },
+          isArchived: false,
+        },
+      });
+      if (activeTeam) throw new ConflictError("A team with this name already exists.");
+
+      const team = await transaction.responseTeam.create({
+        data: { ...data, team_name: teamName },
+      });
+      return { team, restored: false };
+    });
   },
 
   async updateTeam(teamId: string, data: UpdateTeamInput) {
-    await this.findTeamById(teamId)
+    const team = await this.findTeamById(teamId)
+    if (team.isArchived) throw new ConflictError("Archived teams cannot be edited.")
     return prisma.responseTeam.update({ where: { team_id: teamId}, data})
   },
 
@@ -78,6 +133,8 @@ export const operationService = {
       return await prisma.$transaction(async (transaction) => {
         const team = await transaction.responseTeam.findUnique({ where: { team_id: teamId } });
         if (!team) throw new NotFoundError("ResponseTeam", teamId);
+
+        if (team.isArchived) return { success: true };
 
         const assignedUserCount = await transaction.user.count({ where: { team_id: teamId } });
         if (assignedUserCount > 0) {
@@ -281,12 +338,6 @@ export const operationService = {
     });
   },
 
-  async delete(operationId: string) {
-    await this.findById(operationId)
-    await prisma.operationLog.delete({ where: { operation_id: operationId }})
-    return { success: true}
-  },
-
   // Persons Involved
 
   async addPerson(operationId: string, data: PersonInvolvedInput) {
@@ -294,10 +345,6 @@ export const operationService = {
     return prisma.personsInvolved.create({
       data: { ...data, operation_id: operationId }
     })
-  },
-
-  async removePerson(personId: string) {
-    return prisma.personsInvolved.delete({ where: { person_id: personId }})
   },
 
   // Operation Responders
@@ -309,12 +356,6 @@ export const operationService = {
     })
   },
 
-  async removeResponder(operationId: string, userId: string) {
-    return prisma.operationResponder.delete({
-      where: { operation_id_user_id: { operation_id: operationId, user_id: userId }}
-    })
-  },
-
   // Image Attachments
 
   async addImage(operationId: string, uploadBy: string, data: OperationImageInput) {
@@ -323,11 +364,5 @@ export const operationService = {
       data: { ...data, operation_id: operationId, uploaded_by: uploadBy }
     })
   },
-
-  async removeImage(attachmentId: string) {
-    return prisma.operationImageAttachment.delete({
-      where: { attachment_id: attachmentId }
-    })
-  }
 
 }

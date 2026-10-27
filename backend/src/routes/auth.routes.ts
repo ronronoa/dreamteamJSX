@@ -5,9 +5,32 @@ import { requireAuth } from "@/middleware/auth.middleware";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 999,
+  limit: 99,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+});
+
+const signInLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 3,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (req, res) => {
+    const rateLimitInfo = (req as typeof req & {
+      rateLimit?: { resetTime?: Date };
+    }).rateLimit;
+    const resetTime = rateLimitInfo?.resetTime?.getTime();
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil(((resetTime ?? Date.now() + 60 * 1000) - Date.now()) / 1000),
+    );
+
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    res.status(429).json({
+      message: "Too many sign-in attempts.",
+      retryAfterSeconds,
+    });
+  },
 });
 
 const passwordResetRequestLimiter = rateLimit({
@@ -29,7 +52,7 @@ const passwordResetAttemptLimiter = rateLimit({
 export const authRoutes = Router();
 
 authRoutes.post("/auth/signup", authLimiter, authController.signUp);
-authRoutes.post("/auth/signin", authLimiter, authController.signIn);
+authRoutes.post("/auth/signin", signInLimiter, authController.signIn);
 authRoutes.post("/auth/password-reset/request", passwordResetRequestLimiter, authController.requestPasswordReset);
 authRoutes.post("/auth/password-reset/complete", passwordResetAttemptLimiter, authController.completePasswordReset);
 authRoutes.post("/auth/refresh", authLimiter, authController.refresh);

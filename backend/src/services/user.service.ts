@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma"
-import { ConflictError, NotFoundError } from "@/shared/errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 import type { CreateUserInput, ResetPasswordInput, UpdateUserInput } from "@/types/user.types";
 import { hashPassword, toSafeUser } from "@/utils";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { listManagedUsers, lockSuperAdminChanges } from "@/sql/manageUsers";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma, Role } from "@/generated/prisma/client";
 
 export const userService = {
     async findAll() {
@@ -61,10 +61,14 @@ export const userService = {
         return this.findProfile(userId);
     },
 
-    async create(data: CreateUserInput) {
+    async create(data: CreateUserInput, actorRole: Role) {
+        if (actorRole === "DEPARTMENT_HEAD" && data.role === "SUPER_ADMIN") {
+            throw new ForbiddenError("Department Heads cannot create Super Admin accounts.");
+        }
+
         const hashedPassword = await hashPassword(data.password)
         if (data.team_id) {
-            const team = await prisma.responseTeam.findUnique({ where: { team_id: data.team_id } });
+            const team = await prisma.responseTeam.findFirst({ where: { team_id: data.team_id, isArchived: false } });
             if (!team) throw new NotFoundError("Response team", data.team_id);
         }
 
@@ -90,9 +94,9 @@ export const userService = {
         }
     },
 
-    async update(userId: string, data: UpdateUserInput, actorId: string) {
+    async update(userId: string, data: UpdateUserInput, actorId: string, actorRole: Role) {
         if (data.team_id) {
-            const team = await prisma.responseTeam.findUnique({ where: { team_id: data.team_id } });
+            const team = await prisma.responseTeam.findFirst({ where: { team_id: data.team_id, isArchived: false } });
             if (!team) throw new NotFoundError("Response team", data.team_id);
         }
 
@@ -108,6 +112,11 @@ export const userService = {
 
                 const existing = await transaction.user.findUnique({ where: { user_id: userId } });
                 if (!existing) throw new NotFoundError("User", userId);
+                if (actorRole === "DEPARTMENT_HEAD" && (
+                    existing.role === "SUPER_ADMIN" || data.role === "SUPER_ADMIN"
+                )) {
+                    throw new ForbiddenError("Department Heads cannot edit or promote Super Admin accounts.");
+                }
                 if (userId === actorId && data.isActive === false) {
                     throw new ConflictError("You cannot deactivate your own account.");
                 }
@@ -133,8 +142,12 @@ export const userService = {
         }
     },
 
-    async resetPassword(userId: string, data: ResetPasswordInput) {
-        await this.findById(userId)
+    async resetPassword(userId: string, data: ResetPasswordInput, actorRole: Role) {
+        const targetUser = await prisma.user.findUnique({ where: { user_id: userId } });
+        if (!targetUser) throw new NotFoundError("User", userId);
+        if (actorRole === "DEPARTMENT_HEAD" && targetUser.role === "SUPER_ADMIN") {
+            throw new ForbiddenError("Department Heads cannot edit Super Admin accounts.");
+        }
         const hashedPassword = await hashPassword(data.newPassword)
         await prisma.user.update({
             where: { user_id: userId },
@@ -145,11 +158,14 @@ export const userService = {
         return { success: true }
     },
 
-    async deactivate(userId: string, actorId: string) {
+    async deactivate(userId: string, actorId: string, actorRole: Role) {
         await prisma.$transaction(async (transaction) => {
             await lockSuperAdminChanges(transaction);
             const user = await transaction.user.findUnique({ where: { user_id: userId } });
             if (!user) throw new NotFoundError("User", userId);
+            if (actorRole === "DEPARTMENT_HEAD" && user.role === "SUPER_ADMIN") {
+                throw new ForbiddenError("Department Heads cannot edit Super Admin accounts.");
+            }
             if (userId === actorId) throw new ConflictError("You cannot deactivate your own account.");
             if (user.role === "SUPER_ADMIN" && user.isActive) {
                 await this.ensureAnotherActiveSuperAdmin(userId, transaction);
