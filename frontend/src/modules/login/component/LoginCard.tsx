@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { ROUTES } from "../../../routes";
 import CommonInput from "../../../components/common/widgets/CommonInput";
 import CommonButton from "../../../components/common/widgets/CommonButton";

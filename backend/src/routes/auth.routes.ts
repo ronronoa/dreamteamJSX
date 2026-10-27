@@ -32,8 +32,6 @@ authRoutes.post("/auth/signup", authLimiter, authController.signUp);
 authRoutes.post("/auth/signin", authLimiter, authController.signIn);
 authRoutes.post("/auth/password-reset/request", passwordResetRequestLimiter, authController.requestPasswordReset);
 authRoutes.post("/auth/password-reset/complete", passwordResetAttemptLimiter, authController.completePasswordReset);
-authRoutes.get("/checksession", authLimiter, authController.checkSession);
-authRoutes.get("/auth/checksession", authLimiter, authController.checkSession);
 authRoutes.post("/auth/refresh", authLimiter, authController.refresh);
 authRoutes.post("/auth/logout", requireAuth, authController.logout);
 authRoutes.post("/auth/change-password", requireAuth, authController.changePassword);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import CommonInput from "@/components/common/widgets/CommonInput";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { CARD_CLASS } from "./profileUtils";
 
 export default function PasswordSection() {

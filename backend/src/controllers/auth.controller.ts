@@ -7,6 +7,8 @@ import { env } from "@/config/env";
 import { passwordResetService } from "@/services/passwordReset.service";
 
 const REFRESH_COOKIE = "refreshToken";
+const LEGACY_REFRESH_COOKIE = "refresh_token";
+const LEGACY_REFRESH_COOKIE_PATHS = ["/", "/api", "/api/auth"];
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const isProduction = env.NODE_ENV === "production";
 const REFRESH_COOKIE_OPTIONS = {
@@ -16,17 +18,28 @@ const REFRESH_COOKIE_OPTIONS = {
   partitioned: isProduction,
 };
 
-const CookieSchema = z.object({
-  [REFRESH_COOKIE]: z.string().optional(),
-});
-
 function getRefreshCookie(req: Request): string | undefined {
-  const parsed = CookieSchema.safeParse(req.cookies);
-  if (!parsed.success) return req.body?.refreshToken;
-  return parsed.data[REFRESH_COOKIE] ?? req.body?.refreshToken;
+  const token = req.cookies?.[REFRESH_COOKIE];
+  return typeof token === "string" ? token : undefined;
+}
+
+const ALLOWED_REFRESH_ORIGINS = new Set([
+  "http://localhost:5173",
+  "https://dreamteamjsx.web.app",
+]);
+
+function requireTrustedRefreshRequest(req: Request) {
+  const origin = req.get("origin");
+  const requestedWith = req.get("x-requested-with");
+
+  if (!origin || !ALLOWED_REFRESH_ORIGINS.has(origin) || requestedWith !== "XMLHttpRequest") {
+    throw new UnauthorizedError("Refresh request is not allowed");
+  }
 }
 
 function setRefreshCookie(res: Response, token: string) {
+  clearLegacyRefreshCookies(res);
+
   // Clear the old narrower path so clients do not send duplicate cookies after upgrading.
   // Deletion cookies need the same cross-site attributes as the cookie being replaced.
   res.clearCookie(REFRESH_COOKIE, {
@@ -51,6 +64,16 @@ function clearRefreshCookie(res: Response) {
     ...REFRESH_COOKIE_OPTIONS,
     path: "/api/auth",
   });
+  clearLegacyRefreshCookies(res);
+}
+
+function clearLegacyRefreshCookies(res: Response) {
+  for (const path of LEGACY_REFRESH_COOKIE_PATHS) {
+    res.clearCookie(LEGACY_REFRESH_COOKIE, {
+      ...REFRESH_COOKIE_OPTIONS,
+      path,
+    });
+  }
 }
 
 function getFirstZodIssue(error: z.ZodError): z.ZodIssue {
@@ -89,40 +112,6 @@ export const authController = {
       res.locals["activityActorId"] = result.user.id;
       setRefreshCookie(res, result.refreshToken);
       res.status(200).json({ user: result.user, accessToken: result.accessToken });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  async checkSession(req: Request, res: Response, next: NextFunction) {
-    try {
-      const authorization = req.headers.authorization;
-      const accessToken = authorization?.startsWith("Bearer ")
-        ? authorization.slice("Bearer ".length).trim()
-        : "";
-
-      if (accessToken) {
-        const activeSession = await authService.checkAccessToken(accessToken);
-        if (activeSession) {
-          res.locals["activityActorId"] = activeSession.user.id;
-          res.status(200).json(activeSession);
-          return;
-        }
-      }
-
-      const refreshToken = getRefreshCookie(req);
-      const parsed = RefreshTokenSchema.safeParse({ refreshToken });
-      if (!parsed.success) {
-        throw new UnauthorizedError("Session is missing or expired");
-      }
-
-      const refreshedSession = await authService.refresh(parsed.data.refreshToken);
-      res.locals["activityActorId"] = refreshedSession.user.id;
-      setRefreshCookie(res, refreshedSession.refreshToken);
-      res.status(200).json({
-        user: refreshedSession.user,
-        accessToken: refreshedSession.accessToken,
-      });
     } catch (error) {
       next(error);
     }
@@ -180,6 +169,7 @@ export const authController = {
 
   async refresh(req: Request, res: Response, next: NextFunction) {
     try {
+      requireTrustedRefreshRequest(req);
       const token = getRefreshCookie(req);
       const parsed = RefreshTokenSchema.safeParse({ refreshToken: token });
 

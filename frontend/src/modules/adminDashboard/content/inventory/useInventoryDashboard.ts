@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchInventory, createInventoryItem, updateInventoryItem, type InventoryOverview } from "@/api/inventory";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import type { InventoryItem } from "@/types/inventory";
 import type { AddInventoryFormValues } from "@/components/common/modals/AddInventoryModal";
 import type { StatCardProps } from "../../component/StatCard";

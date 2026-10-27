@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchArchives, restoreArchiveRecord } from "@/api/archives";
 import type { ArchiveRecord } from "@/api/archives";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { getPageCount } from "@/utils/pagination";
 import { EMPTY_STATS, PAGE_SIZE } from "./archiveConfig";
 

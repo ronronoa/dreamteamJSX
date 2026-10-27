@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { dashboardSectionsByRole } from "@/modules/adminDashboard/DashboardNav";
 
 export default function RoleGuard({ children }: { children: ReactNode }) {

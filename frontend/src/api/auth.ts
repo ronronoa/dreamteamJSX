@@ -1,8 +1,7 @@
 import { API_URL } from "./config";
 import { apiFetch } from "./apiFetch";
+import { refreshSession } from "./refreshSession";
 import type { UserSession } from "../types/auth";
-
-let sessionCheckInFlight: Promise<UserSession | null> | null = null;
 
 export async function login(identifier: string, password: string): Promise<UserSession | null>{
   const res = await fetch(`${API_URL}/auth/signin`, {
@@ -83,30 +82,6 @@ export async function logout(): Promise<void>{
   });
 }
 
-export async function refresh(accessToken?: string): Promise<UserSession | null> {
-  if (sessionCheckInFlight) return sessionCheckInFlight;
-
-  const headers = new Headers();
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-
-  sessionCheckInFlight = (async () => {
-    try {
-      const response = await fetch(`${API_URL}/auth/checksession`, {
-        method: "GET",
-        headers,
-        credentials: "include",
-      });
-
-      if (!response.ok) return null;
-      return await response.json() as UserSession;
-    } catch {
-      return null;
-    }
-  })();
-
-  try {
-    return await sessionCheckInFlight;
-  } finally {
-    sessionCheckInFlight = null;
-  }
+export async function refresh(): Promise<UserSession | null> {
+  return refreshSession();
 }

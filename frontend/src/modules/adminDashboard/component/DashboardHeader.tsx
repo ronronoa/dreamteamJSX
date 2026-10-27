@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import UserAvatar from "@/components/common/widgets/UserAvatar";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { getProfilePhotoSource } from "@/api/profile";
 import { formatDate } from "@/utils/dateTime";
 import { getInitials } from "@/utils/name";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { fetchUserProfile, type UserProfileData } from "@/api/profile";
 import { CARD_CLASS } from "./usersProfile/profileUtils";
 import IdentityCard from "./usersProfile/IdentityCard";

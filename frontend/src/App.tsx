@@ -1,4 +1,4 @@
-import {  useAuth } from "./context/AuthContext"
+import {  useAuth } from "@/store/useAuth"
 import {  BrowserRouter, Route, Routes } from "react-router"
 
 import { ROUTES } from "./routes"
@@ -36,7 +36,11 @@ import BackendStatusBanner from "./components/BackendStatusBanner"
 
 
 function App() {
-  const { loading } = useAuth();
+  const { loading, refresh } = useAuth();
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     function preventFileDrop(event: DragEvent) {

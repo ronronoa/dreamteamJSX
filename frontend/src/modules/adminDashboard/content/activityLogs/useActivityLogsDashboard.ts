@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { archiveActivityLogs, exportActivityLogs, fetchActivityLogs } from "@/api/activityLogs";
 import type { ActivityLogRecord } from "@/api/activityLogs";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { formatDate } from "@/utils/dateTime";
 import { getPageCount } from "@/utils/pagination";
 import { EMPTY_STATS, PAGE_SIZE } from "./activityLogConfig";

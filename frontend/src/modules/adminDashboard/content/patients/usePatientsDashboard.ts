@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { archivePatientLog, fetchPatientLogs, reviewPatientLog, type PatientLogRecord } from "@/api/patients";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { getPageCount } from "@/utils/pagination";
 import { createPatientPdf } from "./patientPdf";
 import {

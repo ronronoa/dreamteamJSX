@@ -7,7 +7,7 @@ import {
   validateOperation,
   type OperationRecord,
 } from "@/api/operations";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { createOperationPdf } from "./operationPdf";
 import { getPageCount } from "@/utils/pagination";
 import {

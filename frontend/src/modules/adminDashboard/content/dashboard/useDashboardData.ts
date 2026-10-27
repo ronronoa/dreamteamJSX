@@ -4,7 +4,7 @@ import { fetchOperations, type OperationRecord } from "@/api/operations"
 import { fetchPatientLogs, type PatientLogRecord } from "@/api/patients"
 import { fetchFleetVehicles, type FleetVehicle } from "@/api/vehicles"
 import { fetchVehicularDispatchRecords, type VehicleDispatchRecord } from "@/api/vehicularDispatches"
-import { useAuth } from "@/context/AuthContext"
+import { useAuth } from "@/store/useAuth"
 
 export function useDashboardData() {
   const { session } = useAuth()

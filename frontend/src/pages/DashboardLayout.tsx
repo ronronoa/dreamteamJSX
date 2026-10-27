@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router";
 
 import DashboardHeader from "../modules/adminDashboard/component/DashboardHeader";
 import Sidebar from "../modules/adminDashboard/component/Sidebar";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import AreYouSureModal from "../components/common/modals/AreYouSure";
 import { getNavLabel } from "@/modules/adminDashboard/DashboardNav";
 import { fetchSettings } from "@/api/settings";
