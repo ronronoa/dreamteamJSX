@@ -508,16 +508,18 @@ async function renderReportPdf(data: ReportData) {
   doc.setDrawColor(...COLORS.ink);
   doc.line(MARGIN + 5, signatureLineY, MARGIN + 5 + signatureWidth, signatureLineY);
   setFont(doc, "bold", 8, COLORS.purple);
-  doc.text("Prepared by", MARGIN + 5 + signatureWidth / 2, y + 13, { align: "center" });
+  doc.text("MICHAEL L. SORIANO", MARGIN + 5 + signatureWidth / 2, y + 13, { align: "center" });
   setFont(doc, "normal", 7, COLORS.ink);
-  doc.text("Report generator", MARGIN + 5 + signatureWidth / 2, y + 17, { align: "center" });
+  doc.text("Department Head, DRRMO / BHERT", MARGIN + 5 + signatureWidth / 2, y + 17, { align: "center" });
+  doc.text("Operation Logistics Management System", MARGIN + 5 + signatureWidth / 2, y + 21, { align: "center" });
 
   const rightSignatureX = PAGE_WIDTH - MARGIN - signatureWidth - 5;
   doc.line(rightSignatureX, signatureLineY, rightSignatureX + signatureWidth, signatureLineY);
   setFont(doc, "bold", 8, COLORS.ink);
-  doc.text("Reviewed by", rightSignatureX + signatureWidth / 2, y + 13, { align: "center" });
+  doc.text("HON. DHAREL D. CUNTAPAY", rightSignatureX + signatureWidth / 2, y + 13, { align: "center" });
   setFont(doc, "normal", 7, COLORS.ink);
-  doc.text("Authorized department representative", rightSignatureX + signatureWidth / 2, y + 17, { align: "center" });
+  doc.text("Punong Barangay, Barangay 176-E", rightSignatureX + signatureWidth / 2, y + 17, { align: "center" });
+  doc.text("Barangay Chairman / Approving Authority", rightSignatureX + signatureWidth / 2, y + 21, { align: "center" });
 
   doc.save(`${data.kind}-log-report-${fileDate}.pdf`);
 }

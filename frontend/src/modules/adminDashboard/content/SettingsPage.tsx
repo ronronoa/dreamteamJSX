@@ -15,7 +15,7 @@ const defaultSettings: SettingsResponse = {
     officeHotline: "(02) 8241 1760",
     archiveRetention: "1-year",
   },
-  preferences: { lowStockAlerts: false, approvalNotifications: false, sessionTimeout: "30-min" },
+  preferences: { lowStockAlerts: true, approvalNotifications: true, sessionTimeout: "30-min" },
   globalPinConfigured: false,
 }
 
@@ -91,9 +91,9 @@ export default function SettingsPage() {
       {message && <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 
       <SettingsSection icon={Sparkles} title="Workspace identity" description="Set the shared system name and office contact details.">
-        <Row label="System name"><CommonInput aria-label="System name" value={settings.workspace.systemName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, systemName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
-        <Row label="Office name"><CommonInput aria-label="Office name" value={settings.workspace.officeName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
-        <Row label="Office hotline"><CommonInput aria-label="Office hotline" value={settings.workspace.officeHotline} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeHotline: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
+        <Row label="System name" wide><CommonInput className="w-full" aria-label="System name" value={settings.workspace.systemName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, systemName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
+        <Row label="Office name" wide><CommonInput className="w-full" aria-label="Office name" value={settings.workspace.officeName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
+        <Row label="Office hotline" wide><CommonInput className="w-full" aria-label="Office hotline" value={settings.workspace.officeHotline} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeHotline: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
         {canManageWorkspace && <div className="flex justify-end"><CommonButton compact disabled={saving} onClick={() => void saveWorkspace()}>{saving ? "Saving…" : "Save workspace"}</CommonButton></div>}
       </SettingsSection>
 
@@ -118,8 +118,10 @@ export default function SettingsPage() {
           label="Archive retention"
           hint="Saved policy preference; this does not automatically delete records."
           isLast
+          wide
         >
           <Select
+            wide
             disabled={!canManageWorkspace || saving}
             value={settings.workspace.archiveRetention}
             onChange={(archiveRetention) => setSettings((current) => ({
@@ -146,8 +148,8 @@ export default function SettingsPage() {
       {/* </SettingsSection>} */}
 
       <SettingsSection icon={Shield} title="Security & accessibility" description="Choose how long an inactive session stays signed in.">
-        <Row label="Session timeout" hint="You will be signed out after this period without activity." isLast>
-          <Select disabled={saving} value={settings.preferences.sessionTimeout} onChange={(sessionTimeout) => void savePreferences({ sessionTimeout: sessionTimeout as SettingsResponse["preferences"]["sessionTimeout"] })} options={[{ value: "15-min", label: "15 minutes" }, { value: "30-min", label: "30 minutes" }, { value: "1-hour", label: "1 hour" }, { value: "2-hours", label: "2 hours" }]} />
+        <Row label="Session timeout" hint="You will be signed out after this period without activity." isLast wide>
+          <Select wide disabled={saving} value={settings.preferences.sessionTimeout} onChange={(sessionTimeout) => void savePreferences({ sessionTimeout: sessionTimeout as SettingsResponse["preferences"]["sessionTimeout"] })} options={[{ value: "15-min", label: "15 minutes" }, { value: "30-min", label: "30 minutes" }, { value: "1-hour", label: "1 hour" }, { value: "2-hours", label: "2 hours"}]} />
         </Row>
       </SettingsSection>
 

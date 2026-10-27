@@ -308,8 +308,8 @@ model SystemSetting {
 
 model UserPreference {
   user_id                 String   @id
-  lowStockAlerts          Boolean  @default(false)
-  approvalNotifications   Boolean  @default(false)
+  lowStockAlerts          Boolean  @default(true)
+  approvalNotifications   Boolean  @default(true)
   sessionTimeout          String   @default("30-min")
   updatedAt               DateTime @updatedAt
 
