@@ -52,8 +52,8 @@ export const notificationsService = {
   async list(userId: string) {
     const preferences = await prisma.userPreference.findUnique({ where: { user_id: userId } })
     const enabledCategories: string[] = []
-    if (preferences?.approvalNotifications) enabledCategories.push("approval")
-    if (preferences?.lowStockAlerts) enabledCategories.push("inventory")
+    if (preferences?.approvalNotifications ?? true) enabledCategories.push("approval")
+    if (preferences?.lowStockAlerts ?? true) enabledCategories.push("inventory")
 
     if (enabledCategories.length === 0) return { notifications: [], unreadCount: 0 }
 
@@ -121,7 +121,13 @@ export const notificationsService = {
 
   async createApprovalNotifications(activity: ActivityLog) {
     const recipients = await prisma.user.findMany({
-      where: { isActive: true, preferences: { is: { approvalNotifications: true } } },
+      where: {
+        isActive: true,
+        OR: [
+          { preferences: { is: { approvalNotifications: true } } },
+          { preferences: { is: null } },
+        ],
+      },
       select: { user_id: true },
     })
     if (recipients.length === 0) return 0
@@ -141,7 +147,14 @@ export const notificationsService = {
     const historyStart = new Date(Date.now() - NOTIFICATION_HISTORY_DAYS * 24 * 60 * 60 * 1000)
     const [recipient, submissions] = await Promise.all([
       prisma.user.findFirst({
-        where: { user_id: userId, isActive: true, preferences: { is: { approvalNotifications: true } } },
+        where: {
+          user_id: userId,
+          isActive: true,
+          OR: [
+            { preferences: { is: { approvalNotifications: true } } },
+            { preferences: { is: null } },
+          ],
+        },
         select: { user_id: true },
       }),
       prisma.activityLog.findMany({
@@ -172,7 +185,13 @@ export const notificationsService = {
   async syncLowStockNotifications() {
     const [recipients, inventory] = await Promise.all([
       prisma.user.findMany({
-        where: { isActive: true, preferences: { is: { lowStockAlerts: true } } },
+        where: {
+          isActive: true,
+          OR: [
+            { preferences: { is: { lowStockAlerts: true } } },
+            { preferences: { is: null } },
+          ],
+        },
         select: { user_id: true },
       }),
       inventoryService.list(),

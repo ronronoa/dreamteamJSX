@@ -90,3 +90,11 @@ export function requireRole(...allowedRoles: Role[]) {
     next();
   };
 }
+
+export function denyTeamLeaderWrites(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role === "TEAM_LEADER") {
+    return next(new ForbiddenError("Team Leaders have read-only access."));
+  }
+
+  next();
+}

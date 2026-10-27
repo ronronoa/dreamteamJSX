@@ -1,8 +1,8 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, type Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /** User directory query: include the account's assigned team in one database round trip. */
-export async function listManagedUsers() {
+export async function listManagedUsers(actorRole: Role) {
   return prisma.$queryRaw<Array<{
     id: string;
     name: string;
@@ -32,6 +32,7 @@ export async function listManagedUsers() {
       u."updatedAt"
     FROM "User" u
     LEFT JOIN "ResponseTeam" t ON t."team_id" = u."team_id"
+    WHERE ${actorRole !== "DEPARTMENT_HEAD"} OR u."role" <> 'SUPER_ADMIN'::"Role"
     ORDER BY u."createdAt" DESC, u."name" ASC
   `);
 }

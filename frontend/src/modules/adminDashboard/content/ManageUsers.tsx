@@ -16,12 +16,12 @@ import { useManageUsersDashboard } from "./manageUsers/useManageUsersDashboard";
 
 export default function ManageUsers() {
   const {
-    session, isDepartmentHead, users, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
+    session, isDepartmentHead, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
     modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
     teamToDelete, setTeamToDelete, teamSubmitting, teamError, setTeamError,
-    filteredUsers, activeCount, administratorCount, canManageTeams,
+    visibleUsers, filteredUsers, activeCount, administratorCount, canManageTeams,
     openCreateModal, openEditModal, saveUser, deactivateUser, saveTeam, removeTeam,
   } = useManageUsersDashboard();
 
@@ -68,10 +68,10 @@ export default function ManageUsers() {
         />}
       <div className="space-y-7">
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <StatCard label="Total Accounts" value={String(users.length)} sub="Registered portal users" variant="primary" />
+        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-3 "lg:grid-cols-3"`}>
+          <StatCard label="Total Accounts" value={String(visibleUsers.length)} sub="Registered portal users" variant="primary" />
           <StatCard label="Active Accounts" value={String(activeCount)} sub="Accounts able to sign in" />
-          <StatCard label="Super Admins" value={String(administratorCount)} sub="Active privileged accounts" />
+          {!isDepartmentHead && <StatCard label="Super Admins" value={String(administratorCount)} sub="Active privileged accounts" />}
         </div>
 
         {pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p>}
@@ -119,7 +119,9 @@ export default function ManageUsers() {
                 <Filter size={14} />
                 <select aria-label="Filter users by role" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as Role | "ALL")} className="bg-transparent outline-none">
                   <option value="ALL">All roles</option>
-                  {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {Object.entries(roleLabels)
+                    .filter(([value]) => !isDepartmentHead || value !== "SUPER_ADMIN")
+                    .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
               <select aria-label="Filter users by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600">
@@ -157,10 +159,6 @@ export default function ManageUsers() {
                 { label: "Status", render: (user) => <TableStatus variant={user.isActive ? "active" : "inactive"} /> },
                 { label: "Actions", align: "center", render: (user) => {
                   const blockReason = getDeactivationBlockReason(user, session?.user.id, administratorCount);
-                  const cannotManageAccount = isDepartmentHead && user.role === "SUPER_ADMIN";
-                  if (cannotManageAccount) {
-                    return <span className="text-xs text-gray-400" title="Department Heads cannot edit Super Admin accounts">Protected</span>;
-                  }
                   return (
                     <div className="flex items-center justify-center gap-3">
                       <button type="button" aria-label={`Edit ${user.name}`} title="Edit user" onClick={() => openEditModal(user)} className="text-purple-700 hover:text-purple-900"><Pencil size={16} /></button>

@@ -5,7 +5,7 @@ import { ConflictError, ForbiddenError } from "@/shared/errors";
 export type ReportReviewAction = "authorize" | "validate" | "reject";
 type ReviewableStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED";
 
-const FINAL_REVIEW_ROLES: Role[] = ["TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"];
+const FINAL_REVIEW_ROLES: Role[] = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"];
 const REVIEWABLE_SOURCE_STATUSES: ReviewableStatus[] = ["PENDING"];
 
 export async function prepareReportReview({
@@ -19,12 +19,16 @@ export async function prepareReportReview({
   action: ReportReviewAction;
   currentStatus: ReviewableStatus;
 }): Promise<"VALIDATED" | "REJECTED"> {
-  if (action === "authorize" && actor.role !== "TEAM_LEADER") {
-    throw new ForbiddenError("Only team leaders can send reports for review.");
+  if (actor.role === "TEAM_LEADER") {
+    throw new ForbiddenError("Team Leaders have read-only access.");
   }
 
-  if (action !== "authorize" && !FINAL_REVIEW_ROLES.includes(actor.role)) {
+  if (!FINAL_REVIEW_ROLES.includes(actor.role)) {
     throw new ForbiddenError("Insufficient permissions.");
+  }
+
+  if (action === "authorize") {
+    throw new ForbiddenError("This report action is no longer available.");
   }
 
   await pinService.verifyPin(actor.userId, { pin });

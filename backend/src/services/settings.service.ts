@@ -43,8 +43,8 @@ export const settingsService = {
         archiveRetention: settingsByKey.get(WORKSPACE_SETTING_KEYS.archiveRetention) ?? DEFAULT_WORKSPACE_SETTINGS.archiveRetention,
       },
       preferences: {
-        lowStockAlerts: preferences?.lowStockAlerts ?? false,
-        approvalNotifications: preferences?.approvalNotifications ?? false,
+        lowStockAlerts: preferences?.lowStockAlerts ?? true,
+        approvalNotifications: preferences?.approvalNotifications ?? true,
         sessionTimeout: preferences?.sessionTimeout ?? "30-min",
       },
       globalPinConfigured: Boolean(globalPin || legacyPinOwner),

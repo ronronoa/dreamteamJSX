@@ -37,11 +37,13 @@ export function Row({
   label,
   hint,
   isLast = false,
+  wide = false,
   children,
 }: {
   label: string;
   hint?: string;
   isLast?: boolean;
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -55,7 +57,7 @@ export function Row({
         {hint && <p className="mt-0.5 text-[11px] text-gray-500">{hint}</p>}
       </div>
 
-      <div className="shrink-0">{children}</div>
+      <div className={wide ? "w-full max-w-xl" : "shrink-0"}>{children}</div>
     </div>
   );
 }
@@ -77,13 +79,13 @@ export function Toggle({
       onCheckedChange={onChange}
       disabled={disabled}
       aria-label={label}
-      className={`relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? "bg-purple-600" : "bg-gray-200"
       }`}
     >
       <Switch.Thumb
-        className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
-          checked ? "translate-x-4" : "translate-x-0.5"
+        className={`absolute left-0.5 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow transition-transform ${
+          checked ? "translate-x-4" : "translate-x-0"
         }`}
       />
     </Switch.Root>
@@ -95,19 +97,21 @@ export function Select({
   onChange,
   options,
   disabled = false,
+  wide = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
   disabled?: boolean;
+  wide?: boolean;
 }) {
   return (
-    <div className="relative">
+    <div className={`relative ${wide ? "w-full" : ""}`}>
       <select
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-56 cursor-pointer appearance-none rounded-md border border-gray-200 bg-gray-100 pl-3 pr-9 text-xs font-medium text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${wide ? "w-full" : "w-56"} h-9 cursor-pointer appearance-none rounded-md border border-gray-200 bg-gray-100 pl-3 pr-9 text-xs font-medium text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 disabled:cursor-not-allowed disabled:opacity-60`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

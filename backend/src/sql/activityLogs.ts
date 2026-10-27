@@ -15,6 +15,10 @@ export interface ActivityLogRow {
   recordId: string | null;
   status: "Success" | "Failed" | "Warning";
   details: string;
+  pinType: string | null;
+  pinOwnerId: string | null;
+  pinOwnerName: string | null;
+  pinOwnerRole: string | null;
 }
 
 export interface ActivityOverview {
@@ -55,6 +59,10 @@ export async function createActivityLog(data: ActivityLogInput) {
       record_id: data.recordId,
       status: data.status,
       details: data.details,
+      pin_type: data.pinType ?? null,
+      pin_owner_id: data.pinOwnerId ?? null,
+      pin_owner_name: data.pinOwnerName ?? null,
+      pin_owner_role: data.pinOwnerRole ?? null,
     },
   });
 }
@@ -73,7 +81,11 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
         log."action",
         log."record_id" AS "recordId",
         log."status",
-        COALESCE(log."details", '') AS details
+        COALESCE(log."details", '') AS details,
+        log."pin_type" AS "pinType",
+        log."pin_owner_id" AS "pinOwnerId",
+        log."pin_owner_name" AS "pinOwnerName",
+        log."pin_owner_role" AS "pinOwnerRole"
       FROM "ActivityLog" AS log
       WHERE log."archivedAt" IS NULL
         AND log."actor_name" <> 'Unauthenticated user'
@@ -186,7 +198,11 @@ export async function exportActivityLogs() {
       log."action",
       log."record_id" AS "recordId",
       log."status",
-      COALESCE(log."details", '') AS details
+      COALESCE(log."details", '') AS details,
+      log."pin_type" AS "pinType",
+      log."pin_owner_id" AS "pinOwnerId",
+      log."pin_owner_name" AS "pinOwnerName",
+      log."pin_owner_role" AS "pinOwnerRole"
     FROM "ActivityLog" AS log
     WHERE log."archivedAt" IS NULL
       AND log."actor_name" <> 'Unauthenticated user'

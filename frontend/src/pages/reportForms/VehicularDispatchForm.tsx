@@ -257,7 +257,10 @@ export default function VehicularDispatchForm() {
 
   const nextStep = () => {
     if (step >= FORM_STEPS) return
-    setValidationErrors(validateStep(step, formData))
+    const errors = validateStep(step, formData)
+    setValidationErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     setDirection(1)
     setStep((current) => current + 1)
   }
@@ -419,7 +422,13 @@ export default function VehicularDispatchForm() {
                   Submit
                 </CommonButton>
               ) : (
-                <CommonButton className="min-w-[130px]" onClick={nextStep}>Next</CommonButton>
+                <CommonButton
+                  className="min-w-[130px]"
+                  onClick={nextStep}
+                  disabled={Object.keys(validateStep(step, formData)).length > 0 || optionsLoading || Boolean(optionsError)}
+                >
+                  Next
+                </CommonButton>
               )}
             </div>
           </div>

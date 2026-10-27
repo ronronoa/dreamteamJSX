@@ -34,7 +34,7 @@ export const patientLogController = {
       );
       let action: "authorize" | "validate" | "reject" = "validate";
       if (requestedAction === "authenticate") {
-        action = req.user?.role === "TEAM_LEADER" ? "authorize" : "validate";
+        action = "validate";
       } else {
         action = requestedAction;
       }

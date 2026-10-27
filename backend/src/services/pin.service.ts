@@ -100,7 +100,15 @@ export const pinService = {
       select: { value: true },
     })
     if (globalPinSetting) {
-      if (await argon2.verify(globalPinSetting.value, data.pin)) return { valid: true }
+      if (await argon2.verify(globalPinSetting.value, data.pin)) {
+        return {
+          valid: true,
+          type: "GLOBAL" as const,
+          ownerId: null,
+          ownerName: null,
+          ownerRole: null,
+        };
+      }
       throw new UnauthorizedError("Invalid global PIN.")
     }
 
@@ -111,7 +119,7 @@ export const pinService = {
         pinHash: { not: null },
         OR: [{ pinLockedUntil: null }, { pinLockedUntil: { lte: new Date() } }],
       },
-      select: { user_id: true, pinHash: true },
+      select: { user_id: true, name: true, role: true, pinHash: true },
     });
     if (pinOwners.length === 0) {
       throw new UnauthorizedError("A report PIN has not been set by an administrator yet.");
@@ -128,7 +136,13 @@ export const pinService = {
           },
           update: {},
         });
-        return { valid: true };
+        return {
+          valid: true,
+          type: "USER" as const,
+          ownerId: pinOwner.user_id,
+          ownerName: pinOwner.name,
+          ownerRole: pinOwner.role,
+        };
       }
     }
     throw new UnauthorizedError("Invalid report PIN.");

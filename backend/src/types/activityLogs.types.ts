@@ -3,6 +3,7 @@ import type { z } from "zod";
 
 export type ActivityLogsQuery = z.infer<typeof ActivityLogsQuerySchema>;
 export type ActivityStatus = "Success" | "Failed" | "Warning";
+export type ReportPinType = "GLOBAL" | "USER" | "TEAM_LEADER" | "DEPARTMENT_HEAD";
 
 export interface ActivityLogInput {
   actorId?: string;
@@ -12,4 +13,8 @@ export interface ActivityLogInput {
   recordId: string | null;
   status: ActivityStatus;
   details: string;
+  pinType?: ReportPinType;
+  pinOwnerId?: string | null;
+  pinOwnerName?: string | null;
+  pinOwnerRole?: string | null;
 }

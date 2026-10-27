@@ -205,6 +205,9 @@ export default function PatientLogForm() {
 
   const nextStep = () => {
     if (step >= totalSteps) return
+    const errors = getPatientStepErrors(step, formData)
+    if (Object.keys(errors).length > 0) return
+
     setDirection(1)
     setStep((current) => current + 1)
   }
@@ -452,7 +455,10 @@ export default function PatientLogForm() {
                 <CommonButton
                   className="min-w-[130px]"
                   onClick={nextStep}
-                  disabled={step === 1 && (optionsLoading || Boolean(optionsError))}
+                  disabled={
+                    (step === 1 && (optionsLoading || Boolean(optionsError))) ||
+                    Object.keys(getPatientStepErrors(step, formData)).length > 0
+                  }
                 >
                   Next
                 </CommonButton>

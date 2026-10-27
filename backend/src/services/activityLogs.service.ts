@@ -1,5 +1,5 @@
 import { createActivityLog } from "@/sql/activityLogs";
-import type { ActivityLogInput, ActivityStatus } from "@/types/activityLogs.types";
+import type { ActivityLogInput, ActivityStatus, ReportPinType } from "@/types/activityLogs.types";
 import { notificationsService } from "@/services/notifications.service";
 
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -48,6 +48,10 @@ export const activityLogsService = {
     actorId?: string;
     actorName?: string;
     recordId?: string;
+      pinType?: ReportPinType;
+      pinOwnerId?: string;
+      pinOwnerName?: string;
+      pinOwnerRole?: string;
     method: string;
     path: string;
     statusCode: number;
@@ -65,6 +69,10 @@ export const activityLogsService = {
     const activity: ActivityLogInput = {
       ...(input.actorId ? { actorId: input.actorId } : {}),
       ...(input.actorName ? { actorName: input.actorName } : {}),
+      ...(input.pinType ? { pinType: input.pinType } : {}),
+      ...(input.pinOwnerId ? { pinOwnerId: input.pinOwnerId } : {}),
+      ...(input.pinOwnerName ? { pinOwnerName: input.pinOwnerName } : {}),
+      ...(input.pinOwnerRole ? { pinOwnerRole: input.pinOwnerRole } : {}),
       module,
       action,
       recordId,

@@ -1,4 +1,4 @@
-import { Activity, Calendar, ClipboardList, Network, Truck } from "lucide-react";
+import { Activity, ClipboardList, Network, Truck } from "lucide-react";
 import type { ReportCard } from "@/types/reports";
 
 export const REPORT_CARDS: ReportCard[] = [
@@ -21,10 +21,5 @@ export const REPORT_CARDS: ReportCard[] = [
     title: "Inventory Reports",
     description: "Review stock levels, low-stock alerts, and supply movement.",
     icon: Network,
-  },
-  {
-    title: "Summary",
-    description: "Create a concise view of community response performance.",
-    icon: Calendar,
   },
 ];

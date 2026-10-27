@@ -3,7 +3,7 @@ import { operationController } from "@/controllers/operation.controller";
 import { patientLogController } from "@/controllers/patientLog.controller";
 import { vehicularDispatchReportController } from "@/controllers/vehicularDispatchReport.controller";
 import { ocrController } from "@/controllers/ocr.controller";
-import { optionalAuth, requireAuth, requireRole } from "@/middleware/auth.middleware";
+import { denyTeamLeaderWrites, optionalAuth, requireAuth, requireRole } from "@/middleware/auth.middleware";
 import { createOcrImageUpload, createReportFormUpload } from "@/middleware/upload";
 import { ValidationError } from "@/shared/errors";
 import { Router } from "express";
@@ -30,24 +30,24 @@ export const reportFormsRoutes = Router();
 // Operation-log read, edit, and review APIs share this route module with form submissions.
 reportFormsRoutes.get("/operations", requireAuth, operationController.list);
 reportFormsRoutes.get("/operations/:id", requireAuth, operationController.getById);
-reportFormsRoutes.post("/operations", requireAuth, operationController.create);
-reportFormsRoutes.patch("/operations/:id", requireAuth, operationController.update);
+reportFormsRoutes.post("/operations", requireAuth, denyTeamLeaderWrites, operationController.create);
+reportFormsRoutes.patch("/operations/:id", requireAuth, denyTeamLeaderWrites, operationController.update);
 
-reportFormsRoutes.post("/operations/:id/submit", requireAuth, operationController.submit);
-reportFormsRoutes.post("/operations/:id/authorize", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), operationController.authorize);
-reportFormsRoutes.post("/operations/:id/validate", requireAuth, requireRole("TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.validate);
-reportFormsRoutes.post("/operations/:id/reject", requireAuth, requireRole("TEAM_LEADER", "SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject);
+reportFormsRoutes.post("/operations/:id/submit", requireAuth, denyTeamLeaderWrites, operationController.submit);
+reportFormsRoutes.post("/operations/:id/authorize", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), operationController.authorize);
+reportFormsRoutes.post("/operations/:id/validate", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.validate);
+reportFormsRoutes.post("/operations/:id/reject", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), operationController.reject);
 
-reportFormsRoutes.post("/operations/:id/persons", requireAuth, operationController.addPerson);
-reportFormsRoutes.post("/operations/:id/responders", requireAuth, operationController.addResponder);
-reportFormsRoutes.post("/operations/:id/images", requireAuth, operationController.addImage);
+reportFormsRoutes.post("/operations/:id/persons", requireAuth, denyTeamLeaderWrites, operationController.addPerson);
+reportFormsRoutes.post("/operations/:id/responders", requireAuth, denyTeamLeaderWrites, operationController.addResponder);
+reportFormsRoutes.post("/operations/:id/images", requireAuth, denyTeamLeaderWrites, operationController.addImage);
 
 reportFormsRoutes.get("/patient-logs", requireAuth, patientLogController.list);
 reportFormsRoutes.get("/patient-logs/:id", requireAuth, patientLogController.getById);
-reportFormsRoutes.post("/patient-logs/:id/authorize", requireAuth, requireRole("TEAM_LEADER"), patientLogController.review);
-reportFormsRoutes.post("/patient-logs/:id/authenticate", requireAuth, patientLogController.review);
-reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
-reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("TEAM_LEADER", "DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/authorize", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/authenticate", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/validate", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
+reportFormsRoutes.post("/patient-logs/:id/reject", requireAuth, requireRole("DEPARTMENT_HEAD", "DEPUTY", "SUPER_ADMIN"), patientLogController.review);
 
 function parseImages(req: Request, res: Response, next: NextFunction) {
   parseReportImages(req, res, (error: unknown) => {
@@ -96,11 +96,11 @@ reportFormsRoutes.get("/report-forms/inventory/last-selection", reportFormsContr
 reportFormsRoutes.get("/report-forms/operations/latest", reportFormsController.getLatestOperationReport);
 reportFormsRoutes.get("/report-forms/patients/latest", reportFormsController.getLatestPatientReport);
 reportFormsRoutes.post("/report-forms/patients/scan", optionalAuth, parseOcrImage, ocrController.scanPatientLogImage);
-reportFormsRoutes.post("/report-forms/operations", optionalAuth, reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
-reportFormsRoutes.post("/report-forms/patients", optionalAuth, reportFormPinLimiter, parsePatientImages, reportFormsController.submitPatient);
+reportFormsRoutes.post("/report-forms/operations", optionalAuth, denyTeamLeaderWrites, reportFormPinLimiter, parseImages, reportFormsController.submitOperation);
+reportFormsRoutes.post("/report-forms/patients", optionalAuth, denyTeamLeaderWrites, reportFormPinLimiter, parsePatientImages, reportFormsController.submitPatient);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/options", vehicularDispatchReportController.getOptions);
 reportFormsRoutes.get("/report-forms/vehicular-dispatches/latest", vehicularDispatchReportController.getLatest);
-reportFormsRoutes.post("/report-forms/vehicular-dispatches", optionalAuth, reportFormPinLimiter, vehicularDispatchReportController.submit);
+reportFormsRoutes.post("/report-forms/vehicular-dispatches", optionalAuth, denyTeamLeaderWrites, reportFormPinLimiter, vehicularDispatchReportController.submit);
 
 reportFormsRoutes.get("/vehicular-dispatches/:id", requireAuth, vehicularDispatchReportController.getById);
 reportFormsRoutes.post("/vehicular-dispatches/:id/:action", requireAuth, vehicularDispatchReportController.review);

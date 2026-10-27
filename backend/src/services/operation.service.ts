@@ -258,7 +258,7 @@ export const operationService = {
 
   async authorize(operationId: string, actor: { userId: string; role: Role }, pin: string) {
     const op = await this.findById(operationId)
-    const action = actor.role === "TEAM_LEADER" ? "authorize" : "validate"
+    const action = "validate"
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: op.status })
 
     return prisma.$transaction(async (tx) => {

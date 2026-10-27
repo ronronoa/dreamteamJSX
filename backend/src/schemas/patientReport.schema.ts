@@ -9,10 +9,10 @@ const personNameSchema = z.object({
 });
 
 const addressSchema = z.object({
-  phase: z.string().trim().max(30),
-  package: z.string().trim().max(30),
-  block: z.string().trim().max(30),
-  lot: z.string().trim().max(30),
+  phase: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  package: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  block: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  lot: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
 });
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);
@@ -68,7 +68,7 @@ export const PatientReportSchema = z.object({
     age: z.number().int().min(0).max(150),
     sex: z.enum(["Male", "Female"]),
     contactPerson: personNameSchema,
-    contactNumber: z.string().trim().min(1).max(30),
+    contactNumber: z.string().trim().min(1).max(11).regex(/^\d+$/),
     address: addressSchema,
   }),
   firstAidHospital: z.object({

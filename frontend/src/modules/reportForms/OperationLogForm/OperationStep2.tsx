@@ -5,6 +5,7 @@ import CommonButton from "../../../components/common/widgets/CommonButton"
 import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
@@ -169,7 +170,8 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             label="Contact Number"
             placeholder="09123456789"
             value={draft.contactNumber}
-            onChange={(e) => updateDraft({ contactNumber: e.target.value })}
+            maxLength={MAX_CONTACT_NUMBER_LENGTH}
+            onChange={(e) => updateDraft({ contactNumber: sanitizeContactNumber(e.target.value) })}
             errorMessage={draftErrors.contactNumber}
           />
         </div>
@@ -195,40 +197,44 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             <CommonInput
               variant="compact"
               className="w-9 px-1 text-center"
+              maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="9"
               value={draft.address.phase}
               errorMessage={draftErrors["address.phase"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, phase: e.target.value } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, phase: sanitizeAddressValue(e.target.value) } })}
             />
 
             <span>Package</span>
             <CommonInput
               variant="compact"
               className="w-9 px-1 text-center"
+              maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="3"
               value={draft.address.package}
               errorMessage={draftErrors["address.package"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, package: e.target.value } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, package: sanitizeAddressValue(e.target.value) } })}
             />
 
             <span>Block</span>
             <CommonInput
               variant="compact"
               className="w-9 px-1 text-center"
+              maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="25"
               value={draft.address.block}
               errorMessage={draftErrors["address.block"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, block: e.target.value } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, block: sanitizeAddressValue(e.target.value) } })}
             />
 
             <span>Lot</span>
             <CommonInput
               variant="compact"
               className="w-9 px-1 text-center"
+              maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="16"
               value={draft.address.lot}
               errorMessage={draftErrors["address.lot"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, lot: e.target.value } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, lot: sanitizeAddressValue(e.target.value) } })}
             />
           </div>
         </div>
