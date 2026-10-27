@@ -8,14 +8,17 @@ import AreYouSureModal from "../components/common/modals/AreYouSure";
 import { getNavLabel } from "@/modules/adminDashboard/DashboardNav";
 import { fetchSettings } from "@/api/settings";
 import { useTitle } from "@/hooks/useTitle";
+import CommonTopBanner from "../components/common/widgets/CommonToBanner";
 
 const SESSION_TIMEOUT_MS: Record<string, number> = {
+  "1-min": 60 * 1000,
   "15-min": 15 * 60 * 1000,
   "30-min": 30 * 60 * 1000,
   "1-hour": 60 * 60 * 1000,
   "2-hours": 2 * 60 * 60 * 1000,
 };
 const ACTIVITY_RESET_THROTTLE_MS = 5000;
+const SESSION_TIMEOUT_WARNING_MS = 60 * 1000;
 
 export default function DashboardLayout() {
   const [isAreYouSureModalOpen, setIsAreYouSureModalOpen] = useState(false)
@@ -23,6 +26,7 @@ export default function DashboardLayout() {
   const { session, logout } = useAuth();
   const { pathname } = useLocation();
   const [sessionTimeout, setSessionTimeout] = useState("30-min");
+  const [idleSecondsRemaining, setIdleSecondsRemaining] = useState<number | null>(null);
   useTitle("Dashboard")
 
   useEffect(() => {
@@ -45,10 +49,34 @@ export default function DashboardLayout() {
     const timeoutMs = SESSION_TIMEOUT_MS[sessionTimeout] ?? SESSION_TIMEOUT_MS["30-min"];
     let lastActivityResetAt = Date.now() - ACTIVITY_RESET_THROTTLE_MS;
     let timeoutId = window.setTimeout(() => { void logout() }, timeoutMs);
+    let lastDisplayedSeconds: number | null = null;
+
+    const updateCountdown = () => {
+      const elapsedMs = Date.now() - lastActivityResetAt;
+      const remainingMs = timeoutMs - elapsedMs;
+
+      if (remainingMs >= SESSION_TIMEOUT_WARNING_MS) {
+        if (lastDisplayedSeconds !== null) {
+          lastDisplayedSeconds = null;
+          setIdleSecondsRemaining(null);
+        }
+        return;
+      }
+
+      const secondsRemaining = Math.max(1, Math.ceil(remainingMs / 1000));
+      if (secondsRemaining !== lastDisplayedSeconds) {
+        lastDisplayedSeconds = secondsRemaining;
+        setIdleSecondsRemaining(secondsRemaining);
+      }
+    };
+
+    const countdownIntervalId = window.setInterval(updateCountdown, 250);
     const resetTimer = () => {
       const now = Date.now();
       if (now - lastActivityResetAt < ACTIVITY_RESET_THROTTLE_MS) return;
       lastActivityResetAt = now;
+      lastDisplayedSeconds = null;
+      setIdleSecondsRemaining(null);
       window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => { void logout() }, timeoutMs);
     };
@@ -56,6 +84,8 @@ export default function DashboardLayout() {
     activityEvents.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
     return () => {
       window.clearTimeout(timeoutId);
+      window.clearInterval(countdownIntervalId);
+      setIdleSecondsRemaining(null);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
     };
   }, [logout, sessionTimeout]);
@@ -73,6 +103,7 @@ export default function DashboardLayout() {
         open={isAreYouSureModalOpen}
         onConfirm={logout}
         title="Are you sure you want to log out?"
+        variant="danger"
       />
 
       <Sidebar
@@ -84,6 +115,13 @@ export default function DashboardLayout() {
       />
 
       <div className="min-w-0 flex-1 flex flex-col">
+        {idleSecondsRemaining !== null && (
+          <div className="fixed inset-x-0 top-0 z-[110]">
+            <CommonTopBanner variant="warning">
+              You will be logged out due to inactivity in {idleSecondsRemaining} {idleSecondsRemaining === 1 ? "second" : "seconds"}. Move or click your mouse, or press a key, to stay signed in.
+            </CommonTopBanner>
+          </div>
+        )}
         <DashboardHeader
           onMenuClick={() => setSidebarOpen(true)}
           contentName={contentName}

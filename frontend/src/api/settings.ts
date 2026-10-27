@@ -10,7 +10,7 @@ export interface WorkspaceSettings {
 export interface UserPreferences {
   lowStockAlerts: boolean
   approvalNotifications: boolean
-  sessionTimeout: "15-min" | "30-min" | "1-hour" | "2-hours"
+  sessionTimeout: "1-min" | "15-min" | "30-min" | "1-hour" | "2-hours"
 }
 
 export interface SettingsResponse {

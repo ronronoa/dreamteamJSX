@@ -13,6 +13,7 @@ import { fetchVehicularDispatchRecords, reviewVehicularDispatch, type VehicleDis
 import { archiveRecord } from "@/api/archives";
 import { getPageCount } from "@/utils/pagination";
 import { createVehiclePdf } from "./vehiclePdf";
+import { formatDate } from "@/utils/dateTime";
 
 export const VEHICLE_PAGE_SIZE = 10;
 type ReviewAction = "authorize" | "validate" | "reject";
@@ -37,6 +38,8 @@ export function useVehiclesDashboard() {
   const [dispatchError, setDispatchError] = useState("");
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingPage, setPendingPage] = useState(1);
@@ -92,6 +95,9 @@ export function useVehiclesDashboard() {
     const term = search.trim().toLowerCase();
     return allRows.filter((record) => {
       if (statusFilter !== "all" && record.status !== statusFilter) return false;
+      const reportDate = formatDate(record.date, "YYYY-MM-DD");
+      if (fromDate && reportDate < fromDate) return false;
+      if (toDate && reportDate > toDate) return false;
       if (!term) return true;
       return [
         record.id,
@@ -103,7 +109,7 @@ export function useVehiclesDashboard() {
         record.status,
       ].some((value) => value.toLowerCase().includes(term));
     });
-  }, [allRows, search, statusFilter]);
+  }, [allRows, fromDate, search, statusFilter, toDate]);
 
   const pendingRows = useMemo(
     () => matchingRows.filter((record) => record.status === "PENDING" && ( !record.operation_id || !record.patient_log_id ) ),
@@ -131,6 +137,28 @@ export function useVehiclesDashboard() {
     setReviewedPage(1);
     setSelectedIds([]);
     setFilterOpen(false);
+  }
+
+  function resetPagesAndSelection() {
+    setPendingPage(1);
+    setReviewedPage(1);
+    setSelectedIds([]);
+  }
+
+  function updateFromDate(value: string) {
+    setFromDate(value);
+    resetPagesAndSelection();
+  }
+
+  function updateToDate(value: string) {
+    setToDate(value);
+    resetPagesAndSelection();
+  }
+
+  function clearDateFilter() {
+    setFromDate("");
+    setToDate("");
+    resetPagesAndSelection();
   }
 
   function openReview(record: VehicleDispatchRecord, action: "approve" | "reject") {
@@ -360,6 +388,8 @@ export function useVehiclesDashboard() {
     role,
     busy,
     search,
+    fromDate,
+    toDate,
     statusFilter,
     filterOpen,
     pendingPage,
@@ -401,6 +431,9 @@ export function useVehiclesDashboard() {
 
     updateSearch,
     updateStatusFilter,
+    updateFromDate,
+    updateToDate,
+    clearDateFilter,
     openReview,
     openBulkReview,
     handleReview,

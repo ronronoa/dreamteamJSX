@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { archivePatientLog, fetchPatientLogs, reviewPatientLog, type PatientLogRecord } from "@/api/patients";
 import { useAuth } from "@/store/useAuth";
 import { getPageCount } from "@/utils/pagination";
+import { formatDate } from "@/utils/dateTime";
 import { createPatientPdf } from "./patientPdf";
 import {
   getMostCommonAgeRange,
@@ -28,6 +29,8 @@ export function usePatientsDashboard() {
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingPage, setPendingPage] = useState(1);
@@ -81,11 +84,14 @@ export function usePatientsDashboard() {
     const term = search.trim().toLowerCase();
     return allRows.filter((row) => {
       if (statusFilter !== "all" && row.status !== statusFilter) return false;
+      const reportDate = formatDate(row.date, "YYYY-MM-DD");
+      if (fromDate && reportDate < fromDate) return false;
+      if (toDate && reportDate > toDate) return false;
       if (!term) return true;
       return [row.id, row.name, row.assessment, row.waiverDescription, row.address, row.submittedBy, row.requestType]
         .some((value) => value.toLowerCase().includes(term));
     });
-  }, [allRows, search, statusFilter]);
+  }, [allRows, fromDate, search, statusFilter, toDate]);
 
   const pendingRows = useMemo(() => matchingRows.filter((row) => row.status === "PENDING"), [matchingRows]);
   const reviewedRows = useMemo(() => matchingRows.filter((row) => row.status === "VALIDATED" || row.status === "REJECTED"), [matchingRows]);
@@ -119,6 +125,28 @@ export function usePatientsDashboard() {
     setReviewedPage(1);
     setSelectedIds([]);
     setFilterOpen(false);
+  }
+
+  function resetPagesAndSelection() {
+    setPendingPage(1);
+    setReviewedPage(1);
+    setSelectedIds([]);
+  }
+
+  function updateFromDate(value: string) {
+    setFromDate(value);
+    resetPagesAndSelection();
+  }
+
+  function updateToDate(value: string) {
+    setToDate(value);
+    resetPagesAndSelection();
+  }
+
+  function clearDateFilter() {
+    setFromDate("");
+    setToDate("");
+    resetPagesAndSelection();
   }
 
   function openReview(row: PatientRow, action: "approve" | "reject") {
@@ -221,7 +249,7 @@ export function usePatientsDashboard() {
   }
 
   return {
-    role, loading, loadRecords, busy, pageError, successMessage, search, statusFilter, filterOpen,
+    role, loading, loadRecords, busy, pageError, successMessage, search, fromDate, toDate, statusFilter, filterOpen,
     pendingPage, reviewedPage, selectedIds, selectedRecord, reviewTarget, pinError,
     pdfConfirmationOpen, archiveConfirmationOpen, stats, pendingRows, reviewedRows,
     selectedRows, selectedPendingRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,
@@ -230,7 +258,8 @@ export function usePatientsDashboard() {
     reviewedPageCount: getPageCount(reviewedRows.length, PATIENT_PAGE_SIZE),
     setFilterOpen, setPendingPage, setReviewedPage, setSelectedIds, setSelectedRecord,
     setReviewTarget, setBulkReviewAction, setPinError, setPdfConfirmationOpen, setArchiveConfirmationOpen,
-    updateSearch, updateStatusFilter, openReview, openBulkReview, handleReview, toggleSelection,
+    updateSearch, updateStatusFilter, updateFromDate, updateToDate, clearDateFilter,
+    openReview, openBulkReview, handleReview, toggleSelection,
     printSelectedRecords, archiveSelectedRecords,
   };
 }

@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/store/useAuth";
 import { createOperationPdf } from "./operationPdf";
 import { getPageCount } from "@/utils/pagination";
+import { formatDate } from "@/utils/dateTime";
 import {
   getAverageResponseTime,
   getMostFrequent,
@@ -32,6 +33,8 @@ export function useOperationsDashboard() {
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingPage, setPendingPage] = useState(1);
@@ -86,11 +89,14 @@ export function useOperationsDashboard() {
     const term = search.trim().toLowerCase();
     return allRows.filter((row) => {
       if (statusFilter !== "all" && row.status !== statusFilter) return false;
+      const reportDate = formatDate(row.date, "YYYY-MM-DD");
+      if (fromDate && reportDate < fromDate) return false;
+      if (toDate && reportDate > toDate) return false;
       if (!term) return true;
       return [row.id, row.caller, row.incident, row.location, row.team, row.submittedBy]
         .some((value) => value.toLowerCase().includes(term));
     });
-  }, [allRows, search, statusFilter]);
+  }, [allRows, fromDate, search, statusFilter, toDate]);
 
   const pendingRows = useMemo(
     () => matchingRows.filter((row) => row.status === "PENDING"),
@@ -131,6 +137,28 @@ export function useOperationsDashboard() {
     setReviewedPage(1);
     setSelectedIds([]);
     setFilterOpen(false);
+  }
+
+  function resetPagesAndSelection() {
+    setPendingPage(1);
+    setReviewedPage(1);
+    setSelectedIds([]);
+  }
+
+  function updateFromDate(value: string) {
+    setFromDate(value);
+    resetPagesAndSelection();
+  }
+
+  function updateToDate(value: string) {
+    setToDate(value);
+    resetPagesAndSelection();
+  }
+
+  function clearDateFilter() {
+    setFromDate("");
+    setToDate("");
+    resetPagesAndSelection();
   }
 
   function openReview(row: OperationRow, action: ReviewAction) {
@@ -238,6 +266,8 @@ export function useOperationsDashboard() {
     pageError,
     successMessage,
     search,
+    fromDate,
+    toDate,
     statusFilter,
     filterOpen,
     pendingPage,
@@ -272,6 +302,9 @@ export function useOperationsDashboard() {
     setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
+    updateFromDate,
+    updateToDate,
+    clearDateFilter,
     openReview,
     openBulkReview,
     handleReview,

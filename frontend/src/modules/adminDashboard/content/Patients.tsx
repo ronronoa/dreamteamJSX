@@ -13,6 +13,7 @@ import PatientDetails from "./patients/PatientDetails";
 import PatientStatusBadge from "./patients/PatientStatusBadge";
 import { type PatientRow } from "./patients/patientUtils";
 import { usePatientsDashboard } from "./patients/usePatientsDashboard";
+import DateRangeFilter from "@/components/common/widgets/DateRangeFilter";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
@@ -70,6 +71,8 @@ export default function Patients() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {dashboard.stats.map((stat) => <StatCard key={stat.label} {...stat} />)}
         </div>
+
+        <DateRangeFilter fromDate={dashboard.fromDate} toDate={dashboard.toDate} onFromDateChange={dashboard.updateFromDate} onToDateChange={dashboard.updateToDate} onClear={dashboard.clearDateFilter} />
 
         {dashboard.pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{dashboard.pageError}</p>}
         {dashboard.successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{dashboard.successMessage}</p>}

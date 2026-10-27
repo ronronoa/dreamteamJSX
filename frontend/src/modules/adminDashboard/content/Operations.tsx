@@ -15,6 +15,7 @@ import StatCard from "../component/StatCard";
 import DateCell from "../component/DateCell";
 import TableSearch from "../component/TableSearch";
 import TablePagination from "../component/TablePagination";
+import DateRangeFilter from "@/components/common/widgets/DateRangeFilter";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
@@ -31,6 +32,8 @@ export default function Operations() {
     pageError,
     successMessage,
     search,
+    fromDate,
+    toDate,
     statusFilter,
     filterOpen,
     pendingPage,
@@ -64,6 +67,9 @@ export default function Operations() {
     setArchiveConfirmationOpen,
     updateSearch,
     updateStatusFilter,
+    updateFromDate,
+    updateToDate,
+    clearDateFilter,
     openReview,
     openBulkReview,
     handleReview,
@@ -114,6 +120,8 @@ export default function Operations() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {stats.map((stat) => <StatCard key={stat.label} {...stat} />)}
         </div>
+
+        <DateRangeFilter fromDate={fromDate} toDate={toDate} onFromDateChange={updateFromDate} onToDateChange={updateToDate} onClear={clearDateFilter} />
 
         {pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p>}
         {successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>}

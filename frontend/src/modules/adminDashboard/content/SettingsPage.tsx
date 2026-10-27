@@ -149,7 +149,20 @@ export default function SettingsPage() {
 
       <SettingsSection icon={Shield} title="Security & accessibility" description="Choose how long an inactive session stays signed in.">
         <Row label="Session timeout" hint="You will be signed out after this period without activity." isLast wide>
-          <Select wide disabled={saving} value={settings.preferences.sessionTimeout} onChange={(sessionTimeout) => void savePreferences({ sessionTimeout: sessionTimeout as SettingsResponse["preferences"]["sessionTimeout"] })} options={[{ value: "15-min", label: "15 minutes" }, { value: "30-min", label: "30 minutes" }, { value: "1-hour", label: "1 hour" }, { value: "2-hours", label: "2 hours"}]} />
+          <Select
+            wide
+            disabled={saving}
+            value={settings.preferences.sessionTimeout}
+            onChange={(sessionTimeout) => void savePreferences({
+              sessionTimeout: sessionTimeout as SettingsResponse["preferences"]["sessionTimeout"] }
+            )}
+            options={[
+              // { value: "1-min", label: "1 minute" },
+              { value: "15-min", label: "15 minutes" },
+              { value: "30-min", label: "30 minutes" },
+              { value: "1-hour", label: "1 hour" },
+              { value: "2-hours", label: "2 hours"}
+            ]} />
         </Row>
       </SettingsSection>
 
