@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { archiveActivityLogs, exportActivityLogs, fetchActivityLogs } from "@/api/activityLogs";
-import type { ActivityLogRecord } from "@/api/activityLogs";
+import type { ActivityLogFilters, ActivityLogRecord } from "@/api/activityLogs";
 import { useAuth } from "@/store/useAuth";
 import { formatDate } from "@/utils/dateTime";
 import { getPageCount } from "@/utils/pagination";
@@ -14,6 +14,13 @@ export function useActivityLogsDashboard() {
   const [logs, setLogs] = useState<ActivityLogRecord[]>([]);
   const [stats, setStats] = useState(EMPTY_STATS);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [moduleFilter, setModuleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ActivityLogFilters["status"] | "">("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [totalMatchingCount, setTotalMatchingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pageError, setPageError] = useState("");
@@ -31,9 +38,17 @@ export function useActivityLogsDashboard() {
       setPageError("");
     }
     try {
-      const result = await fetchActivityLogs(accessToken, page, PAGE_SIZE);
+      const result = await fetchActivityLogs(accessToken, page, PAGE_SIZE, {
+        search,
+        module: moduleFilter,
+        role: roleFilter,
+        status: statusFilter || undefined,
+        from: fromDate,
+        to: toDate,
+      });
       setLogs(result.logs);
       setStats(result.stats);
+      setTotalMatchingCount(result.totalMatchingCount);
     } catch (error) {
       if (showLoading) {
         setPageError(error instanceof Error ? error.message : "Could not load activity logs.");
@@ -41,7 +56,7 @@ export function useActivityLogsDashboard() {
     } finally {
       if (showLoading) setLoading(false);
     }
-  }, [accessToken, page]);
+  }, [accessToken, page, search, moduleFilter, roleFilter, statusFilter, fromDate, toDate]);
 
   useEffect(() => {
     void (async () => {
@@ -58,7 +73,7 @@ export function useActivityLogsDashboard() {
     return () => window.clearInterval(pollingInterval);
   }, [loadLogs]);
 
-  const pageCount = useMemo(() => getPageCount(stats.totalCount, PAGE_SIZE), [stats.totalCount]);
+  const pageCount = useMemo(() => getPageCount(totalMatchingCount, PAGE_SIZE), [totalMatchingCount]);
   const statCards = [
     { label: "Total Activities", value: stats.totalCount.toLocaleString(), sub: "All recorded system actions" },
     { label: "Today's Activities", value: stats.todayCount.toLocaleString(), sub: formatDate(new Date(), "dddd, D MMM YYYY") },
@@ -115,9 +130,21 @@ export function useActivityLogsDashboard() {
     }
   }
 
+  function updateFilter<T>(setter: (value: T) => void, value: T) {
+    setPage(1);
+    setter(value);
+  }
+
   return {
     logs, stats, page, setPage, loading, busy, pageError, successMessage,
     archiveModalOpen, setArchiveModalOpen, selectedLog, setSelectedLog,
-    pageCount, statCards, handleArchive, handleExport, loadLogs,
+    pageCount, totalMatchingCount, search, moduleFilter, roleFilter, statusFilter, fromDate, toDate,
+    updateSearch: (value: string) => updateFilter(setSearch, value),
+    updateModuleFilter: (value: string) => updateFilter(setModuleFilter, value),
+    updateRoleFilter: (value: string) => updateFilter(setRoleFilter, value),
+    updateStatusFilter: (value: ActivityLogFilters["status"] | "") => updateFilter(setStatusFilter, value),
+    updateFromDate: (value: string) => updateFilter(setFromDate, value),
+    updateToDate: (value: string) => updateFilter(setToDate, value),
+    statCards, handleArchive, handleExport, loadLogs,
   };
 }

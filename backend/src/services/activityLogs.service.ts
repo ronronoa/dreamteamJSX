@@ -18,11 +18,13 @@ function getModule(path: string) {
   return "System";
 }
 
-function getAction(method: string, path: string, module: string) {
+function getAction(method: string, path: string, module: string, statusCode: number) {
   const normalizedPath = path.toLowerCase();
   if (method === "POST" && normalizedPath === "/report-forms/operations") return "Submitted operation report";
   if (method === "POST" && normalizedPath === "/report-forms/patients") return "Submitted patient report";
   if (method === "POST" && normalizedPath === "/report-forms/vehicular-dispatches") return "Submitted vehicle dispatch report";
+  if (normalizedPath === "/auth/signin" && statusCode >= 400) return "Failed sign-in attempt";
+  if (method === "PATCH" && module === "Inventory" && statusCode >= 400) return "Failed to update inventory record";
   if (normalizedPath.includes("/login") || normalizedPath.includes("/signin")) return "Signed in";
   if (normalizedPath.includes("/signup")) return "Created account";
   if (normalizedPath.includes("/logout")) return "Signed out";
@@ -55,16 +57,23 @@ export const activityLogsService = {
     method: string;
     path: string;
     statusCode: number;
+    errorMessage?: string;
   }) {
     const module = getModule(input.path);
-    const status: ActivityStatus = input.statusCode >= 500
+    const isFailedSignIn = input.method.toUpperCase() === "POST" &&
+      input.path.toLowerCase() === "/auth/signin" &&
+      input.statusCode >= 400;
+    const status: ActivityStatus = isFailedSignIn || input.statusCode >= 500
       ? "Failed"
       : input.statusCode >= 400
         ? "Warning"
         : "Success";
     const recordId = input.recordId ?? input.path.match(UUID_PATTERN)?.[0] ?? null;
-    const action = getAction(input.method, input.path, module);
-    const details = `${input.method} ${input.path} · HTTP ${input.statusCode}`;
+    const action = getAction(input.method, input.path, module, input.statusCode);
+    const details = [
+      `${input.method} ${input.path} · HTTP ${input.statusCode}`,
+      input.errorMessage,
+    ].filter(Boolean).join(" · ");
 
     const activity: ActivityLogInput = {
       ...(input.actorId ? { actorId: input.actorId } : {}),
@@ -83,9 +92,6 @@ export const activityLogsService = {
     const result = await createActivityLog(activity);
     if (status === "Success" && action.startsWith("Submitted ")) {
       await notificationsService.createApprovalNotifications(result)
-    }
-    if (status === "Success" && module === "Inventory") {
-      await notificationsService.syncLowStockNotifications()
     }
     return result;
   },

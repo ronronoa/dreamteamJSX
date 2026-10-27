@@ -182,6 +182,48 @@ export const notificationsService = {
     return result.count
   },
 
+  async createLowStockNotificationForItem(item: {
+    item_id: string;
+    item_name: string;
+    stock_quantity: number;
+    unit: string;
+    minimum_quantity: number;
+    updatedAt: Date;
+  }) {
+    if (item.stock_quantity > item.minimum_quantity) return 0;
+
+    const recipients = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { preferences: { is: { lowStockAlerts: true } } },
+          { preferences: { is: null } },
+        ],
+      },
+      select: { user_id: true },
+    });
+    if (recipients.length === 0) return 0;
+
+    const sourceKey = `inventory:${item.item_id}:${item.updatedAt.getTime()}`;
+    const result = await prisma.notification.createMany({
+      data: recipients.map(({ user_id }) => ({
+        user_id,
+        source_key: sourceKey,
+        title: "Low stock alert",
+        message: `${item.item_name} has ${item.stock_quantity} ${item.unit} remaining (reorder level: ${item.minimum_quantity}).`,
+        category: "inventory",
+        target: "inventory",
+        createdAt: item.updatedAt,
+      })),
+      skipDuplicates: true,
+    });
+    await pushNotifications(
+      recipients.map(({ user_id }) => user_id),
+      [sourceKey],
+    );
+    return result.count;
+  },
+
   async syncLowStockNotifications() {
     const [recipients, inventory] = await Promise.all([
       prisma.user.findMany({

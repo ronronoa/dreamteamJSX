@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { isAppError, handleError } from "@/shared/errors/app-error";
+import { AppError, handleError } from "@/shared/errors/app-error";
 
 export function notFoundHandler(_req: Request, res: Response) {
   res.status(404).json({ code: "NOT_FOUND", message: "Route not found" });
@@ -7,5 +7,6 @@ export function notFoundHandler(_req: Request, res: Response) {
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   const { status, body } = handleError(err);
+  res.locals["activityErrorMessage"] = err instanceof AppError ? err.message : "Internal server error";
   res.status(status).json(body);
 }

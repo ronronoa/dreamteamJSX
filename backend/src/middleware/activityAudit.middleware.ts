@@ -13,6 +13,7 @@ const IGNORED_PATHS = [
   "/operations/debug-submit",
   "/activity-logs/archive",
   "/auth/logout",
+  "/auth/refresh",
   "/report-forms/operations/latest",
   "/notifications",
   "/notifications/read ",
@@ -44,17 +45,21 @@ export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
     const actorName = typeof responseActorName === "string" ? responseActorName : undefined;
     const responseRecordId = res.locals["activityRecordId"];
     const recordId = typeof responseRecordId === "string" ? responseRecordId : undefined;
+    const responseErrorMessage = res.locals["activityErrorMessage"];
+    const errorMessage = typeof responseErrorMessage === "string" ? responseErrorMessage : undefined;
     const pinType = getReportPinType(res.locals["activityPinType"]);
     const pinOwnerId = res.locals["activityPinOwnerId"];
     const pinOwnerName = res.locals["activityPinOwnerName"];
     const pinOwnerRole = res.locals["activityPinOwnerRole"];
+    const isSignInAttempt = method === "POST" && apiPath === "/auth/signin";
     if (!actorId && !actorName) return;
-    if (!actorId && res.statusCode >= 400) return;
+    if (!actorId && res.statusCode >= 400 && !isSignInAttempt) return;
 
     void activityLogsService.recordRequest({
       ...(actorId ? { actorId } : {}),
       ...(actorName ? { actorName } : {}),
       ...(recordId ? { recordId } : {}),
+      ...(errorMessage ? { errorMessage } : {}),
       ...(pinType ? { pinType } : {}),
       ...(typeof pinOwnerId === "string" ? { pinOwnerId } : {}),
       ...(typeof pinOwnerName === "string" ? { pinOwnerName } : {}),
