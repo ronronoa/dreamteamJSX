@@ -1,3 +1,4 @@
+import { VEHICLE_PLATE_LENGTH, VEHICLE_PLATE_PATTERN, VEHICLE_PLATE_HINT, normalizeVehiclePlateInput, isValidVehiclePlate } from "@/utils/vehiclePlate";
 import { useState } from "react"
 import { Check, ChevronRight, Filter, Pencil, X } from "lucide-react"
 import DataTable from "@/components/common/DataTable"
@@ -39,7 +40,7 @@ function FleetVehicleRow({ vehicle, canEdit, saving, detailsSaving, availability
   const [odometer, setOdometer] = useState(String(vehicle.current_odometer ?? 0))
   const [editingDetails, setEditingDetails] = useState(false)
   const [vehicleName, setVehicleName] = useState(vehicle.vehicle_name)
-  const [plateNumber, setPlateNumber] = useState(vehicle.plate_number)
+  const [plateNumber, setPlateNumber] = useState(normalizeVehiclePlateInput(vehicle.plate_number))
   const parsedOdometer = Number(odometer)
   const isValidOdometer = /^\d+$/.test(odometer) && Number.isSafeInteger(parsedOdometer)
   const hasChanged = odometer !== String(vehicle.current_odometer ?? 0)
@@ -50,7 +51,7 @@ function FleetVehicleRow({ vehicle, canEdit, saving, detailsSaving, availability
         <input aria-label={`Vehicle name for ${vehicle.vehicle_name}`} maxLength={100} value={vehicleName} onChange={(event) => setVehicleName(event.target.value)} className="h-8 w-40 rounded-md border border-gray-200 px-2 text-sm" />
       ) : vehicle.vehicle_name}</td>
       <td className="py-3 text-gray-600">{editingDetails ? (
-        <input aria-label={`Plate number for ${vehicle.vehicle_name}`} maxLength={20} value={plateNumber} onChange={(event) => setPlateNumber(event.target.value)} className="h-8 w-32 rounded-md border border-gray-200 px-2 text-sm uppercase" />
+        <input aria-label={`Plate number for ${vehicle.vehicle_name}`} maxLength={VEHICLE_PLATE_LENGTH} pattern={VEHICLE_PLATE_PATTERN} title={VEHICLE_PLATE_HINT} value={plateNumber} onChange={(event) => setPlateNumber(normalizeVehiclePlateInput(event.target.value))} className="h-8 w-32 rounded-md border border-gray-200 px-2 text-sm uppercase" />
       ) : vehicle.plate_number}</td>
       <td className="py-3">
         <div className="flex items-center gap-2">
@@ -95,10 +96,10 @@ function FleetVehicleRow({ vehicle, canEdit, saving, detailsSaving, availability
         <td className="py-3 text-right">
           <div className="flex justify-end gap-2">
           {editingDetails ? <>
-            <CommonButton compact disabled={detailsSaving || !vehicleName.trim() || !plateNumber.trim()} onClick={() => { void onSaveDetails(vehicle.vehicle_id, vehicleName, plateNumber).then((saved) => { if (saved) setEditingDetails(false) }) }}>
+            <CommonButton compact disabled={detailsSaving || !vehicleName.trim() || !isValidVehiclePlate(plateNumber)} onClick={() => { void onSaveDetails(vehicle.vehicle_id, vehicleName, plateNumber).then((saved) => { if (saved) setEditingDetails(false) }) }}>
               {detailsSaving ? "Saving…" : "Save details"}
             </CommonButton>
-            <button type="button" aria-label={`Cancel editing ${vehicle.vehicle_name}`} onClick={() => { setVehicleName(vehicle.vehicle_name); setPlateNumber(vehicle.plate_number); setEditingDetails(false) }} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X size={16} /></button>
+            <button type="button" aria-label={`Cancel editing ${vehicle.vehicle_name}`} onClick={() => { setVehicleName(vehicle.vehicle_name); setPlateNumber(normalizeVehiclePlateInput(vehicle.plate_number)); setEditingDetails(false) }} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X size={16} /></button>
           </> : <button type="button" aria-label={`Edit ${vehicle.vehicle_name}`} onClick={() => setEditingDetails(true)} className="rounded-md p-1 text-purple-700 hover:bg-purple-50"><Pencil size={16} /></button>}
           <CommonButton
             compact
@@ -291,7 +292,8 @@ export default function Vehicles() {
               </label>
               <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs font-medium text-gray-700">
                 Plate number
-                <input required maxLength={20} value={dashboard.plateNumber} onChange={(event) => dashboard.setPlateNumber(event.target.value)} className="h-9 rounded-lg border border-gray-200 px-3 text-sm uppercase" placeholder="ABC 1234" />
+                <input required maxLength={VEHICLE_PLATE_LENGTH} pattern={VEHICLE_PLATE_PATTERN} title={VEHICLE_PLATE_HINT} value={dashboard.plateNumber} onChange={(event) => dashboard.setPlateNumber(normalizeVehiclePlateInput(event.target.value))} className="h-9 rounded-lg border border-gray-200 px-3 text-sm uppercase" placeholder="ABC1234" />
+                <span className="font-normal text-gray-500">{VEHICLE_PLATE_HINT}</span>
               </label>
               <CommonButton compact type="submit" disabled={dashboard.savingVehicle}>{dashboard.savingVehicle ? "Adding…" : "Add vehicle"}</CommonButton>
             </form>

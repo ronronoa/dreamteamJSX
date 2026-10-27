@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ReportAddressPartSchema } from "./reportAddress.schema";
 import { getTodayDateInputValue } from "@/shared/utils/date";
 import { PatientInventorySchema } from "./patientInventory.schema";
 
@@ -11,9 +12,9 @@ const personNameSchema = z.object({
 
 const addressSchema = z.object({
   phase: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  package: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  block: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  lot: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  package: ReportAddressPartSchema,
+  block: ReportAddressPartSchema,
+  lot: ReportAddressPartSchema,
 });
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);

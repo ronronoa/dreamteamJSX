@@ -38,11 +38,11 @@ export default function VehicularDispatchSection({
   allowOther = true,
 }: VehicularDispatchSectionProps) {
   const optionsWithOther = [
+    { label: "None", value: NO_VEHICLE_VALUE },
     ...vehicleOptions,
     ...(vehicleOptions.some((option) => option.value === OTHER_VEHICLE_VALUE) || !allowOther
       ? []
       : [{ label: "Other", value: OTHER_VEHICLE_VALUE }]),
-    { label: "None", value: NO_VEHICLE_VALUE },
   ]
 
   const isOtherVehicle = dispatch.vehicle === OTHER_VEHICLE_VALUE
@@ -85,9 +85,8 @@ export default function VehicularDispatchSection({
         <CommonSelect
           variant="compact"
           label="Vehicle"
-          placeholder="Dropdown Menu"
           options={optionsWithOther}
-          value={dispatch.vehicle}
+          value={dispatch.vehicle || NO_VEHICLE_VALUE}
           onChange={(e) => {
             const selectedVehicle = vehicleOptions.find((option) => option.value === e.target.value)
             const odometer = selectedVehicle?.currentOdometer

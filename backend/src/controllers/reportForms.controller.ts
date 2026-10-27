@@ -44,18 +44,11 @@ function getPin(req: Request) {
   return parsed.data;
 }
 
-function removeIncompleteOperationRows(form: Record<string, unknown>) {
-  const people = Array.isArray(form["people"]) ? form["people"] : [];
+function removeIncompleteInventoryRows(form: Record<string, unknown>) {
   const inventory = Array.isArray(form["inventory"]) ? form["inventory"] : [];
 
   return {
     ...form,
-    people: people.filter((person) => {
-      if (!person || typeof person !== "object") return false;
-      const row = person as Record<string, unknown>;
-      const name = row["name"] as Record<string, unknown> | undefined;
-      return Boolean(name?.["surname"] && name?.["firstName"] && row["birthdate"] && row["age"] !== "" && row["gender"]);
-    }),
     inventory: inventory.filter((item) => {
       if (!item || typeof item !== "object") return false;
       const row = item as Record<string, unknown>;
@@ -130,7 +123,7 @@ export const reportFormsController = {
   async submitOperation(req: Request, res: Response, next: NextFunction) {
     try {
       const pinUsage = await pinService.verifyReportFormPin(getPin(req));
-      const submittedForm = removeIncompleteOperationRows(parseJsonField(req.body.formData, "formData"));
+      const submittedForm = removeIncompleteInventoryRows(parseJsonField(req.body.formData, "formData"));
       const parsedForm = OperationReportSchema.safeParse(submittedForm);
       if (!parsedForm.success) {
         const fields: Record<string, string[]> = {};

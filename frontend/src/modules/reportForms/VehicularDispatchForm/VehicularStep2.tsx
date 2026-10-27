@@ -9,34 +9,29 @@ import CommonFormSection from "../component/CommonFormSection"
 import { calculateAge } from "../../../types/operationLog"
 import { createEmptyPerson, type Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchErrors } from "./formValidation"
+import { hasPersonInput, validateReportPerson } from "../reportPersonValidation"
 import { calculateBirthdateFromAge, formatDate, MAX_REASONABLE_AGE } from "@/utils/dateTime"
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
+import { MAX_ADDRESS_PART_LENGTH, MAX_PHASE_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber, sanitizePersonName } from "../reportFieldRules"
 
 const MAX_PASSENGERS = 100
 const CommonInput = createFormAutocomplete("vehicular-dispatches")
 
 type VehicularStep2Props = {
   people: Person[]
+  draft: Person
+  onDraftChange: (draft: Person) => void
   onPeopleChange: (people: Person[]) => void
   errors: VehicularDispatchErrors
 }
 
-export default function VehicularStep2({ people, onPeopleChange, errors }: VehicularStep2Props) {
-  const [draft, setDraft] = useState<Person>(createEmptyPerson())
+export default function VehicularStep2({ people, draft, onDraftChange, onPeopleChange, errors }: VehicularStep2Props) {
   const [draftError, setDraftError] = useState("")
-  const today = formatDate(new Date(), "YYYY-MM-DD")
-  const draftErrors = {
-    surname: draft.name.surname.trim() ? "" : "Enter the passenger's surname.",
-    firstName: draft.name.firstName.trim() ? "" : "Enter the passenger's first name.",
-    birthdate: !draft.birthdate || draft.birthdate > today || draft.age === "" ? "Choose a valid birthdate." : "",
-    gender: draft.gender ? "" : "Select the passenger's sex.",
-    contactNumber: draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH ? `Contact number must be ${MAX_CONTACT_NUMBER_LENGTH} characters or fewer.` : "",
-  }
+  const draftErrors = hasPersonInput(draft) ? validateReportPerson(draft) : {}
 
 
   const updateDraft = (patch: Partial<Person>) => {
     const updatedDraft = { ...draft, ...patch }
-    setDraft(updatedDraft)
+    onDraftChange(updatedDraft)
     setDraftError("")
   }
 
@@ -50,27 +45,19 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
   }
 
   const addPerson = () => {
+    if (!hasPersonInput(draft)) return
     if (people.length >= MAX_PASSENGERS) {
       setDraftError(`Add no more than ${MAX_PASSENGERS} passengers.`)
       return
     }
 
-    const today = formatDate(new Date(), "YYYY-MM-DD")
-    if (!draft.name.surname.trim() || !draft.name.firstName.trim() || !draft.birthdate || !draft.gender) {
-      setDraftError("Enter the passenger's name, birthdate, and sex before adding them.")
-      return
-    }
-    if (draft.birthdate > today || draft.age === "") {
-      setDraftError("Choose a valid birthdate.")
-      return
-    }
-    if (draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH) {
-      setDraftError(`Contact number must be ${MAX_CONTACT_NUMBER_LENGTH} characters or fewer.`)
+    if (Object.keys(validateReportPerson(draft)).length > 0) {
+      setDraftError("Complete the required passenger fields before adding them.")
       return
     }
 
     onPeopleChange([...people, { ...draft }])
-    setDraft(createEmptyPerson())
+    onDraftChange(createEmptyPerson())
     setDraftError("")
   }
 
@@ -92,6 +79,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       <CommonFormSection title="CIVILIAN PASSENGERS">
+        <p className="mb-4 text-sm text-slate-600">Leave this section blank if there are no civilian passengers. Once you start an entry, complete the required fields before continuing. Middle initial and suffix are optional.</p>
         <div className="mb-5">
           <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
             <span>Full Name</span>
@@ -102,32 +90,34 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
               variant="compact"
               placeholder="Surname"
               value={draft.name.surname}
-              errorMessage={draftErrors.surname}
-              onChange={(e) => updateDraft({ name: { ...draft.name, surname: e.target.value } })}
+              errorMessage={draftErrors["name.surname"]}
+              onChange={(e) => updateDraft({ name: { ...draft.name, surname: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
               variant="compact"
               placeholder="First Name"
               value={draft.name.firstName}
-              errorMessage={draftErrors.firstName}
-              onChange={(e) => updateDraft({ name: { ...draft.name, firstName: e.target.value } })}
+              errorMessage={draftErrors["name.firstName"]}
+              onChange={(e) => updateDraft({ name: { ...draft.name, firstName: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
               variant="compact"
               className="px-1"
               placeholder="M.I"
+              errorMessage={draftErrors["name.middleInitial"]}
               value={draft.name.middleInitial}
-              onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
               variant="compact"
               className="px-1"
               placeholder="Sfx"
+              errorMessage={draftErrors["name.suffix"]}
               value={draft.name.suffix}
-              onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, suffix: sanitizePersonName(e.target.value) } })}
             />
           </div>
         </div>
@@ -140,6 +130,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
             value={draft.birthdate}
             max={formatDate(new Date(), "YYYY-MM-DD")}
             onChange={(e) => handleBirthdateChange(e.target.value)}
+            onInput={(e) => handleBirthdateChange(e.currentTarget.value)}
             errorMessage={draftErrors.birthdate}
           />
 
@@ -147,7 +138,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
             variant="compact"
             type="number"
             label="Age"
-            value={draft.age === "" ? "" : String(draft.age)}
+            value={draft.birthdate ? calculateAge(draft.birthdate) : draft.age}
             min={0}
             max={MAX_REASONABLE_AGE}
             onChange={(e) => handleAgeChange(e.target.value)}
@@ -196,41 +187,45 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
             <span>Phase</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
-              maxLength={MAX_ADDRESS_PART_LENGTH}
+              className="w-14 px-1 text-center"
+              maxLength={MAX_PHASE_LENGTH}
               placeholder="9"
               value={draft.address.phase}
-              onChange={(e) => updateDraft({ address: { ...draft.address, phase: sanitizeAddressValue(e.target.value) } })}
+              errorMessage={draftErrors["address.phase"]}
+              onChange={(e) => updateDraft({ address: { ...draft.address, phase: sanitizeAddressValue(e.target.value, "phase") } })}
             />
 
             <span>Package</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="3"
               value={draft.address.package}
-              onChange={(e) => updateDraft({ address: { ...draft.address, package: sanitizeAddressValue(e.target.value) } })}
+              errorMessage={draftErrors["address.package"]}
+              onChange={(e) => updateDraft({ address: { ...draft.address, package: sanitizeAddressValue(e.target.value, "package") } })}
             />
 
             <span>Block</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="25"
               value={draft.address.block}
-              onChange={(e) => updateDraft({ address: { ...draft.address, block: sanitizeAddressValue(e.target.value) } })}
+              errorMessage={draftErrors["address.block"]}
+              onChange={(e) => updateDraft({ address: { ...draft.address, block: sanitizeAddressValue(e.target.value, "block") } })}
             />
 
             <span>Lot</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="16"
               value={draft.address.lot}
-              onChange={(e) => updateDraft({ address: { ...draft.address, lot: sanitizeAddressValue(e.target.value) } })}
+              errorMessage={draftErrors["address.lot"]}
+              onChange={(e) => updateDraft({ address: { ...draft.address, lot: sanitizeAddressValue(e.target.value, "lot") } })}
             />
           </div>
         </div>

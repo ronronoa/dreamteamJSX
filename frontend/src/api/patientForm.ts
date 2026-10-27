@@ -19,10 +19,10 @@ export interface PatientLogOcrResult {
     gender: "MALE" | "FEMALE" | "";
     birthday: string;
     address: {
-      phase: number | null;
-      package: number | null;
-      block: number | null;
-      lot: number | null;
+      phase: string | number | null;
+      package: string | number | null;
+      block: string | number | null;
+      lot: string | number | null;
     };
     contactPerson: string;
     contactNumber: string;

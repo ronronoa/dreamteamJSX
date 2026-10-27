@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { ReportPeopleSchema } from "./reportPeople.schema"
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/)
 const formTimeSchema = z.preprocess(
@@ -18,31 +19,6 @@ function getTodayDateInputValue() {
   const day = String(today.getDate()).padStart(2, "0")
   return `${today.getFullYear()}-${month}-${day}`
 }
-
-const personNameSchema = z.object({
-  surname: z.string().trim().min(1).max(80),
-  firstName: z.string().trim().min(1).max(80),
-  middleInitial: z.string().trim().max(10),
-  suffix: z.string().trim().max(20),
-})
-
-const passengerSchema = z.object({
-  name: personNameSchema,
-  birthdate: z.iso.date(),
-  age: z.number().int().min(0).max(150),
-  gender: z.enum(["Male", "Female"]),
-  contactNumber: z.string().trim().max(11).regex(/^\d*$/),
-  address: z.object({
-    phase: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-    package: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-    block: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-    lot: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  }),
-})
-  .refine((passenger) => passenger.birthdate <= getTodayDateInputValue(), {
-    path: ["birthdate"],
-    message: "Birthdate cannot be in the future.",
-  })
 
 export const VehicularDispatchReportSchema = z.object({
   details: z.object({
@@ -77,7 +53,7 @@ export const VehicularDispatchReportSchema = z.object({
     path: ["vehicleOther"],
     message: "Specify the vehicle.",
   }),
-  passengers: z.array(passengerSchema).max(100),
+  passengers: ReportPeopleSchema,
 }).refine((form) => form.details.responders.length + form.details.otherResponders.length > 0, {
   path: ["details", "responders"],
   message: "Add at least one responder.",

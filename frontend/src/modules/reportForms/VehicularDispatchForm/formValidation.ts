@@ -1,8 +1,7 @@
 import type { Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchReportData } from "../../../types/vehicularDispatchReport"
-import { calculateAge } from "../../../types/operationLog"
 import { formatDate } from "../../../utils/dateTime"
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules"
+import { hasPersonInput, validateReportPerson } from "../reportPersonValidation"
 
 export type VehicularDispatchErrors = Record<string, string>
 
@@ -61,35 +60,15 @@ function validatePassengers(passengers: Person[]): VehicularDispatchErrors {
   if (passengers.length > 100) errors.passengers = "Add no more than 100 passengers."
 
   passengers.forEach((person, index) => {
-    const prefix = `passengers.${index}`
-    if (!person.name.surname.trim()) errors[`${prefix}.surname`] = "Enter each passenger's surname."
-    if (!person.name.firstName.trim()) errors[`${prefix}.firstName`] = "Enter each passenger's first name."
-    if (!isValidDate(person.birthdate) || person.birthdate > formatDate(new Date(), "YYYY-MM-DD") || person.age === "") {
-      errors[`${prefix}.birthdate`] = "Choose a valid birthdate."
-    } else if (person.age !== calculateAge(person.birthdate)) {
-      errors[`${prefix}.birthdate`] = "Check the passenger's birthdate."
+    if (!hasPersonInput(person)) return
+    for (const [field, message] of Object.entries(validateReportPerson(person))) {
+      errors[`passengers.${index}.${field}`] = message
     }
-    if (!person.gender) errors[`${prefix}.gender`] = "Select each passenger's sex."
-    if (!/^\d*$/.test(person.contactNumber) || person.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH) {
-      errors[`${prefix}.contactNumber`] = `Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`
-    }
-    validateAddressValue(person.address.phase, "Phase", `${prefix}.address.phase`, errors)
-    validateAddressValue(person.address.package, "Package", `${prefix}.address.package`, errors)
-    validateAddressValue(person.address.block, "Block", `${prefix}.address.block`, errors)
-    validateAddressValue(person.address.lot, "Lot", `${prefix}.address.lot`, errors)
   })
 
   return errors
 }
 
-function validateAddressValue(value: string, label: string, field: string, errors: VehicularDispatchErrors) {
-  if (value.length > MAX_ADDRESS_PART_LENGTH) {
-    errors[field] = `${label} must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`
-  }
-  if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
-    errors[field] = `${label} can contain only letters and numbers.`
-  }
-}
 
 function isValidDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false

@@ -28,6 +28,7 @@ import {
   type Person,
 } from "../../types/vehicularDispatchReport"
 import { validateReport, validateStep, type VehicularDispatchErrors } from "../../modules/reportForms/VehicularDispatchForm/formValidation"
+import { preparePeopleForNextStep } from "../../modules/reportForms/reportPersonValidation"
 import { hasStoredDraft, hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
 import { useTitle } from "@/hooks/useTitle"
 
@@ -98,7 +99,7 @@ function normalizeReport(value: unknown): VehicularDispatchReportData {
     dispatch: {
       from: storedString(dispatch.from),
       to: storedString(dispatch.to),
-      vehicle: storedString(dispatch.vehicle),
+      vehicle: storedString(dispatch.vehicle) || "none",
       vehicleOther: storedString(dispatch.vehicleOther),
       driver: storedString(dispatch.driver),
       departTime: storedString(dispatch.departTime),
@@ -122,6 +123,7 @@ function isReportEmpty(report: VehicularDispatchReportData): boolean {
 }
 
 export default function VehicularDispatchForm() {
+  const [passengerDraft, setPassengerDraft] = useState(createEmptyPerson)
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [pinModalShow, setPinModalShow] = useState(false)
@@ -143,7 +145,7 @@ export default function VehicularDispatchForm() {
     }
     return storedReport
   })
-  const [, setValidationErrors] = useState<VehicularDispatchErrors>({})
+  const [validationErrors, setValidationErrors] = useState<VehicularDispatchErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
 
@@ -151,7 +153,10 @@ export default function VehicularDispatchForm() {
   useTitle("Dispatch Form")
 
   const progress = (Math.min(step, FORM_STEPS) / FORM_STEPS) * 100
-  const allErrors = validateReport(formData)
+  const allErrors = { ...validationErrors, ...validateReport(formData) }
+  const nextStepDisabled = optionsLoading || Boolean(optionsError) ||
+    Object.keys(validateStep(step, formData)).length > 0 ||
+    (step === 2 && Object.keys(preparePeopleForNextStep(formData.passengers, passengerDraft).errors).length > 0)
   const selectedVehicle = formOptions.vehicles.find((vehicle) => vehicle.vehicle_id === formData.dispatch.vehicle)
   const vehicleLabel = selectedVehicle ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})` : ""
   const responderLabels = formData.details.responders.flatMap((responderId) => {
@@ -255,12 +260,30 @@ export default function VehicularDispatchForm() {
     setValidationErrors({})
   }
 
+  function updatePassengerDraft(draft: Person) {
+    setPassengerDraft(draft)
+    setValidationErrors({})
+  }
+
   const nextStep = () => {
-    if (step >= FORM_STEPS) return
-    const errors = validateStep(step, formData)
+    if (nextStepDisabled || step >= FORM_STEPS) return
+    let nextFormData = formData
+    if (step === 2) {
+      const prepared = preparePeopleForNextStep(formData.passengers, passengerDraft)
+      if (Object.keys(prepared.errors).length > 0) {
+        setValidationErrors({ passengers: "Complete the required fields in the current passenger entry before continuing." })
+        return
+      }
+      nextFormData = { ...formData, passengers: prepared.people }
+    }
+    const errors = validateStep(step, nextFormData)
     setValidationErrors(errors)
     if (Object.keys(errors).length > 0) return
 
+    if (step === 2) {
+      setFormData(nextFormData)
+      setPassengerDraft(createEmptyPerson())
+    }
     setDirection(1)
     setStep((current) => current + 1)
   }
@@ -367,6 +390,8 @@ export default function VehicularDispatchForm() {
                   {step === 2 && (
                     <VehicularStep2
                       people={formData.passengers}
+                      draft={passengerDraft}
+                      onDraftChange={updatePassengerDraft}
                       onPeopleChange={updatePassengers}
                       errors={allErrors}
                     />
@@ -423,9 +448,10 @@ export default function VehicularDispatchForm() {
                 </CommonButton>
               ) : (
                 <CommonButton
-                  className="min-w-[130px]"
+                  className="min-w-[130px] disabled:pointer-events-none"
+                  variant={nextStepDisabled ? "gray" : "purple"}
                   onClick={nextStep}
-                  disabled={Object.keys(validateStep(step, formData)).length > 0 || optionsLoading || Boolean(optionsError)}
+                  disabled={nextStepDisabled}
                 >
                   Next
                 </CommonButton>

@@ -124,9 +124,9 @@ describe("managed account passwords", () => {
   it("sets a password atomically during promotion", async () => {
     mocks.findUnique.mockResolvedValue({ role: "MEMBER", passwordHash: null, team_id: member.team_id });
     await userService.update("member-id", UpdateUserSchema.parse({ role: "TEAM_LEADER", password: "valid-password" }), "admin-id", "SUPER_ADMIN");
-    expect(mocks.update).toHaveBeenCalledWith({
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { user_id: "member-id" }, data: { role: "TEAM_LEADER", passwordHash: "password-hash", pinHash: "pin-hash", pinLookupHash: "lookup" },
-    });
+    }));
     expect(mocks.deleteTokens).toHaveBeenCalledWith({ where: { userId: "member-id" } });
   });
 

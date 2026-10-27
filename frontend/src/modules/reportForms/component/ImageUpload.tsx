@@ -145,7 +145,7 @@ export default function ImageUpload({
 
   return (
     <>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <label className="text-lg font-medium text-slate-900">
           Attach Images (optional)
         </label>
@@ -153,7 +153,7 @@ export default function ImageUpload({
         <CommonButton
           type="button"
           variant="orange"
-          className="flex w-70 items-center gap-2"
+          className="flex w-full items-center gap-2 sm:w-auto"
           onClick={() => fileInputRef.current?.click()}
 
         >
@@ -187,6 +187,8 @@ export default function ImageUpload({
         }}
         className={`
           min-h-[300px]
+          min-w-0
+          w-full
           flex-1
           rounded-md
           border-2
@@ -212,12 +214,12 @@ export default function ImageUpload({
             </p>
           </div>
         ) : (
-          <div className="p-2 pb-10">
+          <div className="min-w-0 p-2 pb-10">
             {images.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
                 className="
-                  flex items-center justify-between
+                  flex min-w-0 items-center justify-between gap-3
                   rounded-md
                   border-b border-gray-300
                   px-3 py-2
@@ -227,7 +229,7 @@ export default function ImageUpload({
                 "
                 onClick={() => setPreviewIndex(index)}
               >
-                <p className="truncate">
+                <p className="min-w-0 flex-1 truncate" title={file.name}>
                   {file.name}
                 </p>
 

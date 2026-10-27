@@ -4,7 +4,7 @@ import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
 import CommonVitalField from "@/components/common/widgets/CommonVitalField"
 import CommonFormSection from "../component/CommonFormSection"
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
+import { MAX_ADDRESS_PART_LENGTH, MAX_PHASE_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
 
 import {
   calculateAge,
@@ -205,56 +205,56 @@ export default function PatientStep2({
               <span>Phase</span>
               <CommonInput
                 variant="compact"
-                className="w-9 px-1 text-center"
-                maxLength={MAX_ADDRESS_PART_LENGTH}
+                className="w-14 px-1 text-center"
+                maxLength={MAX_PHASE_LENGTH}
                 placeholder="9"
                 value={patientDetails.address.phase}
                 errorMessage={errors.phase}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, phase: sanitizeAddressValue(e.target.value) },
+                    address: { ...patientDetails.address, phase: sanitizeAddressValue(e.target.value, "phase") },
                   })
                 }
               />
               <span>Package</span>
               <CommonInput
                 variant="compact"
-                className="w-9 px-1 text-center"
+                className="w-14 px-1 text-center"
                 maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="3"
                 value={patientDetails.address.package}
                 errorMessage={errors.package}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, package: sanitizeAddressValue(e.target.value) },
+                    address: { ...patientDetails.address, package: sanitizeAddressValue(e.target.value, "package") },
                   })
                 }
               />
               <span>Block</span>
               <CommonInput
                 variant="compact"
-                className="w-9 px-1 text-center"
+                className="w-14 px-1 text-center"
                 maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="25"
                 value={patientDetails.address.block}
                 errorMessage={errors.block}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, block: sanitizeAddressValue(e.target.value) },
+                    address: { ...patientDetails.address, block: sanitizeAddressValue(e.target.value, "block") },
                   })
                 }
               />
               <span>Lot</span>
               <CommonInput
                 variant="compact"
-                className="w-9 px-1 text-center"
+                className="w-14 px-1 text-center"
                 maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="16"
                 value={patientDetails.address.lot}
                 errorMessage={errors.lot}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, lot: sanitizeAddressValue(e.target.value) },
+                    address: { ...patientDetails.address, lot: sanitizeAddressValue(e.target.value, "lot") },
                   })
                 }
               />

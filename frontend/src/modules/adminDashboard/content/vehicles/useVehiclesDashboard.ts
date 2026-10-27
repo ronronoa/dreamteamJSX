@@ -1,3 +1,5 @@
+import { isValidVehiclePlate, VEHICLE_PLATE_HINT } from "@/utils/vehiclePlate";
+import { getReportReviewError, getBulkReportReviewError } from "@/utils/reportReviewError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAuth } from "@/store/useAuth";
@@ -112,7 +114,8 @@ export function useVehiclesDashboard() {
   }, [allRows, fromDate, search, statusFilter, toDate]);
 
   const pendingRows = useMemo(
-    () => matchingRows.filter((record) => record.status === "PENDING" && ( !record.operation_id || !record.patient_log_id ) ),
+    // Linked dispatches are reviewed automatically with their source report.
+    () => matchingRows.filter((record) => record.status === "PENDING" && !record.operation_id && !record.patient_log_id),
     [matchingRows],
   );
   const reviewedRows = useMemo(
@@ -191,10 +194,15 @@ export function useVehiclesDashboard() {
           .filter((_record, index) => reviewResults[index].status === "rejected")
           .map((record) => record.dispatchId);
         setSelectedIds(failedIds);
+        if (successfulCount > 0) {
+          setSuccessMessage(`${successfulCount} vehicle dispatch${successfulCount === 1 ? " was" : "es were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
+          await loadDispatchRecords();
+        }
+        if (failedIds.length > 0) {
+          setPinError(getBulkReportReviewError(reviewResults));
+          return;
+        }
         setBulkReviewAction(null);
-        setSuccessMessage(`${successfulCount} vehicle dispatch${successfulCount === 1 ? " was" : "es were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
-        await loadDispatchRecords();
-        if (failedIds.length > 0) setDispatchError(`${failedIds.length} selected dispatch${failedIds.length === 1 ? " was" : "es were"} not updated.`);
         return;
       }
 
@@ -209,7 +217,7 @@ export function useVehiclesDashboard() {
       setReviewedPage(1);
       await loadDispatchRecords();
     } catch (error) {
-      setPinError(error instanceof Error ? error.message : "Could not update this vehicle dispatch.");
+      setPinError(getReportReviewError(error));
     } finally {
       setBusy(false);
     }
@@ -293,6 +301,10 @@ export function useVehiclesDashboard() {
   async function handleAddVehicle(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken) return;
+    if (!isValidVehiclePlate(plateNumber)) {
+      setFleetError(VEHICLE_PLATE_HINT);
+      return;
+    }
     setSavingVehicle(true);
     setFleetError("");
     setFleetMessage("");
@@ -327,6 +339,10 @@ export function useVehiclesDashboard() {
 
   async function saveVehicleDetails(vehicleId: string, nextVehicleName: string, nextPlateNumber: string): Promise<boolean> {
     if (!accessToken || savingDetailsId) return false;
+    if (!isValidVehiclePlate(nextPlateNumber)) {
+      setFleetError(VEHICLE_PLATE_HINT);
+      return false;
+    }
     setSavingDetailsId(vehicleId);
     setFleetError("");
     setFleetMessage("");

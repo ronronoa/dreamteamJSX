@@ -74,7 +74,7 @@ export const createEmptyOperationDetails = (): OperationDetails => ({
 export const createEmptyVehicularDispatch = (): VehicularDispatch => ({
   from: "",
   to: "",
-  vehicle: "",
+  vehicle: "none",
   driver: "",
   departTime: "",
   departPeriod: "AM",

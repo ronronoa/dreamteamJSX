@@ -10,9 +10,11 @@ import OperationStep3 from "../../modules/reportForms/OperationLogForm/Operation
 import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
 import OperationLogLastStep from "../../modules/reportForms/OperationLogForm/OperationLogLastStep"
 import { isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
+import { preparePeopleForNextStep } from "../../modules/reportForms/reportPersonValidation"
 
 import {
   createEmptyOperationLogData,
+  createEmptyPerson,
   type OperationDetails,
   type OperationLogData,
   type VehicularDispatch,
@@ -62,6 +64,7 @@ function normalizeOperationReport(value: unknown): OperationLogData {
     dispatch: {
       ...emptyReport.dispatch,
       ...report.dispatch,
+      vehicle: report.dispatch?.vehicle || "none",
       departTime: normalizeTimeInput(report.dispatch?.departTime),
       arrivalTime: normalizeTimeInput(report.dispatch?.arrivalTime),
     },
@@ -76,6 +79,7 @@ function normalizeOperationReport(value: unknown): OperationLogData {
 }
 
 export default function OperationLogForm() {
+  const [personDraft, setPersonDraft] = useState(createEmptyPerson)
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [pinModalShow, setPinModalShow] = useState(false)
@@ -102,7 +106,7 @@ export default function OperationLogForm() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState("")
   const [optionsRequestId, setOptionsRequestId] = useState(0)
-  const [, setValidationErrors] = useState<FormErrors>({})
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();
@@ -165,10 +169,13 @@ export default function OperationLogForm() {
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
+  const nextStepDisabled = optionsLoading || Boolean(optionsError) ||
+    Object.keys(validateStep(step, formData, formOptions)).length > 0 ||
+    (step === 2 && Object.keys(preparePeopleForNextStep(formData.people, personDraft).errors).length > 0)
   const reportValidationErrors = [1, 2, 3].reduce<FormErrors>((allErrors, formStep) => ({
     ...allErrors,
     ...validateStep(formStep, formData, formOptions),
-  }), {})
+  }), validationErrors)
 
   const VARIANTS = {
     enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -177,12 +184,25 @@ export default function OperationLogForm() {
   }
 
 const nextStep = () => {
-  if (step >= totalSteps) return
+  if (nextStepDisabled || step >= totalSteps) return
 
-  const errors = validateStep(step, formData, formOptions)
-  setValidationErrors((current) => ({ ...current, ...errors }))
+  let nextFormData = formData
+  if (step === 2) {
+    const prepared = preparePeopleForNextStep(formData.people, personDraft)
+    if (Object.keys(prepared.errors).length > 0) {
+      setValidationErrors({ people: "Complete the required fields in the current person entry before continuing." })
+      return
+    }
+    nextFormData = { ...formData, people: prepared.people }
+  }
+  const errors = validateStep(step, nextFormData, formOptions)
+  setValidationErrors(errors)
   if (Object.keys(errors).length > 0) return
 
+  if (step === 2) {
+    setFormData(nextFormData)
+    setPersonDraft(createEmptyPerson())
+  }
   setDirection(1)
   setStep((current) => current + 1)
 }
@@ -211,6 +231,11 @@ const nextStep = () => {
   const updatePeople = (people: OperationLogData["people"]) => {
     setValidationErrors({})
     setFormData((current) => ({ ...current, people }))
+  }
+
+  function updatePersonDraft(draft: OperationLogData["people"][number]) {
+    setPersonDraft(draft)
+    setValidationErrors({})
   }
 
   const updateOperationDescription = (patch: Partial<OperationDescription>) => {
@@ -337,6 +362,8 @@ const nextStep = () => {
                   {step === 2 && (
                     <OperationStep2 
                       people={formData.people}
+                      draft={personDraft}
+                      onDraftChange={updatePersonDraft}
                       onPeopleChange={updatePeople}
                       errors={reportValidationErrors}
                     />
@@ -428,13 +455,10 @@ const nextStep = () => {
                 </CommonButton>
               ) : (
                   <CommonButton
-                    className="min-w-[130px]"
+                    className="min-w-[130px] disabled:pointer-events-none"
+                    variant={nextStepDisabled ? "gray" : "purple"}
                     onClick={nextStep}
-                    disabled={
-                      optionsLoading ||
-                      Boolean(optionsError) ||
-                      Object.keys(validateStep(step, formData, formOptions)).length > 0
-                    }
+                    disabled={nextStepDisabled}
                   >
                     Next
                   </CommonButton>

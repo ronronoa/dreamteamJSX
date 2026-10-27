@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 
 import CommonBackground from "@/components/common/background/CommonBackground";
 import CommonButton from "@/components/common/widgets/CommonButton";
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeContactNumber } from "@/modules/reportForms/reportFieldRules";
+import { isValidAddressValue, MAX_CONTACT_NUMBER_LENGTH, sanitizeContactNumber } from "@/modules/reportForms/reportFieldRules";
 import {
   fetchPatientFormOptions,
   submitPatientLog,
@@ -210,8 +210,8 @@ function getSubmissionIssues(formData: PatientLogData) {
     [patientDetails.address.block, "Block"],
     [patientDetails.address.lot, "Lot"],
   ] as const) {
-    if (addressPart.length > MAX_ADDRESS_PART_LENGTH || (addressPart && !/^[a-zA-Z0-9]+$/.test(addressPart))) {
-      issues.push(`${label} must be no more than ${MAX_ADDRESS_PART_LENGTH} letters or numbers.`);
+    if (!isValidAddressValue(addressPart, label.toLowerCase())) {
+      issues.push(`${label} allows at most two digits and two letters (phase: two characters).`);
     }
   }
   if (!firstAidHospital.medicalAssessment.trim()) issues.push("Enter the medical assessment.");

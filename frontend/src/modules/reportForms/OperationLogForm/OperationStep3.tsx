@@ -26,14 +26,16 @@ export default function OperationStep3({
       <CommonFormSection title="OPERATION DESCRIPTION">
         <div className="flex h-full flex-col">
           <div className="mb-5">
-            <label className="mb-1 block text-lg font-medium text-slate-900">Description</label>
+            <label htmlFor="operation-description" className="mb-1 block text-lg font-medium text-slate-900">Description (required)</label>
 
             <ReportAutocompleteTextarea
+              id="operation-description"
+              required
               formType="operations"
               suggestionField="description"
               variant="compact"
               rows={6}
-              placeholder="Provide a detailed description of the eve, actions taken, and current status"
+              placeholder="Provide a detailed description of the event, actions taken, and current status"
               value={operationDescription.description}
               onChange={(e) => onOperationDescriptionChange({ description: e.target.value })}
               errorMessage={errors["operationDescription.description"]}

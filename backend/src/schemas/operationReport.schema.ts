@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getTodayDateInputValue } from "@/shared/utils/date";
+import { ReportPeopleSchema } from "./reportPeople.schema";
 
 const personNameSchema = z.object({
   surname: z.string().trim().max(80),
@@ -8,12 +9,6 @@ const personNameSchema = z.object({
   suffix: z.string().trim().max(20),
 });
 
-const personAddressSchema = z.object({
-  phase: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  package: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  block: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-  lot: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
-});
 
 const inventoryQuantity = z.string()
   .trim()
@@ -79,16 +74,9 @@ export const OperationReportSchema = z.object({
     odometerIn: optionalOdometer,
     odometerOut: optionalOdometer,
   }),
-  people: z.array(z.object({
-    name: personNameSchema,
-    birthdate: z.iso.date(),
-    age: z.number().int().min(0).max(150),
-    gender: z.enum(["Male", "Female"]),
-    contactNumber: z.string().trim().max(11).regex(/^\d*$/),
-    address: personAddressSchema,
-  })).max(100),
+  people: ReportPeopleSchema,
   operationDescription: z.object({
-    description: z.string().trim().max(10000),
+    description: z.string().trim().min(1, "Enter the operation description.").max(10000),
   }),
   inventory: z.array(z.object({
     itemName: z.string().trim().min(1).max(120),

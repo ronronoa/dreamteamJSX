@@ -5,8 +5,8 @@ export type VehicleLogStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED"
 
 export interface VehicleDispatchRecord {
   id: string
-  operation_id?: string
-  patient_log_id?: string
+  operation_id: string | null
+  patient_log_id: string | null
   dispatchId: string
   date: Date
   vehicle: string
@@ -22,6 +22,8 @@ export interface VehicleDispatchRecord {
 
 export interface VehicleDispatchDetailRecord {
   dispatch_id: string
+  operation_id: string | null
+  patient_log_id: string | null
   dispatch_date: string
   createdAt?: string
   submitter_name: string | null
@@ -69,6 +71,8 @@ export async function fetchVehicularDispatchRecords(accessToken: string): Promis
     return {
       id: formatVehicularDispatchId(dispatch.dispatch_id),
       dispatchId: dispatch.dispatch_id,
+      operation_id: dispatch.operation_id,
+      patient_log_id: dispatch.patient_log_id,
       date: new Date(dispatch.dispatch_date),
       vehicle: dispatch.plate_number
         ? `${dispatch.vehicle_name} (${dispatch.plate_number})`

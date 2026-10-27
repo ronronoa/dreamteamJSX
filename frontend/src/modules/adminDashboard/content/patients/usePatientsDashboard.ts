@@ -1,3 +1,4 @@
+import { getReportReviewError, getBulkReportReviewError } from "@/utils/reportReviewError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { archivePatientLog, fetchPatientLogs, reviewPatientLog, type PatientLogRecord } from "@/api/patients";
@@ -179,10 +180,15 @@ export function usePatientsDashboard() {
           .filter((_row, index) => reviewResults[index].status === "rejected")
           .map((row) => row.patientLogId);
         setSelectedIds(failedIds);
+        if (successfulCount > 0) {
+          setSuccessMessage(`${successfulCount} patient report${successfulCount === 1 ? " was" : "s were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
+          await loadRecords();
+        }
+        if (failedIds.length > 0) {
+          setPinError(getBulkReportReviewError(reviewResults));
+          return;
+        }
         setBulkReviewAction(null);
-        setSuccessMessage(`${successfulCount} patient report${successfulCount === 1 ? " was" : "s were"} ${bulkReviewAction === "reject" ? "rejected" : "approved"}.`);
-        await loadRecords();
-        if (failedIds.length > 0) setPageError(`${failedIds.length} selected report${failedIds.length === 1 ? " was" : "s were"} not updated.`);
         return;
       }
 
@@ -193,7 +199,7 @@ export function usePatientsDashboard() {
       setReviewTarget(null);
       await loadRecords();
     } catch (error) {
-      setPinError(error instanceof Error ? error.message : "Could not update this patient report.");
+      setPinError(getReportReviewError(error));
     } finally {
       setBusy(false);
     }

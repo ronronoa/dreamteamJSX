@@ -24,7 +24,7 @@ export default function CommonFormSection({
 }: CommonFormSectionProps) {
   return (
     <section
-      className={`flex w-full flex-col rounded-md shadow-md ${hasError ? "border-2 border-red-400 bg-red-50" : "bg-[#fffdfb]"} ${
+      className={`flex w-full min-w-0 flex-col rounded-md shadow-md ${hasError ? "border-2 border-red-400 bg-red-50" : "bg-[#fffdfb]"} ${
         standardHeight ? "lg:min-h-[650px]" : ""
       } ${padded ? "p-6" : ""} ${onClick ? "cursor-pointer transition hover:ring-2 hover:ring-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" : ""} ${className}`}
       onClick={onClick}
@@ -45,7 +45,7 @@ export default function CommonFormSection({
       )}
 
       <div
-        className={`flex flex-1 flex-col ${standardHeight ? "justify-start lg:justify-center" : ""} ${
+        className={`flex min-w-0 flex-1 flex-col ${standardHeight ? "justify-start lg:justify-center" : ""} ${
           scrollable ? "min-h-0 overflow-y-auto" : ""
         }`}
       >

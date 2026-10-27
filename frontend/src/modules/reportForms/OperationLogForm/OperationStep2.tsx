@@ -1,28 +1,29 @@
-import { useState } from "react"
 import { Trash, UserRoundPlus } from "lucide-react"
 
 import CommonButton from "../../../components/common/widgets/CommonButton"
 import { createFormAutocomplete } from "../component/ReportAutocompleteInput"
 import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonFormSection from "../component/CommonFormSection"
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
+import { MAX_ADDRESS_PART_LENGTH, MAX_PHASE_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber, sanitizePersonName } from "../reportFieldRules"
 
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
 import { validatePerson, type FormErrors } from "./formValidation"
+import { hasPersonInput } from "../reportPersonValidation"
 import { calculateBirthdateFromAge, getCurrentDateInputValue, getMinimumBirthdateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("operations")
 
 type OperationStep2Props = {
   people: Person[]
+  draft: Person
+  onDraftChange: (draft: Person) => void
   onPeopleChange: (people: Person[]) => void
   errors: FormErrors
 }
 
-export default function OperationStep2({ people, onPeopleChange, errors }: OperationStep2Props) {
-  const [draft, setDraft] = useState<Person>(createEmptyPerson())
-  const draftErrors = validatePerson(draft)
+export default function OperationStep2({ people, draft, onDraftChange, onPeopleChange, errors }: OperationStep2Props) {
+  const draftErrors = hasPersonInput(draft) ? validatePerson(draft) : {}
 
   function formatGroupedErrors(fields: Array<[string, string]>) {
     return fields.filter(([, message]) => Boolean(message)).map(([label, message]) => `${label}: ${message}`).join(" ")
@@ -30,7 +31,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
 
   const updateDraft = (patch: Partial<Person>) => {
     const updatedDraft = { ...draft, ...patch }
-    setDraft(updatedDraft)
+    onDraftChange(updatedDraft)
   }
 
   const handleBirthdateChange = (birthdate: string) => {
@@ -43,11 +44,12 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
   }
 
   const addPerson = () => {
+    if (!hasPersonInput(draft)) return
     const validationErrors = validatePerson(draft)
     if (Object.keys(validationErrors).length > 0) return
 
     onPeopleChange([...people, { ...draft, id: crypto.randomUUID() }])
-    setDraft(createEmptyPerson())
+    onDraftChange(createEmptyPerson())
   }
 
   const removePerson = (id: string) => {
@@ -68,6 +70,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row">
       <CommonFormSection title="PEOPLE INVOLVED">
+        <p className="mb-4 text-sm text-slate-600">Leave this section blank if there are no people involved. Once you start an entry, complete the required fields before continuing. Middle initial and suffix are optional.</p>
         <div className="mb-5">
           <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
             <span>Full Name</span>
@@ -79,7 +82,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               placeholder="Surname"
               value={draft.name.surname}
               errorMessage={draftErrors["name.surname"]}
-              onChange={(e) => updateDraft({ name: { ...draft.name, surname: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, surname: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
@@ -87,7 +90,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               placeholder="First Name"
               value={draft.name.firstName}
               errorMessage={draftErrors["name.firstName"]}
-              onChange={(e) => updateDraft({ name: { ...draft.name, firstName: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, firstName: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
@@ -96,7 +99,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               placeholder="M.I"
               value={draft.name.middleInitial}
               errorMessage={draftErrors["name.middleInitial"]}
-              onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, middleInitial: sanitizePersonName(e.target.value) } })}
             />
 
             <CommonInput
@@ -105,7 +108,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
               placeholder="Sfx"
               value={draft.name.suffix}
               errorMessage={draftErrors["name.suffix"]}
-              onChange={(e) => updateDraft({ name: { ...draft.name, suffix: e.target.value } })}
+              onChange={(e) => updateDraft({ name: { ...draft.name, suffix: sanitizePersonName(e.target.value) } })}
             />
           </div>
         </div>
@@ -119,6 +122,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             min={getMinimumBirthdateInputValue()}
             max={getCurrentDateInputValue()}
             onChange={(e) => handleBirthdateChange(e.target.value)}
+            onInput={(e) => handleBirthdateChange(e.currentTarget.value)}
             errorMessage={draftErrors.birthdate}
           />
 
@@ -126,7 +130,7 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             variant="compact"
             type="number"
             label="Age"
-            value={draft.age === "" ? "" : String(draft.age)}
+            value={draft.birthdate ? calculateAge(draft.birthdate) : draft.age}
             min={0}
             max={MAX_REASONABLE_AGE}
             onChange={(e) => handleAgeChange(e.target.value)}
@@ -186,45 +190,45 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
             <span>Phase</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
-              maxLength={MAX_ADDRESS_PART_LENGTH}
+              className="w-14 px-1 text-center"
+              maxLength={MAX_PHASE_LENGTH}
               placeholder="9"
               value={draft.address.phase}
               errorMessage={draftErrors["address.phase"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, phase: sanitizeAddressValue(e.target.value) } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, phase: sanitizeAddressValue(e.target.value, "phase") } })}
             />
 
             <span>Package</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="3"
               value={draft.address.package}
               errorMessage={draftErrors["address.package"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, package: sanitizeAddressValue(e.target.value) } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, package: sanitizeAddressValue(e.target.value, "package") } })}
             />
 
             <span>Block</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="25"
               value={draft.address.block}
               errorMessage={draftErrors["address.block"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, block: sanitizeAddressValue(e.target.value) } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, block: sanitizeAddressValue(e.target.value, "block") } })}
             />
 
             <span>Lot</span>
             <CommonInput
               variant="compact"
-              className="w-9 px-1 text-center"
+              className="w-14 px-1 text-center"
               maxLength={MAX_ADDRESS_PART_LENGTH}
               placeholder="16"
               value={draft.address.lot}
               errorMessage={draftErrors["address.lot"]}
-              onChange={(e) => updateDraft({ address: { ...draft.address, lot: sanitizeAddressValue(e.target.value) } })}
+              onChange={(e) => updateDraft({ address: { ...draft.address, lot: sanitizeAddressValue(e.target.value, "lot") } })}
             />
           </div>
         </div>

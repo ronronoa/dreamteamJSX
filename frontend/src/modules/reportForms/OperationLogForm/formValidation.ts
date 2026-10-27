@@ -1,9 +1,8 @@
 import type { OperationFormOptions } from "../../../api/operationForm";
 import type { OperationLogData, Person } from "../../../types/operationLog";
-import { calculateAge } from "../../../types/operationLog";
-import { formatDate, isValidDateInputNotInFuture, MAX_REASONABLE_AGE } from "../../../utils/dateTime";
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules";
-import { getOperationNature } from "@/utils/operationNature";
+import { isValidDateInputNotInFuture } from "../../../utils/dateTime";
+import { hasPersonInput, validateReportPerson } from "../reportPersonValidation";
+import { getOperationNature } from "../../../utils/operationNature";
 
 export type FormErrors = Record<string, string>;
 
@@ -102,36 +101,7 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
 }
 
 export function validatePerson(person: Person): FormErrors {
-  const errors: FormErrors = {};
-  validateNamePart(person.name.surname, 80, "Enter the person's surname.", "name.surname", errors);
-  validateNamePart(person.name.firstName, 80, "Enter the person's first name.", "name.firstName", errors);
-  if (person.name.middleInitial.trim().length > 10) errors["name.middleInitial"] = "Middle initial must be 10 characters or fewer.";
-  if (person.name.suffix.trim().length > 20) errors["name.suffix"] = "Suffix must be 20 characters or fewer.";
-
-  const today = formatDate(new Date(), "YYYY-MM-DD");
-  if (!person.birthdate || person.birthdate > today || person.age === "") {
-    errors.birthdate = "Choose a valid birthdate.";
-  } else if (person.age > MAX_REASONABLE_AGE) {
-    errors.birthdate = `Age cannot exceed ${MAX_REASONABLE_AGE} years.`;
-  } else if (person.age !== calculateAge(person.birthdate)) {
-    errors.birthdate = "Check the person's birthdate.";
-  }
-
-  if (person.gender === "") errors.gender = "Select a sex.";
-  if (!/^\d*$/.test(person.contactNumber) || person.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH) {
-    errors.contactNumber = `Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`;
-  }
-
-  validateOptionalTextLength(person.address.phase, MAX_ADDRESS_PART_LENGTH, `Phase must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.phase", errors);
-  validateOptionalTextLength(person.address.package, MAX_ADDRESS_PART_LENGTH, `Package must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.package", errors);
-  validateOptionalTextLength(person.address.block, MAX_ADDRESS_PART_LENGTH, `Block must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.block", errors);
-  validateOptionalTextLength(person.address.lot, MAX_ADDRESS_PART_LENGTH, `Lot must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.lot", errors);
-  validateAddressCharacters(person.address.phase, "Phase", "address.phase", errors);
-  validateAddressCharacters(person.address.package, "Package", "address.package", errors);
-  validateAddressCharacters(person.address.block, "Block", "address.block", errors);
-  validateAddressCharacters(person.address.lot, "Lot", "address.lot", errors);
-
-  return errors;
+  return validateReportPerson(person);
 }
 
 export function validateStep2(formData: OperationLogData): FormErrors {
@@ -141,6 +111,7 @@ export function validateStep2(formData: OperationLogData): FormErrors {
     return errors;
   }
   formData.people.forEach((person, index) => {
+    if (!hasPersonInput(person)) return;
     for (const [field, message] of Object.entries(validatePerson(person))) {
       errors[`people.${index}.${field}`] = message;
     }
@@ -151,7 +122,8 @@ export function validateStep2(formData: OperationLogData): FormErrors {
 export function validateStep3(formData: OperationLogData): FormErrors {
   const errors: FormErrors = {};
   const description = formData.operationDescription.description.trim();
-  if (description.length > 10000) errors["operationDescription.description"] = "Description must be 10,000 characters or fewer.";
+  if (!description) errors["operationDescription.description"] = "Enter the operation description.";
+  else if (description.length > 10000) errors["operationDescription.description"] = "Description must be 10,000 characters or fewer.";
   if (formData.inventory.length > 100) errors.inventory = "Add no more than 100 inventory entries.";
 
   if (formData.operationDescription.images.length > MAX_IMAGE_COUNT) {
@@ -193,25 +165,10 @@ function isSupportedImage(file: File): boolean {
   return ALLOWED_IMAGE_TYPES.has(file.type) && file.size <= MAX_IMAGE_SIZE_BYTES;
 }
 
-function validateNamePart(value: string, maxLength: number, requiredMessage: string, field: string, errors: FormErrors) {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    errors[field] = requiredMessage;
-    return;
-  }
-  if (trimmedValue.length > maxLength) errors[field] = `Must be ${maxLength} characters or fewer.`;
-}
-
 function validateOptionalNamePart(value: string, maxLength: number, message: string, field: string, errors: FormErrors) {
   if (value.trim().length > maxLength) errors[field] = message;
 }
 
 function validateOptionalTextLength(value: string, maxLength: number, message: string, field: string, errors: FormErrors) {
   if (value.trim().length > maxLength) errors[field] = message;
-}
-
-function validateAddressCharacters(value: string, label: string, field: string, errors: FormErrors) {
-  if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
-    errors[field] = `${label} can contain only letters and numbers.`;
-  }
 }

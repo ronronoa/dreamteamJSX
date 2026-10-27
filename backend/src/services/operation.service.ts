@@ -4,14 +4,13 @@ import { ConflictError, NotFoundError } from "@/shared/errors"
 import type { CreateOperationInput, CreateTeamInput, OperationImageInput, PersonInvolvedInput, UpdateOperationInput, UpdateTeamInput } from "@/types/operation.types"
 import { prepareReportReview } from "@/services/reportReviewWorkflow"
 
-async function fuckSake(
+async function syncOperationDispatchReview(
     tx: Prisma.TransactionClient,
     operationId: string,
-    status: string,
+    status: "VALIDATED" | "REJECTED",
     rejectedReason: string | null,
     reviewerId: string,
 ) {
-    if (status !== "VALIDATED" && status !== "REJECTED") return
     await tx.vehicularDispatch.updateMany({
         where: { operation_id: operationId, archive: null },
         data: {
@@ -284,7 +283,7 @@ export const operationService = {
         await decrementOperationInventory(tx, operationId, actor.userId)
       }
 
-      await fuckSake(tx, operationId, nextStatus, null, actor.userId)
+      await syncOperationDispatchReview(tx, operationId, nextStatus, null, actor.userId)
 
       const updated = await tx.operationLog.findUniqueOrThrow({ where: { operation_id: operationId } })
 
@@ -315,7 +314,7 @@ export const operationService = {
         data: { status: nextStatus, validated_by: actor.userId, rejected_reason: null},
       });
 
-      await fuckSake(tx, operationId, nextStatus, null, actor.userId)
+      await syncOperationDispatchReview(tx, operationId, nextStatus, null, actor.userId)
 
       if (updatedCount.count === 0) throw new ConflictError("This operation was already reviewed.");
 
@@ -337,7 +336,7 @@ export const operationService = {
         data: { status: nextStatus, validated_by: actor.userId, rejected_reason: rejectedReason },
       });
 
-      await fuckSake(tx, operationId, nextStatus, rejectedReason, actor.userId)
+      await syncOperationDispatchReview(tx, operationId, nextStatus, rejectedReason, actor.userId)
 
       await tx.operationLogEdit.create({
         data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Rejected from ${op.status}` },

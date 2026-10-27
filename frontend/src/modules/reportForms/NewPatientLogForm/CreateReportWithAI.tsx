@@ -19,7 +19,7 @@ import {
   MAX_REASONABLE_AGE,
 } from "@/utils/dateTime";
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect";
-import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeContactNumber } from "@/modules/reportForms/reportFieldRules";
+import { MAX_ADDRESS_PART_LENGTH, MAX_PHASE_LENGTH, sanitizeAddressValue, MAX_CONTACT_NUMBER_LENGTH, sanitizeContactNumber } from "@/modules/reportForms/reportFieldRules";
 
 const MAX_OCR_IMAGE_BYTES = 8 * 1024 * 1024;
 const LONG_SCAN_MESSAGE_DELAY_MS = 15_000;
@@ -211,7 +211,7 @@ export default function CreateReportWithAI({
         ...current.patient,
         address: {
           ...current.patient.address,
-          [field]: value === "" ? null : Number(value),
+          [field]: value === "" ? null : sanitizeAddressValue(value, field),
         },
       },
     }));
@@ -493,16 +493,16 @@ export default function CreateReportWithAI({
 
               <div className="ai-scan-inline-fields flex gap-4 items-center">
                 <label className=" block text-lg font-bold text-slate-100">PHASE</label>
-                <CommonInput type="number" min={0} max={99} step={1} variant="compact" value={scanResult.patient.address.phase ?? ""} onChange={(event) => updateAddressValue("phase", event.target.value.slice(0, MAX_ADDRESS_PART_LENGTH))} errorMessage={missingFieldMessage(scanResult.patient.address.phase, "Phase")}/>
+                <CommonInput type="text" maxLength={MAX_PHASE_LENGTH} variant="compact" value={scanResult.patient.address.phase ?? ""} onChange={(event) => updateAddressValue("phase", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.address.phase, "Phase")}/>
 
                 <label className=" block text-lg font-bold text-slate-100">PACKAGE</label>
-                <CommonInput type="number" min={0} max={99} step={1} variant="compact" value={scanResult.patient.address.package ?? ""} onChange={(event) => updateAddressValue("package", event.target.value.slice(0, MAX_ADDRESS_PART_LENGTH))} errorMessage={missingFieldMessage(scanResult.patient.address.package, "Package")}/>
+                <CommonInput type="text" maxLength={MAX_ADDRESS_PART_LENGTH} variant="compact" value={scanResult.patient.address.package ?? ""} onChange={(event) => updateAddressValue("package", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.address.package, "Package")}/>
 
                 <label className=" block text-lg font-bold text-slate-100">BLOCK</label>
-                <CommonInput type="number" min={0} max={99} step={1} variant="compact" value={scanResult.patient.address.block ?? ""} onChange={(event) => updateAddressValue("block", event.target.value.slice(0, MAX_ADDRESS_PART_LENGTH))} errorMessage={missingFieldMessage(scanResult.patient.address.block, "Block")}/>
+                <CommonInput type="text" maxLength={MAX_ADDRESS_PART_LENGTH} variant="compact" value={scanResult.patient.address.block ?? ""} onChange={(event) => updateAddressValue("block", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.address.block, "Block")}/>
 
                 <label className=" block text-lg font-bold text-slate-100">LOT</label>
-                <CommonInput type="number" min={0} max={99} step={1} variant="compact" value={scanResult.patient.address.lot ?? ""} onChange={(event) => updateAddressValue("lot", event.target.value.slice(0, MAX_ADDRESS_PART_LENGTH))} errorMessage={missingFieldMessage(scanResult.patient.address.lot, "Lot")}/>
+                <CommonInput type="text" maxLength={MAX_ADDRESS_PART_LENGTH} variant="compact" value={scanResult.patient.address.lot ?? ""} onChange={(event) => updateAddressValue("lot", event.target.value)} errorMessage={missingFieldMessage(scanResult.patient.address.lot, "Lot")}/>
               </div>
             </div>
 

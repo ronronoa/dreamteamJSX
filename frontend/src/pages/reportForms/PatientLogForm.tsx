@@ -80,7 +80,7 @@ function normalizePatientReport(value: unknown): PatientLogData {
       time: getCurrentTimeInputValue(),
       dispositionType,
     },
-    dispatch: { ...emptyReport.dispatch, ...report.dispatch },
+    dispatch: { ...emptyReport.dispatch, ...report.dispatch, vehicle: report.dispatch?.vehicle || "none" },
     patientDetails: {
       ...emptyReport.patientDetails,
       ...report.patientDetails,

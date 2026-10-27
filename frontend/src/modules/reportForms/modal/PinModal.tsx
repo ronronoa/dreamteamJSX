@@ -85,7 +85,6 @@ export default function PinModal({
           autoComplete="new-password"
           icon={<Lock size={18} />}
           required
-          placeholder="0482"
           inputMode="numeric"
           pattern={REPORT_PIN_PATTERN}
           minLength={4}
@@ -96,7 +95,11 @@ export default function PinModal({
           disabled={loading}
         />
 
-        <p className="text-xs text-gray-600">Enter your personal report PIN. It identifies the account submitting this report.</p>
+        <p className="text-xs text-gray-600">
+          {onSubmitReview
+            ? "Use your own personal report PIN for the account you are signed in to when approving or rejecting a report."
+            : "Enter your personal report PIN. It identifies the account submitting this report."}
+        </p>
         {error && <p role="alert" className="whitespace-pre-line text-sm text-red-600">{error}</p>}
 
         <CommonButton

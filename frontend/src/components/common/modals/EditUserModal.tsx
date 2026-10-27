@@ -135,7 +135,7 @@ export default function EditUserModal({
             <CommonInput id="user-email" label="Email (optional)" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" className={inputClassName} />
             <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => { setRole(event.target.value as Role); setPassword(""); }} options={availableRoleOptions} />
             <CommonInput id="user-phone" label="Mobile" type="tel" inputMode="numeric" value={phone} onChange={(event) => setPhone(event.target.value.replace(/[^0-9]/g, ""))} maxLength={12} pattern="(?:63|0)9[0-9]{9}" title="Enter a valid mobile number using digits only, such as 09171234567 or 639171234567." placeholder="09171234567 or 639171234567" className={inputClassName} />
-            <CommonSelect id="user-team" required label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
+            <CommonSelect id="user-team" required={!user} label={user ? "Team (optional)" : "Team"} value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
             {user && <CommonSelect
               id="user-status"
               label="Account status"

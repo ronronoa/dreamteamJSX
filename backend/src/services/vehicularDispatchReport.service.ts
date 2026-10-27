@@ -22,7 +22,7 @@ function toDispatchRecord(dispatch: DispatchRecord) {
   return {
     dispatch_id: dispatch.dispatch_id,
     operation_id: dispatch.operation_id,
-    patient_id: dispatch.patient_log_id,
+    patient_log_id: dispatch.patient_log_id,
     dispatch_date: dispatch.dispatch_date,
     createdAt: dispatch.createdAt,
     submitter_name: dispatch.submitter_name,
@@ -107,8 +107,7 @@ function formatPassengerAddress(person: VehicularDispatchReportInput["passengers
 export const vehicularDispatchReportService = {
   async list() {
     const dispatches = await prisma.vehicularDispatch.findMany({
-      where: { operation_id: null, patient_log_id: null, archive: null },
-      // where: { archive: null },
+      where: { archive: null },
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
       include: dispatchRecordInclude,
     })
