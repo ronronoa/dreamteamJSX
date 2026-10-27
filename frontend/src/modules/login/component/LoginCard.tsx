@@ -79,7 +79,7 @@ export default function LoginCard({
         Sign In
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
 
         <CommonInput
           id="login-identifier"
@@ -88,7 +88,7 @@ export default function LoginCard({
           type="text"
           placeholder="name@example.com or username"
           onChange={(e) => setIdentifier(e.target.value)}
-          autoComplete="username"
+          autoComplete="off"
           required
           icon={<Mail size={18} />}
           className="border-none"
@@ -101,7 +101,7 @@ export default function LoginCard({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••••"
-          autoComplete="current-password"
+          autoComplete="off"
           required
           icon={<KeyRound size={18} />}
           showPasswordToggle

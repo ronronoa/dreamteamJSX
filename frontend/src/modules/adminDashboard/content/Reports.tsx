@@ -3,6 +3,8 @@ import CommonButton from "@/components/common/widgets/CommonButton";
 import { fetchOperations } from "@/api/operations";
 import { fetchPatientLogs } from "@/api/patients";
 import { fetchVehicularDispatchRecords } from "@/api/vehicularDispatches";
+import { fetchInventory, fetchInventoryTransactions } from "@/api/inventory";
+import { fetchSettings } from "@/api/settings";
 import { useAuth } from "@/store/useAuth";
 import { REPORT_CARDS as reports } from "./reports/reportCards";
 import {
@@ -10,6 +12,7 @@ import {
   createPatientLogReportPdf,
   createVehicleDispatchReportPdf,
 } from "./reports/reportPrintsLayout";
+import { createInventoryAuditPdf } from "./reports/inventoryPrintsLayout";
 import { useState } from "react";
 
 export default function Reports() {
@@ -27,15 +30,22 @@ export default function Reports() {
     setReportError(null);
 
     try {
+      const { workspace } = await fetchSettings(session.accessToken);
       if (title === "Operation Log Reports") {
         const records = await fetchOperations(session.accessToken);
-        await createOperationLogReportPdf(records, session.user.name);
+        await createOperationLogReportPdf(records, session.user.name, workspace);
       } else if (title === "Patient Log Reports") {
         const records = await fetchPatientLogs(session.accessToken);
-        await createPatientLogReportPdf(records, session.user.name);
+        await createPatientLogReportPdf(records, session.user.name, workspace);
       } else if (title === "Vehicle Dispatch Reports") {
         const records = await fetchVehicularDispatchRecords(session.accessToken);
-        await createVehicleDispatchReportPdf(records, session.user.name);
+        await createVehicleDispatchReportPdf(records, session.user.name, workspace);
+      } else if (title === "Inventory Reports") {
+        const { items } = await fetchInventory(session.accessToken);
+        const transactionsByItem = await Promise.all(
+          items.map((item) => fetchInventoryTransactions(session.accessToken, item.itemId)),
+        );
+        await createInventoryAuditPdf(items, transactionsByItem.flat(), session.user.name, workspace);
       }
     } catch (error) {
       setReportError(error instanceof Error ? error.message : "Unable to generate this report.");
@@ -53,7 +63,6 @@ export default function Reports() {
       )}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {reports.map(({ title, description, icon: Icon }) => {
-          const isSupported = title !== "Inventory Reports";
           const isGenerating = generatingReport === title;
 
           return (
@@ -73,7 +82,7 @@ export default function Reports() {
 
               <CommonButton
                 className="mt-5 w-full"
-                disabled={!isSupported || generatingReport !== null}
+                disabled={generatingReport !== null}
                 onClick={() => void generateReport(title)}
               >
                 <span className="inline-flex items-center justify-center gap-2">

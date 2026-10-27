@@ -26,6 +26,7 @@ export const authService = {
 
     const user = await prisma.user.findUnique({
       where: { user_id: parsed.data.userId },
+      include: { team: { select: { team_name: true } } },
     });
     if (!user || !user.isActive || !user.passwordHash) return null;
 
@@ -94,6 +95,7 @@ export const authService = {
           { email: data.identifier.toLowerCase() },
         ],
       },
+      include: { team: { select: { team_name: true } } },
     });
 
     if (!user || !user.passwordHash) {
@@ -182,7 +184,7 @@ export const authService = {
         tokenHash: tokenHash,
       },
       include: {
-        user: true,
+        user: { include: { team: { select: { team_name: true } } } },
       },
     });
 

@@ -6,7 +6,8 @@ import { deductPatientInventory, readPatientInventory } from "./patientInventory
 
 const patientLogIncludes = {
   patient: { include: { images: true } },
-  submitter: { select: { user_id: true, name: true, username: true } },
+  submitter: { select: { user_id: true, name: true, username: true, role: true } },
+  validator: { select: { user_id: true, name: true, username: true, role: true } },
   responders: { include: { user: { select: { user_id: true, name: true } } } },
   dispatches: { include: { vehicle: true } },
   archive: true,
@@ -17,7 +18,7 @@ export const patientLogService = {
     return prisma.patientLog.findMany({
       where: { archive: null },
       include: patientLogIncludes,
-      orderBy: [{ log_date: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     });
   },
 
@@ -47,7 +48,11 @@ export const patientLogService = {
     return prisma.$transaction(async (transaction) => {
       const updated = await transaction.patientLog.updateMany({
         where: { patient_log_id: id, status: patientLog.status },
-        data: { status: nextStatus, rejected_reason: rejectedReasonValue },
+        data: {
+          status: nextStatus,
+          rejected_reason: rejectedReasonValue,
+          validated_by: actor.userId,
+        },
       });
       if (updated.count === 0) throw new ConflictError("This patient report was already reviewed.");
       if (nextStatus === "VALIDATED") {
@@ -55,7 +60,11 @@ export const patientLogService = {
       }
       await transaction.vehicularDispatch.updateMany({
         where: { patient_log_id: id, archive: null },
-        data: { status: nextStatus, rejected_reason: rejectedReasonValue },
+        data: {
+          status: nextStatus,
+          rejected_reason: rejectedReasonValue,
+          validated_by: actor.userId,
+        },
       });
       return transaction.patientLog.findUniqueOrThrow({ where: { patient_log_id: id }, include: patientLogIncludes });
     });

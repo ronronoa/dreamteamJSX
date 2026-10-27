@@ -38,7 +38,7 @@ const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Use
 const defaultSections: DashboardSidebarSection[] = [];
 
 const superAdminSections: DashboardSidebarSection[] = [
-  { label: "Main", items: [dashboardItem] },
+  // { label: "Main", items: [dashboardItem] },
   {
     label: "Administration",
     // items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],

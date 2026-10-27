@@ -1,7 +1,7 @@
 import type { OperationFormOptions } from "../../../api/operationForm";
 import type { OperationLogData, Person } from "../../../types/operationLog";
 import { calculateAge } from "../../../types/operationLog";
-import { formatDate, isValidDateInputNotInFuture } from "../../../utils/dateTime";
+import { formatDate, isValidDateInputNotInFuture, MAX_REASONABLE_AGE } from "../../../utils/dateTime";
 import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules";
 import { getOperationNature } from "@/utils/operationNature";
 
@@ -110,7 +110,9 @@ export function validatePerson(person: Person): FormErrors {
 
   const today = formatDate(new Date(), "YYYY-MM-DD");
   if (!person.birthdate || person.birthdate > today || person.age === "") {
-    errors.birthdate = "Choose a valid birthdate that is not in the future.";
+    errors.birthdate = "Choose a valid birthdate.";
+  } else if (person.age > MAX_REASONABLE_AGE) {
+    errors.birthdate = `Age cannot exceed ${MAX_REASONABLE_AGE} years.`;
   } else if (person.age !== calculateAge(person.birthdate)) {
     errors.birthdate = "Check the person's birthdate.";
   }

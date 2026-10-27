@@ -9,6 +9,7 @@ export interface PatientLogRecord {
   type_of_request: string;
   submitted_by: string | null;
   submitter_name: string | null;
+  validated_by: string | null;
   status: PatientLogStatus;
   rejected_reason: string | null;
   name_of_caller: string | null;
@@ -38,7 +39,8 @@ export interface PatientLogRecord {
     lot: string | null;
     images: Array<{ attachment_id: string; image_url: string; file_type: string | null }>;
   };
-  submitter: { user_id: string; name: string; username: string } | null;
+  submitter: { user_id: string; name: string; username: string; role: string } | null;
+  validator: { user_id: string; name: string; username: string; role: string } | null;
   responders: Array<{ user: { user_id: string; name: string } }>;
   dispatches: Array<{
     dispatch_id: string;

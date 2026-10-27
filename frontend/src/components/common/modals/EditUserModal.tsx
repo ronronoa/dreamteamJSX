@@ -123,7 +123,7 @@ export default function EditUserModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.5fr)]">
             <CommonInput id="user-last-name" label="Last name" value={nameParts.lastName} onChange={(event) => changeName("lastName", event.target.value)} required={!user || Boolean(user.lastName)} maxLength={80} className={inputClassName} />
             <CommonInput id="user-first-name" label="First name" value={nameParts.firstName} onChange={(event) => changeName("firstName", event.target.value)} required maxLength={80} className={inputClassName} />

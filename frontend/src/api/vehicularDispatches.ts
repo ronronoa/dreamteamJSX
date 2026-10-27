@@ -25,6 +25,9 @@ export interface VehicleDispatchDetailRecord {
   dispatch_date: string
   createdAt?: string
   submitter_name: string | null
+  submitter: { user_id: string; name: string; username: string; role: string } | null
+  validated_by: string | null
+  validator: { user_id: string; name: string; username: string; role: string } | null
   depart_time: string | null
   arrival_time: string | null
   vehicle_name: string

@@ -16,8 +16,8 @@ export interface OperationRecord {
   rejected_reason: string | null;
   team: { team_id: string; team_name: string };
   teamAssignments: Array<{ team: { team_id: string; team_name: string } }>;
-  submitter: { user_id: string; name: string; username: string } | null;
-  validator: { user_id: string; name: string; username: string } | null;
+  submitter: { user_id: string; name: string; username: string; role: string } | null;
+  validator: { user_id: string; name: string; username: string; role: string } | null;
   responders: Array<{ user: { user_id: string; name: string } }>;
   personsInvolved: Array<{
     person_id: string;

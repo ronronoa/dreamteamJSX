@@ -13,14 +13,16 @@ export const PROFILE_PHOTO_TYPES = ["image/jpeg", "image/png"];
 export const CARD_CLASS = "rounded-2xl border border-gray-600 bg-white";
 
 export interface ProfileForm {
-  name: string;
+  firstName: string;
+  lastName: string;
   username: string;
   email: string;
   phone: string;
 }
 
 export const EMPTY_PROFILE_FORM: ProfileForm = {
-  name: "",
+  firstName: "",
+  lastName: "",
   username: "",
   email: "",
   phone: "",
@@ -28,10 +30,10 @@ export const EMPTY_PROFILE_FORM: ProfileForm = {
 
 export function toForm(profile: UserProfileData): ProfileForm {
   return {
-    name: profile.name,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
     username: profile.username,
     email: profile.email ?? "",
     phone: profile.phone ?? "",
   };
 }
-

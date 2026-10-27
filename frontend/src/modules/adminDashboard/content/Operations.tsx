@@ -121,8 +121,6 @@ export default function Operations() {
           {stats.map((stat) => <StatCard key={stat.label} {...stat} />)}
         </div>
 
-        <DateRangeFilter fromDate={fromDate} toDate={toDate} onFromDateChange={updateFromDate} onToDateChange={updateToDate} onClear={clearDateFilter} />
-
         {pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p>}
         {successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>}
 
@@ -202,8 +200,9 @@ export default function Operations() {
               <h2 className="text-sm font-bold text-gray-900">Reviewed Operation Records</h2>
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">{reviewedCountLabel}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <TableSearch value={search} onChange={updateSearch} placeholder="Search operation records" ariaLabel="Search operation records" />
+              <DateRangeFilter fromDate={fromDate} toDate={toDate} onFromDateChange={updateFromDate} onToDateChange={updateToDate} onClear={clearDateFilter} />
               <div className="relative">
                 <button type="button" aria-label="Filter operation records" aria-expanded={filterOpen} onClick={() => setFilterOpen((open) => !open)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">
                   <Filter size={14} />

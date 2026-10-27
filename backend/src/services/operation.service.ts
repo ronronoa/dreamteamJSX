@@ -8,12 +8,17 @@ async function fuckSake(
     tx: Prisma.TransactionClient,
     operationId: string,
     status: string,
-    rejectedReason: string | null = null,
+    rejectedReason: string | null,
+    reviewerId: string,
 ) {
     if (status !== "VALIDATED" && status !== "REJECTED") return
     await tx.vehicularDispatch.updateMany({
         where: { operation_id: operationId, archive: null },
-        data: { status, rejected_reason: rejectedReason },
+        data: {
+          status,
+          rejected_reason: rejectedReason,
+          validated_by: reviewerId,
+        },
     })
 }
 
@@ -184,15 +189,15 @@ export const operationService = {
       include: {
         team: true,
         teamAssignments: { include: { team: true } },
-        submitter: { select: { user_id: true, name: true, username: true}},
-        validator: { select: { user_id: true, name: true, username: true}},
+        submitter: { select: { user_id: true, name: true, username: true, role: true}},
+        validator: { select: { user_id: true, name: true, username: true, role: true}},
         responders: { include: { user: { select: { user_id: true, name: true }}}},
         personsInvolved: true,
         inventoryEntries: true,
         dispatches: { include: { vehicle: true } },
         images: true
       },
-      orderBy: { createdAt: "desc"}
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
     })
   },
 
@@ -201,8 +206,8 @@ export const operationService = {
       where: { operation_id: operationId },
       include: {
         team: true,
-        submitter: { select: {user_id: true, name: true, username: true}},
-        validator: { select: { user_id: true, name: true, username: true}},
+        submitter: { select: {user_id: true, name: true, username: true, role: true}},
+        validator: { select: { user_id: true, name: true, username: true, role: true}},
         responders: { include: { user: { select: { user_id: true, name: true}}}},
         personsInvolved: true,
         teamAssignments: { include: { team: true } },
@@ -279,7 +284,7 @@ export const operationService = {
         await decrementOperationInventory(tx, operationId, actor.userId)
       }
 
-      await fuckSake(tx, operationId, nextStatus, null)
+      await fuckSake(tx, operationId, nextStatus, null, actor.userId)
 
       const updated = await tx.operationLog.findUniqueOrThrow({ where: { operation_id: operationId } })
 
@@ -310,7 +315,7 @@ export const operationService = {
         data: { status: nextStatus, validated_by: actor.userId, rejected_reason: null},
       });
 
-      await fuckSake(tx, operationId, nextStatus, null)
+      await fuckSake(tx, operationId, nextStatus, null, actor.userId)
 
       if (updatedCount.count === 0) throw new ConflictError("This operation was already reviewed.");
 
@@ -332,7 +337,7 @@ export const operationService = {
         data: { status: nextStatus, validated_by: actor.userId, rejected_reason: rejectedReason },
       });
 
-      await fuckSake(tx, operationId, nextStatus, rejectedReason)
+      await fuckSake(tx, operationId, nextStatus, rejectedReason, actor.userId)
 
       await tx.operationLogEdit.create({
         data: { operation_id: operationId, admin_id: actor.userId, edit_notes: `Rejected from ${op.status}` },

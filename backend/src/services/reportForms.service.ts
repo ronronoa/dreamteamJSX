@@ -567,6 +567,7 @@ export const reportFormsService = {
           dispatches: {
             create: {
               status,
+              validated_by: status === "VALIDATED" ? submittedBy : null,
               dispatch_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
               submitted_by: submittedBy,
               vehicle_id: vehicle?.vehicle_id ?? null,
@@ -672,6 +673,7 @@ export const reportFormsService = {
             submitted_by: submittedBy,
             submitter_name: owner.ownerName,
             status,
+            validated_by: status === "VALIDATED" ? submittedBy : null,
             name_of_caller: formatPersonName(responderDetails.caller) || null,
             bp: firstAidHospital.bp || null,
             pr: firstAidHospital.pr || null,
@@ -691,6 +693,7 @@ export const reportFormsService = {
             dispatches: {
               create: {
                 status,
+                validated_by: status === "VALIDATED" ? submittedBy : null,
                 dispatch_date: reportDateTime,
                 submitted_by: submittedBy,
                 submitter_name: owner.ownerName,

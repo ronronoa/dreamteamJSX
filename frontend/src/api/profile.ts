@@ -5,6 +5,10 @@ import type { Role } from "@/types/auth";
 export interface UserProfileData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  middleInitial: string | null;
+  suffix: string | null;
   username: string;
   email: string | null;
   role: Role;
@@ -18,9 +22,10 @@ export interface UserProfileData {
 }
 
 export interface UpdateProfileInput {
-  name: string;
+  firstName: string;
+  lastName: string;
   username: string;
-  email: string;
+  email: string | null;
   phone: string | null;
 }
 

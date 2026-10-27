@@ -72,8 +72,6 @@ export default function Patients() {
           {dashboard.stats.map((stat) => <StatCard key={stat.label} {...stat} />)}
         </div>
 
-        <DateRangeFilter fromDate={dashboard.fromDate} toDate={dashboard.toDate} onFromDateChange={dashboard.updateFromDate} onToDateChange={dashboard.updateToDate} onClear={dashboard.clearDateFilter} />
-
         {dashboard.pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{dashboard.pageError}</p>}
         {dashboard.successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{dashboard.successMessage}</p>}
 
@@ -151,8 +149,9 @@ export default function Patients() {
               <h2 className="text-sm font-bold text-gray-900">Reviewed Patient Records</h2>
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">{reviewedCountLabel}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <TableSearch value={dashboard.search} onChange={dashboard.updateSearch} placeholder="Search patient records" ariaLabel="Search patient records" />
+              <DateRangeFilter fromDate={dashboard.fromDate} toDate={dashboard.toDate} onFromDateChange={dashboard.updateFromDate} onToDateChange={dashboard.updateToDate} onClear={dashboard.clearDateFilter} />
               <div className="relative">
                 <button type="button" aria-label="Filter patient records" aria-expanded={dashboard.filterOpen} onClick={() => dashboard.setFilterOpen((open) => !open)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"><Filter size={14} /></button>
                 {dashboard.filterOpen &&

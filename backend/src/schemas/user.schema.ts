@@ -67,9 +67,10 @@ export const UpdateUserSchema = z.object({
 }).refine((data) => Object.keys(data).length > 0, { message: "Provide at least one field to update" });
 
 export const UpdateOwnProfileSchema = z.object({
-    name: z.string().trim().min(1).max(50),
+    firstName: NamePartSchema,
+    lastName: NamePartSchema,
     username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, dots, underscores, or hyphens"),
-    email: EmailSchema,
+    email: OptionalEmailSchema,
     phone: PhoneSchema,
 });
 

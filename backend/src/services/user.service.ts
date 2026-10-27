@@ -36,6 +36,7 @@ export const userService = {
                 user_id: userId,
                 ...(actorRole === "DEPARTMENT_HEAD" && { role: { not: "SUPER_ADMIN" } }),
             },
+            include: { team: { select: { team_name: true } } },
         });
 
         if(!user) throw new NotFoundError("User", userId)
@@ -65,16 +66,21 @@ export const userService = {
 
     async updateOwnProfile(userId: string, data: import("@/types/user.types").UpdateOwnProfileInput) {
         const currentProfile = await this.findProfile(userId);
-        const nameChanged = currentProfile.name !== data.name;
+        const name = [
+            data.firstName,
+            currentProfile.middleInitial ? `${currentProfile.middleInitial}.` : "",
+            data.lastName,
+            currentProfile.suffix ?? "",
+        ].filter(Boolean).join(" ");
         try {
             await prisma.user.update({
                 where: { user_id: userId },
                 data: {
-                    name: data.name,
-                    // The profile's full-name editor cannot reliably split a renamed person into parts.
-                    ...(nameChanged ? { firstName: null, lastName: null, middleInitial: null, suffix: null } : {}),
+                    name,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
                     username: data.username,
-                    email: data.email,
+                    ...(data.email !== undefined && { email: data.email }),
                     ...(data.phone !== undefined && { phone: data.phone }),
                 },
             });
@@ -120,7 +126,8 @@ export const userService = {
                     ...(data.phone !== undefined && { phone: data.phone }),
                     isActive: data.isActive,
                     ...(data.team_id && { team: { connect: { team_id: data.team_id } } }),
-                }
+                },
+                include: { team: { select: { team_name: true } } },
             });
             return { user: toSafeUser(user), generatedPin };
           } catch (err) {
@@ -194,6 +201,7 @@ export const userService = {
                 return transaction.user.update({
                     where: { user_id: userId },
                     data: { ...filteredData, ...pinCredentials, passwordHash },
+                    include: { team: { select: { team_name: true } } },
                 });
             });
             return toSafeUser(user)

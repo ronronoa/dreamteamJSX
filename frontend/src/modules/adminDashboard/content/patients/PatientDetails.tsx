@@ -6,11 +6,17 @@ import CommonButton from "@/components/common/widgets/CommonButton";
 import ImagePreviewModal from "@/modules/reportForms/modal/ImagePreviewModal";
 import { formatDate, formatDateTime, formatTime } from "@/utils/dateTime";
 import PatientStatusBadge from "./PatientStatusBadge";
+import { formatReportUser } from "@/utils/reportUser";
 import { formatPatientLogId } from "./patientUtils";
 
 export default function PatientDetails({ record, onClose }: { record: PatientLogRecord; onClose: () => void }) {
   const [previewedImage, setPreviewedImage] = useState<{ name: string; url: string } | null>(null);
   const apiOrigin = API_URL.replace(/\/api\/?$/, "");
+  const submitter = record.submitter?.name ?? record.submitter_name ?? "Unknown submitter";
+  const submitterPinOwner = formatReportUser(record.submitter, "Unknown PIN owner");
+  const reviewer = formatReportUser(record.validator, "—");
+  const showReviewer = record.status === "VALIDATED" || record.status === "REJECTED";
+  const reviewerLabel = record.status === "REJECTED" ? "Rejected by" : "Approved by";
   const reportData = record.report_data && typeof record.report_data === "object"
     ? record.report_data as Record<string, unknown>
     : {};
@@ -61,12 +67,17 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 pb-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Patient log · {formatPatientLogId(record.patient_log_id)}</p>
           <h2 className="mt-1 text-xl font-bold text-slate-900">{record.patient.full_name}</h2>
-          <p className="mt-1 text-xs text-gray-500">{formatDateTime(record.log_date)} · Submitted by {record.submitter?.name ?? record.submitter_name ?? "Unknown submitter"}</p>
+          <p className="mt-1 text-xs text-gray-500">{formatDateTime(record.log_date)} · Submitted by {submitter}</p>
         </div>
-        <PatientStatusBadge status={record.status} />
+        <div className="flex shrink-0 flex-col items-end gap-2 text-right">
+          <PatientStatusBadge status={record.status} />
+          {showReviewer && <p className="text-xs text-gray-500">
+            <span className="font-semibold text-gray-700">{reviewerLabel}</span><br />{reviewer}
+          </p>}
+        </div>
       </header>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -82,7 +93,9 @@ export default function PatientDetails({ record, onClose }: { record: PatientLog
           <DetailsGrid fields={[
             ["Request Type", record.type_of_request.replaceAll("_", " ")], ["Caller", record.name_of_caller],
             ["Transfer", transferLabel],
-            ["Submitter", record.submitter?.name ?? record.submitter_name], ["Responders", responderNames.join(", ")],
+            ["Submitted by", submitter],
+            ["Submitted using PIN", submitterPinOwner],
+            ["Responders", responderNames.join(", ")],
             ["Medical Assessment", record.medical_assessment], ["First Aid Given", String(firstAid.firstAidGiven ?? "")],
             ["Waiver Description", record.waiver_description],
           ]} />

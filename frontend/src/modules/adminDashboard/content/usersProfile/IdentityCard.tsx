@@ -67,6 +67,9 @@ export default function IdentityCard({
           orientation="vertical"
           variant="onLight"
           tone="purple"
+          onClick={() => photoInput.current?.click()}
+          ariaLabel={profile?.profileImageUrl ? "Change profile photo" : "Add profile photo"}
+          disabled={uploading || loading || !profile}
         />
 
         <h2 className="mt-4 text-lg font-bold text-gray-900">{displayName}</h2>

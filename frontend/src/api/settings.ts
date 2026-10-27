@@ -40,3 +40,28 @@ export const updateUserPreferences = (token: string, preferences: Partial<UserPr
   request<SettingsResponse>("/settings/preferences", token, "PATCH", preferences)
 export const setGlobalPin = (token: string, pin: string) =>
   request<{ success: boolean }>("/settings/global-pin", token, "PUT", { pin })
+
+export async function downloadDatabaseBackup(token: string): Promise<void> {
+  const response = await apiFetch("/settings/database-backup", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    throw new Error(result.message ?? `Request failed (${response.status})`)
+  }
+
+  const backupBlob = await response.blob()
+  const objectUrl = URL.createObjectURL(backupBlob)
+  const link = document.createElement("a")
+  link.href = objectUrl
+  link.download = getBackupFilename(response.headers.get("Content-Disposition"))
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+}
+
+function getBackupFilename(contentDisposition: string | null): string {
+  const filename = contentDisposition?.match(/filename="([^"]+)"/)?.[1]
+  return filename ?? "elms-database-backup.dump"
+}

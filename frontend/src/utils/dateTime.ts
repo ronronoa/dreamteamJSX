@@ -22,6 +22,13 @@ export function getCurrentDateInputValue() {
 
 export const MAX_REASONABLE_AGE = 120;
 
+export function getMinimumBirthdateInputValue(maximumAge = MAX_REASONABLE_AGE): string {
+  return dayjs()
+    .subtract(maximumAge + 1, "year")
+    .add(1, "day")
+    .format("YYYY-MM-DD");
+}
+
 export function calculateBirthdateFromAge(ageValue: string | number): string {
   const age = Number(ageValue);
   if (

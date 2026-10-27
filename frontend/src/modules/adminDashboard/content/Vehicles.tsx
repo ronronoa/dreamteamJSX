@@ -176,8 +176,6 @@ export default function Vehicles() {
           {stats.map((stat) => <StatCard key={stat.label} {...stat} />)}
         </div>
 
-        <DateRangeFilter fromDate={dashboard.fromDate} toDate={dashboard.toDate} onFromDateChange={dashboard.updateFromDate} onToDateChange={dashboard.updateToDate} onClear={dashboard.clearDateFilter} />
-
         {dashboard.dispatchError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{dashboard.dispatchError}</p>}
         {dashboard.successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{dashboard.successMessage}</p>}
 
@@ -230,8 +228,9 @@ export default function Vehicles() {
                 {dashboard.reviewedRows.length} {dashboard.reviewedRows.length === 1 ? "record" : "records"}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <TableSearch value={dashboard.search} onChange={dashboard.updateSearch} placeholder="Search vehicle records" ariaLabel="Search vehicle records" />
+              <DateRangeFilter fromDate={dashboard.fromDate} toDate={dashboard.toDate} onFromDateChange={dashboard.updateFromDate} onToDateChange={dashboard.updateToDate} onClear={dashboard.clearDateFilter} />
               <div className="relative">
                 <button type="button" aria-label="Filter vehicle records" aria-expanded={dashboard.filterOpen} onClick={() => dashboard.setFilterOpen((open) => !open)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">
                   <Filter size={14} />

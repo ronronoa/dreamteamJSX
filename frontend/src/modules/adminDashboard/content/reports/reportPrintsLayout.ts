@@ -3,6 +3,7 @@ import logoUrl from "@/assets/logo.png";
 import type { OperationRecord } from "@/api/operations";
 import type { PatientLogRecord } from "@/api/patients";
 import type { VehicleDispatchRecord } from "@/api/vehicularDispatches";
+import type { WorkspaceSettings } from "@/api/settings";
 import { formatDate, formatDuration, getElapsedMilliseconds } from "@/utils/dateTime";
 
 const COLORS = {
@@ -59,6 +60,7 @@ interface ReportData {
   recordsWithImages: number;
   register: RegisterEntry[];
   generatedBy: string;
+  workspace: WorkspaceSettings;
 }
 
 interface BasicRecord {
@@ -186,6 +188,7 @@ function createReportData(
   kind: ReportKind,
   records: BasicRecord[],
   generatedBy: string,
+  workspace: WorkspaceSettings,
   labels: Pick<ReportData, "title" | "description" | "categoryHeading" | "locationHeading" | "assignmentHeading" | "registerHeading">,
 ): ReportData {
   const sortedRecords = [...records].sort((first, second) => Date.parse(second.date) - Date.parse(first.date));
@@ -228,10 +231,11 @@ function createReportData(
       status: record.status,
     })),
     generatedBy: generatedBy.trim() || "Authorized user",
+    workspace,
   };
 }
 
-export function createOperationLogReportPdf(records: OperationRecord[], generatedBy: string) {
+export function createOperationLogReportPdf(records: OperationRecord[], generatedBy: string, workspace: WorkspaceSettings) {
   const normalized = records.map((record): BasicRecord => {
     const responseTimes = record.dispatches.map((dispatch) => getResponseMilliseconds(dispatch.depart_time, dispatch.arrival_time));
     return {
@@ -247,7 +251,7 @@ export function createOperationLogReportPdf(records: OperationRecord[], generate
       groupingAssignment: record.teamAssignments.map((assignment) => assignment.team.team_name).filter(Boolean),
     };
   });
-  const data = createReportData("operation", normalized, generatedBy, {
+  const data = createReportData("operation", normalized, generatedBy, workspace, {
     title: "OPERATION LOG REPORT",
     description: "Summary of response activity, operation types, and assigned teams recorded in the system",
     categoryHeading: "OPERATIONS BY TYPE",
@@ -258,7 +262,7 @@ export function createOperationLogReportPdf(records: OperationRecord[], generate
   return renderReportPdf(data);
 }
 
-export function createPatientLogReportPdf(records: PatientLogRecord[], generatedBy: string) {
+export function createPatientLogReportPdf(records: PatientLogRecord[], generatedBy: string, workspace: WorkspaceSettings) {
   const normalized = records.map((record): BasicRecord => {
     const responseTimes = record.dispatches.map((dispatch) => getResponseMilliseconds(dispatch.depart_time, dispatch.arrival_time));
     const patient = record.patient;
@@ -275,7 +279,7 @@ export function createPatientLogReportPdf(records: PatientLogRecord[], generated
       groupingAssignment: record.responders.map((responder) => responder.user.name).filter(Boolean),
     };
   });
-  const data = createReportData("patient", normalized, generatedBy, {
+  const data = createReportData("patient", normalized, generatedBy, workspace, {
     title: "PATIENT LOG REPORT",
     description: "Summary of patient requests, recorded assessments, and response activity in the system",
     categoryHeading: "PATIENT LOGS BY REQUEST",
@@ -286,7 +290,7 @@ export function createPatientLogReportPdf(records: PatientLogRecord[], generated
   return renderReportPdf(data);
 }
 
-export function createVehicleDispatchReportPdf(records: VehicleDispatchRecord[], generatedBy: string) {
+export function createVehicleDispatchReportPdf(records: VehicleDispatchRecord[], generatedBy: string, workspace: WorkspaceSettings) {
   const normalized = records.map((item): BasicRecord => {
     const record = item.record;
     return {
@@ -302,7 +306,7 @@ export function createVehicleDispatchReportPdf(records: VehicleDispatchRecord[],
       groupingAssignment: record.responders.length ? record.responders : [record.driver_name || "Unassigned"],
     };
   });
-  const data = createReportData("vehicle", normalized, generatedBy, {
+  const data = createReportData("vehicle", normalized, generatedBy, workspace, {
     title: "VEHICLE DISPATCH REPORT",
     description: "Summary of vehicle assignments, destinations, transfer types, and dispatch times",
     categoryHeading: "DISPATCHES BY TRANSFER",
@@ -313,7 +317,7 @@ export function createVehicleDispatchReportPdf(records: VehicleDispatchRecord[],
   return renderReportPdf(data);
 }
 
-async function loadLogoDataUrl() {
+export async function loadLogoDataUrl() {
   const image = new Image();
   image.src = logoUrl;
   await image.decode();
@@ -342,10 +346,12 @@ async function renderReportPdf(data: ReportData) {
   setFont(doc, "bold", 14, COLORS.ink);
   doc.text("BARANGAY 176-E", PAGE_WIDTH / 2, y + 10, { align: "center" });
   setFont(doc, "bold", 8, COLORS.ink);
-  doc.text("BARANGAY DISASTER RISK REDUCTION AND MANAGEMENT OFFICE (DRRMO)", PAGE_WIDTH / 2, y + 15, { align: "center" });
+  doc.text(fitSingleLine(doc, data.workspace.officeName.toUpperCase(), CONTENT_WIDTH - 20), PAGE_WIDTH / 2, y + 15, { align: "center" });
   doc.text("BARANGAY EMERGENCY RESPONSE TEAM (BHERT)", PAGE_WIDTH / 2, y + 19, { align: "center" });
+  setFont(doc, "normal", 7, COLORS.muted);
+  doc.text(`Office hotline: ${data.workspace.officeHotline}`, PAGE_WIDTH / 2, y + 23, { align: "center" });
 
-  y += 25;
+  y += 29;
   doc.setFillColor(...COLORS.purple); doc.rect(MARGIN, y, CONTENT_WIDTH * 0.33, 1.5, "F");
   doc.setFillColor(16, 185, 129); doc.rect(MARGIN + CONTENT_WIDTH * 0.33, y, CONTENT_WIDTH * 0.33, 1.5, "F");
   doc.setFillColor(245, 158, 11); doc.rect(MARGIN + CONTENT_WIDTH * 0.66, y, CONTENT_WIDTH * 0.34, 1.5, "F");
@@ -360,7 +366,7 @@ async function renderReportPdf(data: ReportData) {
   setFont(doc, "normal", 7, COLORS.muted);
   doc.text(fitSingleLine(doc, data.description, CONTENT_WIDTH - 76), MARGIN + 6, y + 11);
   setFont(doc, "bold", 6, COLORS.muted);
-  doc.text("OPERATION LOGISTICS MANAGEMENT SYSTEM", MARGIN + CONTENT_WIDTH - 4, y + 5, { align: "right" });
+  doc.text(fitSingleLine(doc, data.workspace.systemName.toUpperCase(), CONTENT_WIDTH - 82), MARGIN + CONTENT_WIDTH - 4, y + 5, { align: "right" });
   setFont(doc, "bold", 7, COLORS.purple);
   doc.text(data.reportNumber, MARGIN + CONTENT_WIDTH - 4, y + 10, { align: "right" });
   y += 20;

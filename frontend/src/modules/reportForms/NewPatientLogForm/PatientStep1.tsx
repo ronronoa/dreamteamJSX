@@ -9,6 +9,8 @@ import CommonCheckbox from "@/components/common/widgets/CommonCheckbox"
 import CommonSearchSelect from "@/components/common/widgets/CommonSearchSelect"
 import OtherRespondersInput from "../component/OtherRespondersInput"
 import { getCurrentDateInputValue } from "@/utils/dateTime"
+import CommonTimeInput from "@/components/common/widgets/CommonTimeInput"
+import { get12HourTimeParts, to24HourTimeValue } from "@/utils/timeInput"
 
 const CommonInput = createFormAutocomplete("patients")
 
@@ -38,6 +40,7 @@ export default function PatientStep1({
   optionsLoading,
   errors,
 }: PatientStep1Props) {
+  const timeParts = get12HourTimeParts(responderDetails.time)
   const selectTransfer = (dispositionType: "DROP_OFF" | "PICK_UP") => {
     onResponderDetailsChange({
       dispositionType,
@@ -70,12 +73,16 @@ export default function PatientStep1({
               />
             </div>
 
-            <CommonInput
-              variant="compact"
-              type="time"
+            <CommonTimeInput
               label="Time"
-              value={responderDetails.time}
-              onChange={(e) => onResponderDetailsChange({ time: e.target.value })}
+              time={timeParts.time}
+              period={timeParts.period}
+              onTimeChange={(time) => onResponderDetailsChange({
+                time: to24HourTimeValue(time, timeParts.period),
+              })}
+              onPeriodChange={(period) => onResponderDetailsChange({
+                time: to24HourTimeValue(timeParts.time, period),
+              })}
               errorMessage={errors.time}
             />
           </div>

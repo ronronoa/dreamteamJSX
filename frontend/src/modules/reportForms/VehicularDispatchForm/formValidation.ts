@@ -65,7 +65,7 @@ function validatePassengers(passengers: Person[]): VehicularDispatchErrors {
     if (!person.name.surname.trim()) errors[`${prefix}.surname`] = "Enter each passenger's surname."
     if (!person.name.firstName.trim()) errors[`${prefix}.firstName`] = "Enter each passenger's first name."
     if (!isValidDate(person.birthdate) || person.birthdate > formatDate(new Date(), "YYYY-MM-DD") || person.age === "") {
-      errors[`${prefix}.birthdate`] = "Choose a valid birthdate that is not in the future."
+      errors[`${prefix}.birthdate`] = "Choose a valid birthdate."
     } else if (person.age !== calculateAge(person.birthdate)) {
       errors[`${prefix}.birthdate`] = "Check the passenger's birthdate."
     }

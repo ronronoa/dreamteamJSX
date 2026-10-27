@@ -28,7 +28,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
   const draftErrors = {
     surname: draft.name.surname.trim() ? "" : "Enter the passenger's surname.",
     firstName: draft.name.firstName.trim() ? "" : "Enter the passenger's first name.",
-    birthdate: !draft.birthdate || draft.birthdate > today || draft.age === "" ? "Choose a valid birthdate that is not in the future." : "",
+    birthdate: !draft.birthdate || draft.birthdate > today || draft.age === "" ? "Choose a valid birthdate." : "",
     gender: draft.gender ? "" : "Select the passenger's sex.",
     contactNumber: draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH ? `Contact number must be ${MAX_CONTACT_NUMBER_LENGTH} characters or fewer.` : "",
   }
@@ -61,7 +61,7 @@ export default function VehicularStep2({ people, onPeopleChange, errors }: Vehic
       return
     }
     if (draft.birthdate > today || draft.age === "") {
-      setDraftError("Choose a valid birthdate that is not in the future.")
+      setDraftError("Choose a valid birthdate.")
       return
     }
     if (draft.contactNumber.trim().length > MAX_CONTACT_NUMBER_LENGTH) {

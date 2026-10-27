@@ -1,4 +1,13 @@
-import { type ComponentType, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react"
+import {
+  type ComponentType,
+  type FocusEvent,
+  type KeyboardEvent,
+  type HTMLAttributes,
+  type InputHTMLAttributes,
+  type PointerEvent,
+  type ReactNode,
+  useState,
+} from "react"
 import { InputBase, type InputBaseProps } from "@/components/base/input/input";
 
 type CommonInputVariant = "default" | "compact"
@@ -24,6 +33,7 @@ export interface CommonInputProps
   showPasswordToggle?: boolean
   autoCapitalize?: boolean
   errorMessage?: string
+  errorPlacement?: "top" | "bottom"
 }
 
 /**
@@ -68,11 +78,18 @@ export default function CommonInput({
   className = "",
   showPasswordToggle = false,
   autoCapitalize = false,
+  autoComplete,
+  onFocus,
+  onKeyDown,
+  onPointerDown,
+  readOnly,
   errorMessage,
+  errorPlacement = "top",
   type,
   onChange,
   ...props
 }: CommonInputProps) {
+  const [passwordInputEnabled, setPasswordInputEnabled] = useState(type !== "password")
   const { label: labelClass, wrapper: wrapperClassName, input: inputClass } = styles[variant]
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +115,7 @@ export default function CommonInput({
       {label && (
         <label htmlFor={props.id} className={`${labelClass} flex flex-wrap items-baseline justify-between gap-x-2`}>
           <span>{label}</span>
-          {errorMessage && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
+          {errorMessage && errorPlacement === "top" && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
         </label>
       )}
 
@@ -110,6 +127,25 @@ export default function CommonInput({
           aria-invalid={Boolean(errorMessage)}
           aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
           type={type}
+          autoComplete={type === "password" ? "off" : autoComplete}
+          readOnly={type === "password" ? !passwordInputEnabled || readOnly : readOnly}
+          onFocus={(event: FocusEvent<HTMLInputElement>) => {
+            onFocus?.(event)
+          }}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (type === "password" && !readOnly) {
+              setPasswordInputEnabled(true)
+              event.currentTarget.readOnly = false
+            }
+            onKeyDown?.(event)
+          }}
+          onPointerDown={(event: PointerEvent<HTMLInputElement>) => {
+            if (type === "password" && !readOnly) {
+              setPasswordInputEnabled(true)
+              event.currentTarget.readOnly = false
+            }
+            onPointerDown?.(event)
+          }}
           icon={LeadingIcon}
           hidePasswordToggle={!showPasswordToggle}
           onChange={handleChange}
@@ -117,7 +153,7 @@ export default function CommonInput({
           inputClassName={`w-full outline-none invalid:text-gray-400 ${leftPadding} ${rightPadding} ${inputClass} ${className}`}
         />
       </div>
-      {!label && errorMessage && (
+      {errorMessage && (errorPlacement === "bottom" || !label) && (
         <p id={`${props.id}-error`} role="alert" className="mt-1 text-xs font-medium text-red-700">
           {errorMessage}
         </p>

@@ -30,6 +30,15 @@ export interface InventoryListResult {
   stats: InventoryOverview;
 }
 
+export interface InventoryTransactionRecord {
+  transaction_id: string;
+  item_id: string;
+  transaction_type: "STOCK_IN" | "STOCK_OUT" | "ADJUSTMENT";
+  quantity: number;
+  reason: string | null;
+  transaction_date: string;
+}
+
 async function request<T>(path: string, accessToken: string, options: RequestInit = {}) {
   const response = await apiFetch(path, {
     ...options,
@@ -63,6 +72,26 @@ export async function fetchInventory(accessToken: string): Promise<InventoryList
       nextExpiry: result.stats.nextExpiry ? new Date(result.stats.nextExpiry) : null,
     },
   };
+}
+
+export async function fetchInventoryTransactions(
+  accessToken: string,
+  itemId: string,
+): Promise<InventoryTransactionRecord[]> {
+  const pageSize = 100;
+  const transactions: InventoryTransactionRecord[] = [];
+  let offset = 0;
+
+  while (true) {
+    const query = new URLSearchParams({ limit: String(pageSize), offset: String(offset) });
+    const result = await request<{ transactions: InventoryTransactionRecord[] }>(
+      `/inventory/${itemId}/transactions?${query.toString()}`,
+      accessToken,
+    );
+    transactions.push(...result.transactions);
+    if (result.transactions.length < pageSize) return transactions;
+    offset += pageSize;
+  }
 }
 
 export async function fetchReportFormInventory(): Promise<InventoryRecord[]> {

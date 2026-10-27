@@ -8,7 +8,7 @@ type ReviewableStatus = "PENDING" | "VALIDATED" | "REJECTED" | "ARCHIVED";
 export const REPORT_REVIEW_ROLES: Role[] = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER"];
 
 export function getSubmissionStatus(role: Role): "PENDING" | "VALIDATED" {
-  return REPORT_REVIEW_ROLES.includes(role) ? "VALIDATED" : "PENDING";
+  return role === "DEPARTMENT_HEAD" ? "VALIDATED" : "PENDING";
 }
 const REVIEWABLE_SOURCE_STATUSES: ReviewableStatus[] = ["PENDING"];
 

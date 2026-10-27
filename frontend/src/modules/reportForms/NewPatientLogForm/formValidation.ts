@@ -145,7 +145,7 @@ export function getPatientStepErrors(step: number, formData: PatientLogData): Re
     if (!patientDetails.name.surname.trim()) errors.patientSurname = "Enter the patient's surname."
     if (!patientDetails.name.firstName.trim()) errors.patientFirstName = "Enter the patient's first name."
     if (!isValidDateInputNotInFuture(patientDetails.birthdate) || patientDetails.age === "") {
-      errors.birthdate = "Choose a valid birthdate that is not in the future."
+      errors.birthdate = "Choose a valid birthdate."
     }
     if (!patientDetails.sex) errors.sex = "Select the patient's sex."
     if (!patientDetails.contactPerson.surname.trim()) errors.contactSurname = "Enter the contact person's surname."

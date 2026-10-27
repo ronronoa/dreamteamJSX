@@ -191,10 +191,9 @@ export default function CommonTimeInput({
     <div>
       <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
         <span>{label}</span>
-        {errorMessage && <span role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
       </label>
 
-      <div className={`flex rounded-md ${errorMessage ? "border-2 border-red-500" : ""}`} onBlur={handleBlur}>
+      <div className={`inline-flex w-fit max-w-full rounded-md ${errorMessage ? "border-2 border-red-500" : ""}`} onBlur={handleBlur}>
         <div className="flex h-10 items-center rounded-l-md border border-gray-300 bg-gray-100">
           {digits.map((digit, index) => (
             <Fragment key={index}>
@@ -254,6 +253,7 @@ export default function CommonTimeInput({
           </button>
         </div>
       </div>
+      {errorMessage && <p role="alert" className="mt-1 text-xs font-medium text-red-700">{errorMessage}</p>}
     </div>
   )
 }

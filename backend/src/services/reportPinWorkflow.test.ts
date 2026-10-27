@@ -183,15 +183,15 @@ describe("personal report PINs", () => {
 });
 
 describe.each<Role>(["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER", "MEMBER"])("%s report submission", (role) => {
-  const status = role === "MEMBER" ? "PENDING" : "VALIDATED";
+  const status = role === "DEPARTMENT_HEAD" ? "VALIDATED" : "PENDING";
   const owner = { valid: true, type: "USER" as const, ownerId: "owner-id", ownerName: "Verified owner", ownerRole: role };
 
   it("assigns the operation and child dispatch status from the PIN owner", async () => {
     await reportFormsService.createOperation(operation, [], owner);
     const data = db.operationLog.create.mock.calls[0]![0].data;
     expect(data).toMatchObject({ status, submitted_by: "owner-id", submitter_name: "Verified owner", dispatches: { create: { status } } });
-    expect(data.validated_by).toBe(role === "MEMBER" ? null : "owner-id");
-    expect(db.operationLogEdit.create).toHaveBeenCalledTimes(role === "MEMBER" ? 0 : 1);
+    expect(data.validated_by).toBe(role === "DEPARTMENT_HEAD" ? "owner-id" : null);
+    expect(db.operationLogEdit.create).toHaveBeenCalledTimes(role === "DEPARTMENT_HEAD" ? 1 : 0);
   });
 
   it("assigns the patient and child dispatch status from the PIN owner", async () => {
@@ -206,7 +206,7 @@ describe.each<Role>(["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER", 
       inventoryItemId: "00000000-0000-4000-8000-000000000002",
     }];
     await reportFormsService.createPatient({ ...patient, inventory }, [], owner);
-    if (role === "MEMBER") {
+    if (role !== "DEPARTMENT_HEAD") {
       expect(db.inventoryItem.updateMany).not.toHaveBeenCalled();
       expect(db.inventoryTransaction.create).not.toHaveBeenCalled();
       return;

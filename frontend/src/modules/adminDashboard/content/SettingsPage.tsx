@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import { Bell, FileText, FormInput, Shield, Sparkles } from "lucide-react"
+import { Bell, Database, FormInput, Shield, Sparkles } from "lucide-react"
 import { useNavigate } from "react-router"
 import CommonButton from "@/components/common/widgets/CommonButton"
 import CommonInput from "@/components/common/widgets/CommonInput"
 import { useAuth } from "@/store/useAuth"
-import { fetchSettings, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
+import { downloadDatabaseBackup, fetchSettings, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
 import { ROUTES } from "@/routes"
 import { Row, Select, SettingsSection, Toggle } from "./settings/SettingsPrimitives"
 
@@ -13,7 +13,7 @@ const defaultSettings: SettingsResponse = {
     systemName: "Barangay 176-E DRRMO Operation Logistics Management System",
     officeName: "Disaster Risk Reduction and Management Office",
     officeHotline: "(02) 8241 1760",
-    archiveRetention: "1-year",
+    archiveRetention: "Never",
   },
   preferences: { lowStockAlerts: true, approvalNotifications: true, sessionTimeout: "30-min" },
   globalPinConfigured: false,
@@ -25,12 +25,15 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState(defaultSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [backingUp, setBackingUp] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   // const [pin, setPin] = useState("")
   // const [pinConfirm, setPinConfirm] = useState("")
   // const canManageGlobalPin = ["SUPER_ADMIN", "DEPARTMENT_HEAD"].includes(session?.user.role ?? "")
   const canManageWorkspace = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(session?.user.role ?? "")
+  const canManageForms = ["DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEAD"].includes(session?.user.role ?? "")
+  const canDownloadDatabaseBackup = session?.user.role === "SUPER_ADMIN"
 
   useEffect(() => {
     if (!session?.accessToken) return
@@ -68,6 +71,25 @@ export default function SettingsPage() {
     } finally { setSaving(false) }
   }
 
+  async function createDatabaseBackup() {
+    if (!session?.accessToken) {
+      setError("Your session has expired. Sign in again to download a database backup.")
+      return
+    }
+
+    setBackingUp(true)
+    setError("")
+    setMessage("")
+    try {
+      await downloadDatabaseBackup(session.accessToken)
+      setMessage("Database backup downloaded. Store it somewhere secure.")
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not download the database backup.")
+    } finally {
+      setBackingUp(false)
+    }
+  }
+
   // async function submitGlobalPin(event: FormEvent<HTMLFormElement>) {
   //   event.preventDefault(); setError(""); setMessage("")
   //   if (!/^\d{4,6}$/.test(pin)) { setError("Global PIN must contain 4 to 6 digits."); return }
@@ -91,10 +113,52 @@ export default function SettingsPage() {
       {message && <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 
       <SettingsSection icon={Sparkles} title="Workspace identity" description="Set the shared system name and office contact details.">
-        <Row label="System name" wide><CommonInput className="w-full" aria-label="System name" value={settings.workspace.systemName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, systemName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
-        <Row label="Office name" wide><CommonInput className="w-full" aria-label="Office name" value={settings.workspace.officeName} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeName: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
-        <Row label="Office hotline" wide><CommonInput className="w-full" aria-label="Office hotline" value={settings.workspace.officeHotline} onChange={(event) => setSettings((current) => ({ ...current, workspace: { ...current.workspace, officeHotline: event.target.value } }))} disabled={!canManageWorkspace || saving} /></Row>
-        {canManageWorkspace && <div className="flex justify-end"><CommonButton compact disabled={saving} onClick={() => void saveWorkspace()}>{saving ? "Saving…" : "Save workspace"}</CommonButton></div>}
+        <Row label="System name" wide>
+          <CommonInput
+            className="w-full"
+            aria-label="System name"
+            value={settings.workspace.systemName}
+            onChange={(event) => setSettings((current) =>
+              ({ ...current, workspace:
+                { ...current.workspace, systemName: event.target.value }
+              }))}
+            disabled={!canManageWorkspace || saving} />
+        </Row>
+        <Row
+          label="Office name"
+          wide>
+          <CommonInput
+            className="w-full"
+            aria-label="Office name"
+            value={settings.workspace.officeName}
+            onChange={(event) => setSettings((current) => ({
+              ...current, workspace:
+              { ...current.workspace, officeName: event.target.value }
+            }))}
+            disabled={!canManageWorkspace || saving} />
+        </Row>
+        <Row
+          label="Office hotline"
+          wide>
+          <CommonInput
+            className="w-full"
+            aria-label="Office hotline"
+            value={settings.workspace.officeHotline}
+            onChange={(event) => setSettings((current) => ({
+              ...current, workspace: {
+                ...current.workspace, officeHotline: event.target.value }
+            }))}
+            disabled={!canManageWorkspace || saving} />
+        </Row>
+        {canManageWorkspace &&
+          <div
+            className="flex justify-end">
+            <CommonButton
+              compact
+              disabled={saving}
+              onClick={() => void saveWorkspace()}>
+              {saving ? "Saving…" : "Save workspace"}
+            </CommonButton></div>}
       </SettingsSection>
 
       <SettingsSection icon={Bell} title="Alerts & notifications" description="Choose which operational changes require attention.">
@@ -109,34 +173,44 @@ export default function SettingsPage() {
         <Row label="Approval notifications" hint="Notify when new reports are submitted." isLast><Toggle label="Approval notifications" checked={settings.preferences.approvalNotifications} disabled={saving} onChange={(checked) => void savePreferences({ approvalNotifications: checked })} /></Row>
       </SettingsSection>
 
-      <SettingsSection
-        icon={FileText}
-        title="Reports & records"
-        description="Control report settings and retention policy."
-      >
-        <Row
-          label="Archive retention"
-          hint="Saved policy preference; this does not automatically delete records."
-          isLast
-          wide
-        >
-          <Select
-            wide
-            disabled={!canManageWorkspace || saving}
-            value={settings.workspace.archiveRetention}
-            onChange={(archiveRetention) => setSettings((current) => ({
-              ...current, workspace: { ...current.workspace, archiveRetention } }
-            ))} options={[{ value: "6-months", label: "6 months" },
-              { value: "1-year", label: "1 year" },
-              { value: "3-years", label: "3 years" },
-              { value: "5-years", label: "5 years" },
-              { value: "10-years", label: "10 years" },
-              { value: "Never", label: "Never" }
-            ]}
-          />
-        </Row>
-        {canManageWorkspace && <div className="flex justify-end"><CommonButton compact disabled={saving} onClick={() => void saveWorkspace()}>{saving ? "Saving…" : "Save retention policy"}</CommonButton></div>}
-      </SettingsSection>
+      {/* <SettingsSection */}
+      {/*   icon={FileText} */}
+      {/*   title="Reports & records" */}
+      {/*   description="Control report settings and retention policy." */}
+      {/* > */}
+      {/*   <Row */}
+      {/*     label="Archive retention" */}
+      {/*     hint="Saved policy preference; this does not automatically delete records." */}
+      {/*     isLast */}
+      {/*     wide */}
+      {/*   > */}
+      {/*     <Select */}
+      {/*       wide */}
+      {/*       disabled={!canManageWorkspace || saving} */}
+      {/*       value={settings.workspace.archiveRetention} */}
+      {/*       onChange={(archiveRetention) => setSettings((current) => ({ */}
+      {/*         ...current, workspace: { ...current.workspace, archiveRetention } } */}
+      {/*       ))} options={[{ value: "6-months", label: "6 months" }, */}
+      {/*         { value: "1-year", label: "1 year" }, */}
+      {/*         { value: "3-years", label: "3 years" }, */}
+      {/*         { value: "5-years", label: "5 years" }, */}
+      {/*         { value: "10-years", label: "10 years" }, */}
+      {/*         { value: "Never", label: "Never" } */}
+      {/*       ]} */}
+      {/*     /> */}
+      {/*   </Row> */}
+      {/*   {canManageWorkspace && */}
+      {/*     <div */}
+      {/*       className="flex justify-end"> */}
+      {/*       <CommonButton */}
+      {/*         compact */}
+      {/*         disabled={saving} */}
+      {/*         onClick={() => void saveWorkspace()}> */}
+      {/*         {saving ? "Saving…" : "Save retention policy"} */}
+      {/*       </CommonButton> */}
+      {/*     </div> */}
+      {/*   } */}
+      {/* </SettingsSection> */}
 
       {/* {canManageGlobalPin && <SettingsSection icon={Shield} title="Global PIN" description="Shared PIN used to submit report forms."> */}
       {/*   <p className="text-xs text-gray-600">{settings.globalPinConfigured ? "A global PIN is configured." : "No global PIN has been set yet."}</p> */}
@@ -166,9 +240,21 @@ export default function SettingsPage() {
         </Row>
       </SettingsSection>
 
-      <SettingsSection icon={FormInput} title="Forms management" description="Manage the vehicle options available on dispatch forms.">
-        <Row label="Vehicle fleet" hint="Add and manage registered vehicles" isLast><CommonButton compact onClick={() => navigate(ROUTES.DASHBOARD.VEHICLES)}>Open vehicles</CommonButton></Row>
-      </SettingsSection>
+      {canManageForms &&
+        <SettingsSection icon={FormInput} title="Forms management" description="Manage the vehicle options available on dispatch forms.">
+          <Row label="Vehicle fleet" hint="Add and manage registered vehicles" isLast><CommonButton compact onClick={() => navigate(ROUTES.DASHBOARD.VEHICLES)}>Open vehicles</CommonButton></Row>
+        </SettingsSection>
+      }
+
+      {canDownloadDatabaseBackup && (
+        <SettingsSection icon={Database} title="Database backup" description="Download a PostgreSQL backup of the current database.">
+          <Row label="Download backup" hint="The backup contains sensitive system data. Store it securely." isLast>
+            <CommonButton compact disabled={backingUp} onClick={() => void createDatabaseBackup()}>
+              {backingUp ? "Preparing backup…" : "Download database backup"}
+            </CommonButton>
+          </Row>
+        </SettingsSection>
+      )}
     </div>
   )
 }

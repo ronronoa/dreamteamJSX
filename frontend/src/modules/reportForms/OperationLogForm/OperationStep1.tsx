@@ -10,8 +10,40 @@ import type { FormErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 import OtherRespondersInput from "../component/OtherRespondersInput"
 import { getCurrentDateInputValue } from "@/utils/dateTime"
+import CommonTimeInput from "@/components/common/widgets/CommonTimeInput"
 
 const CommonInput = createFormAutocomplete("operations")
+
+function getOperationTimeParts(time: string): { time: string; period: "AM" | "PM" } {
+  if (!time) return { time: "", period: "AM" }
+
+  const [hoursText, minutes = "00"] = time.split(":")
+  const hours = Number(hoursText)
+  if (!Number.isInteger(hours) || hours < 0 || hours > 23) {
+    return { time, period: "AM" }
+  }
+
+  const period = hours >= 12 ? "PM" : "AM"
+  const twelveHour = hours % 12 || 12
+  return {
+    time: `${String(twelveHour).padStart(2, "0")}:${minutes}`,
+    period,
+  }
+}
+
+function toOperationTime(time: string, period: "AM" | "PM"): string {
+  if (!time) return ""
+
+  const [hoursText, minutes = "00"] = time.split(":")
+  const twelveHour = Number(hoursText)
+  if (!Number.isInteger(twelveHour) || twelveHour < 1 || twelveHour > 12) {
+    return time
+  }
+
+  let hours = twelveHour % 12
+  if (period === "PM") hours += 12
+  return `${String(hours).padStart(2, "0")}:${minutes}`
+}
 
 type OperationStep1Props = {
   operationDetails: OperationDetails
@@ -36,6 +68,7 @@ export default function OperationStep1({
   const isKnownNature = options.operationNatures.some((option) => option.name === nature);
   const selectedNature = nature && !isKnownNature ? "Other" : nature;
   const otherNature = nature === "Other" ? operationDetails.natureOfOperationOther ?? "" : nature;
+  const operationTime = getOperationTimeParts(operationDetails.time);
   const toggleTeam = (team: string) => {
     const isSelected = operationDetails.teamAssigned.includes(team)
     const updatedTeams = isSelected
@@ -77,14 +110,27 @@ export default function OperationStep1({
               errorMessage={errors["operationDetails.date"]}
             />
 
-            <CommonInput
-              variant="compact"
-              type="time"
-              label="Time"
-              value={operationDetails.time}
-              onChange={(e) => onOperationDetailsChange({ time: e.target.value })}
-              errorMessage={errors["operationDetails.time"]}
-            />
+              <CommonTimeInput
+                label="Time"
+                time={operationTime.time}
+                period={operationTime.period}
+                onTimeChange={(value) => onOperationDetailsChange({
+                  time: toOperationTime(value, operationTime.period),
+                })}
+                onPeriodChange={(value) => onOperationDetailsChange({
+                  time: toOperationTime(operationTime.time, value),
+                })}
+                errorMessage={errors["operationDetails.time"]}
+              />
+
+            {/* <CommonInput */}
+            {/*   variant="compact" */}
+            {/*   type="time" */}
+            {/*   label="Time" */}
+            {/*   value={operationDetails.time} */}
+            {/*   onChange={(e) => onOperationDetailsChange({ time: e.target.value })} */}
+            {/*   errorMessage={errors["operationDetails.time"]} */}
+            {/* /> */}
           </div>
 
           <CommonSelect

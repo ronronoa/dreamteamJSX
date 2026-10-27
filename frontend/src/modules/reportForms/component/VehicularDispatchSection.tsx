@@ -161,6 +161,7 @@ export default function VehicularDispatchSection({
                 min={0}
                 step={1}
                 label="Odometer In"
+                errorPlacement="bottom"
                 placeholder="123456"
                 value={dispatch.odometerIn}
                 disabled={hasSelectedDatabaseVehicle}
@@ -175,6 +176,7 @@ export default function VehicularDispatchSection({
                 min={0}
                 step={1}
                 label="Odometer Out"
+                errorPlacement="bottom"
                 placeholder="123456"
                 value={dispatch.odometerOut}
                 onChange={(e) => onDispatchChange({ odometerOut: e.target.value })}

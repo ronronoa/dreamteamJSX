@@ -87,6 +87,7 @@ model User {
   submittedOperations   OperationLog[]               @relation("SubmittedBy")
   validatedOperations   OperationLog[]               @relation("ValidatedBy")
   submittedDispatches   VehicularDispatch[]          @relation("DispatchSubmitter")
+  validatedDispatches   VehicularDispatch[]          @relation("DispatchValidator")
   operationResponders   OperationResponder[]
   patientResponders     PatientResponder[]
   dispatchResponders    VehicularDispatchResponder[]
@@ -95,6 +96,7 @@ model User {
   operationArchives     OperationLogArchive[]
   inventoryArchives     InventoryArchive[]
   submittedPatients     PatientLog[]                 @relation("PatientSubmittedBy")
+  validatedPatients     PatientLog[]                 @relation("PatientValidatedBy")
   operationImages       OperationImageAttachment[]
   patientImages         PatientImageAttachment[]
   activityLogs          ActivityLog[]                @relation("ActivityActor")
@@ -416,6 +418,7 @@ model PatientLog {
   type_of_request         PatientRequestType
   submitted_by            String?
   submitter_name          String?
+  validated_by            String?
   status                  ReportStatus         @default(PENDING)
   rejected_reason         String?
   name_of_caller          String?
@@ -436,12 +439,14 @@ model PatientLog {
 
   patient    Patient             @relation(fields: [patient_id], references: [patient_id])
   submitter  User?               @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id], onDelete: SetNull)
+  validator  User?               @relation("PatientValidatedBy", fields: [validated_by], references: [user_id], onDelete: SetNull)
   responders PatientResponder[]
   dispatches VehicularDispatch[]
   archive    PatientLogArchive?
 
   @@index([patient_id])
   @@index([submitted_by])
+  @@index([validated_by])
 }
 
 model PatientResponder {
@@ -465,6 +470,7 @@ model VehicularDispatch {
   status         ReportStatus @default(PENDING)
   rejected_reason String?
   submitted_by   String?
+  validated_by   String?
   vehicle_id     String?
   vehicle_name   String?
   driver_name    String?
@@ -483,12 +489,14 @@ model VehicularDispatch {
   patientLog PatientLog?                  @relation(fields: [patient_log_id], references: [patient_log_id])
   vehicle    Vehicle?                     @relation(fields: [vehicle_id], references: [vehicle_id])
   submitter  User?                        @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id], onDelete: SetNull)
+  validator  User?                        @relation("DispatchValidator", fields: [validated_by], references: [user_id], onDelete: SetNull)
   responders VehicularDispatchResponder[]
   passengers CivilianPassenger[]
   archive    VehicularDispatchArchive?
 
   @@index([operation_id])
   @@index([patient_log_id])
+  @@index([validated_by])
 }
 
 model PatientLogArchive {

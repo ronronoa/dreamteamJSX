@@ -51,9 +51,10 @@ export default function ProfileDetailsSection({
     setMessage("");
     try {
       const updated = await updateUserProfile(accessToken, {
-        name: form.name.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
         username: form.username.trim(),
-        email: form.email.trim(),
+        email: form.email.trim() || null,
         phone: form.phone.trim() || null,
       });
       onUpdate(updated);
@@ -71,7 +72,7 @@ export default function ProfileDetailsSection({
 
   return (
     <section className={CARD_CLASS}>
-      <form onSubmit={handleSave} className="flex h-full min-h-110 flex-col">
+      <form onSubmit={handleSave} className="flex h-full min-h-130 flex-col">
         <header className="flex items-start justify-between border-b border-gray-300 p-6">
           <div>
             <h3 className="text-sm font-bold text-gray-900">Personal &amp; work details</h3>
@@ -107,52 +108,77 @@ export default function ProfileDetailsSection({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-x-8 gap-y-5 p-6 sm:grid-cols-2 xl:grid-cols-3">
-              <ProfileField
-                label="Full name"
-                value={form.name}
-                editing={editing}
-                onChange={(v) => updateField("name", v)}
-                required
-                maxLength={50}
-                autoComplete="name"
-              />
-              <ProfileField
-                label="Username"
-                value={form.username}
-                editing={editing}
-                onChange={(v) => updateField("username", v)}
-                required
-                minLength={3}
-                maxLength={50}
-                pattern="[a-zA-Z0-9._-]+"
-                autoComplete="username"
-              />
-              <ProfileField
-                label="Work email"
-                value={form.email}
-                editing={editing}
-                onChange={(v) => updateField("email", v)}
-                type="email"
-                required
-                maxLength={254}
-                autoComplete="email"
-              />
-              <ProfileField
-                label="Mobile number"
-                value={form.phone}
-                editing={editing}
-                onChange={(v) => updateField("phone", v)}
-                type="tel"
-                maxLength={20}
-                pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}"
-                placeholder="09171234567 or +639171234567"
-              />
-              <Field label="Role" value={displayRole || "—"} />
-              <Field label="Team" value={profile.team_name ?? "Unassigned"} />
-              <Field label="Account status" value={profile.isActive ? "Active" : "Inactive"} />
-              <Field label="Member since" value={formatDateTime(profile.createdAt)} />
-              <Field label="Last updated" value={formatDateTime(profile.updatedAt)} />
+            <div className="space-y-7 p-6">
+              <section aria-labelledby="personal-details-heading">
+                <h4 id="personal-details-heading" className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-700">Personal details</h4>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-5">
+                  <ProfileField
+                    label="First name"
+                    value={editing ? form.firstName : profile.firstName}
+                    editing={editing}
+                    onChange={(v) => updateField("firstName", v)}
+                    required
+                    maxLength={80}
+                    autoComplete="given-name"
+                  />
+                  <ProfileField
+                    label="Last name"
+                    value={editing ? form.lastName : profile.lastName}
+                    editing={editing}
+                    onChange={(v) => updateField("lastName", v)}
+                    required
+                    maxLength={80}
+                    autoComplete="family-name"
+                  />
+                  <ProfileField
+                    label="Mobile number"
+                    value={editing ? form.phone : profile.phone ?? ""}
+                    editing={editing}
+                    onChange={(v) => updateField("phone", v)}
+                    type="tel"
+                    maxLength={20}
+                    pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}"
+                    placeholder="09171234567 or +639171234567"
+                  />
+                  <ProfileField
+                    label="Email"
+                    value={editing ? form.email : profile.email ?? ""}
+                    editing={editing}
+                    onChange={(v) => updateField("email", v)}
+                    type="email"
+                    maxLength={254}
+                    autoComplete="email"
+                  />
+                  <ProfileField
+                    label="Username"
+                    value={editing ? form.username : profile.username}
+                    editing={editing}
+                    onChange={(v) => updateField("username", v)}
+                    required
+                    minLength={3}
+                    maxLength={50}
+                    pattern="[a-zA-Z0-9._-]+"
+                    autoComplete="username"
+                  />
+                </div>
+              </section>
+
+              <section aria-labelledby="work-details-heading">
+                <h4 id="work-details-heading" className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-700">Work details</h4>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <Field label="Role" value={displayRole || "—"} />
+                  <Field label="Team" value={profile.team_name ?? "Unassigned"} />
+                </div>
+              </section>
+
+              <section aria-labelledby="account-details-heading">
+                <h4 id="account-details-heading" className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-700">Account details</h4>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <Field label="Account status" value={profile.isActive ? "Active" : "Inactive"} />
+                  <Field label="Member since" value={formatDateTime(profile.createdAt)} />
+                  <Field label="Last updated" value={formatDateTime(profile.updatedAt)} />
+                </div>
+              </section>
             </div>
 
             {saveError && (
@@ -202,4 +228,3 @@ export default function ProfileDetailsSection({
 /* -------------------------------------------------------------------------- */
 /*  Password                                                                  */
 /* -------------------------------------------------------------------------- */
-

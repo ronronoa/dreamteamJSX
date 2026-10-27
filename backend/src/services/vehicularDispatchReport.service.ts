@@ -10,6 +10,8 @@ import { saveVehicleOdometerFromDispatch } from "./vehicleOdometer.service"
 
 const dispatchRecordInclude = {
   vehicle: { select: { vehicle_name: true, plate_number: true } },
+  submitter: { select: { user_id: true, name: true, username: true, role: true } },
+  validator: { select: { user_id: true, name: true, username: true, role: true } },
   responders: { include: { user: { select: { name: true } } } },
   passengers: true,
 } as const
@@ -24,6 +26,8 @@ function toDispatchRecord(dispatch: DispatchRecord) {
     dispatch_date: dispatch.dispatch_date,
     createdAt: dispatch.createdAt,
     submitter_name: dispatch.submitter_name,
+    submitter: dispatch.submitter,
+    validator: dispatch.validator,
     depart_time: dispatch.depart_time,
     arrival_time: dispatch.arrival_time,
     vehicle_name: dispatch.vehicle?.vehicle_name ?? dispatch.vehicle_name ?? "Unknown vehicle",
@@ -105,7 +109,7 @@ export const vehicularDispatchReportService = {
     const dispatches = await prisma.vehicularDispatch.findMany({
       where: { operation_id: null, patient_log_id: null, archive: null },
       // where: { archive: null },
-      orderBy: [{ dispatch_date: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
       include: dispatchRecordInclude,
     })
 
@@ -128,7 +132,11 @@ export const vehicularDispatchReportService = {
     const nextStatus = await prepareReportReview({ actor, pin, action, currentStatus: dispatch.status })
     await prisma.vehicularDispatch.update({
       where: { dispatch_id: id },
-      data: { status: nextStatus, rejected_reason: action === "reject" ? rejectedReason!.trim() : null },
+      data: {
+        status: nextStatus,
+        rejected_reason: action === "reject" ? rejectedReason!.trim() : null,
+        validated_by: actor.userId,
+      },
     })
     return findDispatchRecordById(id)
   },

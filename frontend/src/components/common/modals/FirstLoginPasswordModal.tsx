@@ -57,7 +57,7 @@ export default function FirstLoginPasswordModal() {
 
   return (
     <Modal open onClose={() => {}} dismissable={false}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
         <div className="space-y-2">
           <h2 className="text-lg font-bold text-slate-900">Change your default password</h2>
           <p className="text-sm text-gray-600">Before continuing, choose a new password with at least 8 characters.</p>
@@ -68,7 +68,7 @@ export default function FirstLoginPasswordModal() {
           type="password"
           value={currentPassword}
           onChange={(event) => setCurrentPassword(event.target.value)}
-          autoComplete="current-password"
+          autoComplete="off"
           required
           maxLength={200}
           disabled={submitting}
@@ -80,7 +80,7 @@ export default function FirstLoginPasswordModal() {
           type="password"
           value={newPassword}
           onChange={(event) => setNewPassword(event.target.value)}
-          autoComplete="new-password"
+          autoComplete="off"
           minLength={MIN_PASSWORD_LENGTH}
           maxLength={MAX_PASSWORD_LENGTH}
           required
@@ -93,7 +93,7 @@ export default function FirstLoginPasswordModal() {
           type="password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
-          autoComplete="new-password"
+          autoComplete="off"
           minLength={MIN_PASSWORD_LENGTH}
           maxLength={MAX_PASSWORD_LENGTH}
           required

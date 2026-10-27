@@ -31,8 +31,16 @@ const authSlice = createSlice({
       state.session.user = {
         ...state.session.user,
         name: action.payload.name,
+        firstName: action.payload.firstName,
+        lastName: action.payload.lastName,
+        middleInitial: action.payload.middleInitial,
+        suffix: action.payload.suffix,
         username: action.payload.username,
         email: action.payload.email,
+        phone: action.payload.phone,
+        team_id: action.payload.team_id,
+        team_name: action.payload.team_name,
+        role: action.payload.role,
         profileImageUrl: action.payload.profileImageUrl,
       };
     },

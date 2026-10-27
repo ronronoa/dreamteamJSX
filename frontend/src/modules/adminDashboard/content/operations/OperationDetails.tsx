@@ -7,34 +7,44 @@ import CommonButton from "@/components/common/widgets/CommonButton";
 import ImagePreviewModal from "@/modules/reportForms/modal/ImagePreviewModal";
 import { formatOperationId, formatPersonAddress } from "./operationUtils";
 import ReportStatusBadge from "./ReportStatusBadge";
+import { formatReportUser } from "@/utils/reportUser";
 
 export default function OperationDetails({ record, onClose }: { record: OperationRecord; onClose: () => void }) {
   const [previewImage, setPreviewImage] = useState<OperationRecord["images"][number] | null>(null);
   const apiOrigin = API_URL.replace(/\/api\/?$/, "");
   const submitter = record.submitter?.name ?? record.submitter_name ?? "Unknown submitter";
+  const submitterPinOwner = formatReportUser(record.submitter, "Unknown PIN owner");
+  const reviewer = formatReportUser(record.validator, "—");
+  const showReviewer = record.status === "VALIDATED" || record.status === "REJECTED";
+  const reviewerLabel = record.status === "REJECTED" ? "Rejected by" : "Approved by";
   const teams = record.teamAssignments.map(({ team }) => team.team_name);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4 border-b border-gray-200 pb-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 pb-4">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Operation log · {formatOperationId(record.operation_id)}</p>
           <h2 className="mt-1 text-xl font-bold text-slate-900">{record.nature_of_operation}</h2>
           <p className="mt-1 text-xs text-gray-500">{formatDateTime(record.operation_date)} · Submitted by {submitter}</p>
         </div>
-        <ReportStatusBadge status={record.status} />
+        <div className="flex shrink-0 flex-col items-end gap-2 text-right">
+          <ReportStatusBadge status={record.status} />
+          {showReviewer && <p className="text-xs text-gray-500">
+            <span className="font-semibold text-gray-700">{reviewerLabel}</span><br />{reviewer}
+          </p>}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <PreviewSection title="OPERATION DETAILS">
           <div className="grid grid-cols-2 gap-4">
             <PreviewField label="Submitter Name" value={submitter} />
+            <PreviewField label="Submitted using PIN" value={submitterPinOwner} />
             <PreviewField label="Date" value={formatDate(record.operation_date)} />
             <PreviewField label="Nature of Operation" value={record.nature_of_operation} />
             <PreviewField label="Caller" value={record.name_of_caller} />
             <PreviewField label="Team Assigned" value={teams.length > 0 ? teams.join(", ") : record.team.team_name} />
             <PreviewField label="Responders" value={[...record.responders.map(({ user }) => user.name), ...record.other_responders].join(", ")} />
-            <PreviewField label="Approved By" value={record.validator?.name ?? "—"} />
           </div>
         </PreviewSection>
 

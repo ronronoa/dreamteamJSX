@@ -10,7 +10,7 @@ import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValu
 import type { Person } from "../../../types/operationLog"
 import { calculateAge, createEmptyPerson } from "../../../types/operationLog"
 import { validatePerson, type FormErrors } from "./formValidation"
-import { calculateBirthdateFromAge, getCurrentDateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
+import { calculateBirthdateFromAge, getCurrentDateInputValue, getMinimumBirthdateInputValue, MAX_REASONABLE_AGE } from "@/utils/dateTime"
 
 const CommonInput = createFormAutocomplete("operations")
 
@@ -71,17 +71,6 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
         <div className="mb-5">
           <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">
             <span>Full Name</span>
-            {formatGroupedErrors([
-              ["Surname", draftErrors["name.surname"] ?? ""],
-              ["First name", draftErrors["name.firstName"] ?? ""],
-              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
-              ["Suffix", draftErrors["name.suffix"] ?? ""],
-            ]) && <span role="alert" className="text-xs font-medium text-red-700">{formatGroupedErrors([
-              ["Surname", draftErrors["name.surname"] ?? ""],
-              ["First name", draftErrors["name.firstName"] ?? ""],
-              ["Middle initial", draftErrors["name.middleInitial"] ?? ""],
-              ["Suffix", draftErrors["name.suffix"] ?? ""],
-            ])}</span>}
           </label>
 
           <div className="grid grid-cols-[1fr_1fr_85px_85px] gap-1.5">
@@ -121,12 +110,13 @@ export default function OperationStep2({ people, onPeopleChange, errors }: Opera
           </div>
         </div>
 
-        <div className="mb-5 grid grid-cols-[1fr_80px] gap-2">
+        <div className="mb-5 grid grid-cols-[1fr_8rem] gap-2">
           <CommonInput
             variant="compact"
             type="date"
             label="Birthdate"
             value={draft.birthdate}
+            min={getMinimumBirthdateInputValue()}
             max={getCurrentDateInputValue()}
             onChange={(e) => handleBirthdateChange(e.target.value)}
             errorMessage={draftErrors.birthdate}

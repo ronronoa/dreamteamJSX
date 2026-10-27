@@ -8,6 +8,8 @@ import type { VehicularDispatchErrors } from "./formValidation"
 import VehicularDispatchSection from "../component/VehicularDispatchSection"
 import OtherRespondersInput from "../component/OtherRespondersInput"
 import { getCurrentDateInputValue } from "@/utils/dateTime"
+import CommonTimeInput from "@/components/common/widgets/CommonTimeInput"
+import { get12HourTimeParts, to24HourTimeValue } from "@/utils/timeInput"
 
 const CommonInput = createFormAutocomplete("vehicular-dispatches")
 
@@ -32,6 +34,7 @@ export default function VehicularStep1({
   responderOptions,
   optionsLoading,
 }: VehicularStep1Props) {
+  const timeParts = get12HourTimeParts(details.time)
 
   return (
     <div className="flex w-full flex-col justify-between gap-4 lg:flex-row min-h-[650px]">
@@ -57,12 +60,16 @@ export default function VehicularStep1({
               errorMessage={errors["details.date"]}
             />
 
-            <CommonInput
-              variant="compact"
-              type="time"
+            <CommonTimeInput
               label="Time"
-              value={details.time}
-              onChange={(e) => onDetailsChange({ time: e.target.value })}
+              time={timeParts.time}
+              period={timeParts.period}
+              onTimeChange={(time) => onDetailsChange({
+                time: to24HourTimeValue(time, timeParts.period),
+              })}
+              onPeriodChange={(period) => onDetailsChange({
+                time: to24HourTimeValue(timeParts.time, period),
+              })}
               errorMessage={errors["details.time"]}
             />
           </div>

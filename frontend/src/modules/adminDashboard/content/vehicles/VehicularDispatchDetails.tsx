@@ -4,6 +4,7 @@ import CommonButton from "@/components/common/widgets/CommonButton"
 import TableStatus from "../../component/TableStatus"
 import { formatDate, formatTime } from "@/utils/dateTime"
 import { formatVehicularDispatchId } from "@/api/vehicularDispatches"
+import { formatReportUser } from "@/utils/reportUser"
 
 const STATUS_VARIANTS = {
   PENDING: "pending",
@@ -19,19 +20,30 @@ export default function VehicularDispatchDetails({
   record: VehicleDispatchDetailRecord
   onClose: () => void
 }) {
+  const submitter = record.submitter?.name ?? record.submitter_name ?? "Unknown submitter"
+  const submitterPinOwner = formatReportUser(record.submitter, "Unknown PIN owner")
+  const reviewer = formatReportUser(record.validator, "—")
+  const showReviewer = record.status === "VALIDATED" || record.status === "REJECTED"
+  const reviewerLabel = record.status === "REJECTED" ? "Rejected by" : "Approved by"
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 pb-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">
             Vehicle dispatch · {formatVehicularDispatchId(record.dispatch_id)}
           </p>
           <h2 className="mt-1 text-xl font-bold text-slate-900">{record.from_location} to {record.to_location}</h2>
           <p className="mt-1 text-xs text-gray-500">
-            {formatDate(record.dispatch_date)} · Submitted by {record.submitter_name || "Unknown submitter"}
+            {formatDate(record.dispatch_date)} · Submitted by {submitter}
           </p>
         </div>
-        <TableStatus variant={STATUS_VARIANTS[record.status]} />
+        <div className="flex shrink-0 flex-col items-end gap-2 text-right">
+          <TableStatus variant={STATUS_VARIANTS[record.status]} />
+          {showReviewer && <p className="text-xs text-gray-500">
+            <span className="font-semibold text-gray-700">{reviewerLabel}</span><br />{reviewer}
+          </p>}
+        </div>
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -42,6 +54,7 @@ export default function VehicularDispatchDetails({
             ["Driver", record.driver_name], ["Departure", formatTime(record.depart_time)],
             ["Arrival", formatTime(record.arrival_time)], ["Transfer", record.transfers.join(", ")],
             ["Responders", record.responders.join(", ")],
+            ["Submitted using PIN", submitterPinOwner],
             ["Odometer out", record.odometer_out === null ? "—" : `${record.odometer_out} km`],
             ["Odometer in", record.odometer_in === null ? "—" : `${record.odometer_in} km`],
           ]} />

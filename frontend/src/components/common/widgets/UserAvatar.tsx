@@ -2,7 +2,7 @@ import { ROUTES } from "@/routes";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-type Size = "sm" | "md" | "lg" | "xl";
+type Size = "sm" | "md" | "lg" | "xl" | "xxl";
 type Tone = "orange" | "purple";
 type Variant = "onDark" | "onLight";
 type Orientation = "horizontal" | "vertical";
@@ -19,6 +19,9 @@ interface UserAvatarProps {
   orientation?: Orientation;
   className?: string;
   imageUrl?: string | null;
+  onClick?: () => void;
+  ariaLabel?: string;
+  disabled?: boolean;
 }
 
 const circleSize: Record<Size, string> = {
@@ -26,6 +29,7 @@ const circleSize: Record<Size, string> = {
   md: "w-9 h-9 text-sm",
   lg: "w-16 h-16 text-xl",
   xl: "w-24 h-24 text-3xl",
+  xxl: "w-30 h-30 text-3xl",
 };
 
 const circleTone: Record<Tone, string> = {
@@ -38,6 +42,7 @@ const nameSize: Record<Size, string> = {
   md: "text-xs",
   lg: "text-sm",
   xl: "text-lg",
+  xxl: "text-lg",
 };
 
 const roleSize: Record<Size, string> = {
@@ -45,6 +50,7 @@ const roleSize: Record<Size, string> = {
   md: "text-[9px]",
   lg: "text-xs",
   xl: "text-sm",
+  xxl: "text-sm",
 };
 
 const textColors: Record<Variant, { name: string; role: string }> = {
@@ -62,6 +68,9 @@ export default function UserAvatar({
   orientation = "horizontal",
   className = "",
   imageUrl,
+  onClick,
+  ariaLabel,
+  disabled = false,
 }: UserAvatarProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const imageFailed = imageUrl !== null && failedImageUrl === imageUrl;
@@ -73,9 +82,12 @@ export default function UserAvatar({
   const navigate = useNavigate();
 
   return (
-    <div
-      onClick={() => navigate(ROUTES.DASHBOARD.PROFILE)}
-      className={`flex items-center cursor-pointer active:scale-95 ${
+    <button
+      type="button"
+      onClick={onClick ?? (() => navigate(ROUTES.DASHBOARD.PROFILE))}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className={`flex items-center border-0 bg-transparent p-0 text-left ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer active:scale-95"} ${
         stacked ? "flex-col text-center gap-3" : "gap-2"
       } ${className}`}
     >
@@ -115,6 +127,6 @@ export default function UserAvatar({
           )}
         </div>
       )}
-    </div>
+    </button>
   );
 }
