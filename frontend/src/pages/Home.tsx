@@ -1,5 +1,5 @@
 import { Navigate } from "react-router";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { ROUTES } from "../routes";
 
 const ADMIN_ROLES = [

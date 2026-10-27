@@ -100,6 +100,9 @@ export default function CommonDashboardSidebar({
                   md:hidden
                   text-white
                   shrink-0
+                  cursor-pointer
+                  hover:text-white/50
+                  active:scale-90
                 "
               >
                 <X size={18} />
@@ -120,7 +123,8 @@ export default function CommonDashboardSidebar({
           "
         >
           {sections.map((section) => (
-            <div key={section.label}>
+            <div 
+              key={section.label}>
               <SidebarSection title={section.label} />
 
               {section.items.map((item) => {

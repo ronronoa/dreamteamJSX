@@ -1,3 +1,4 @@
+import { REPORT_PIN_PATTERN, REPORT_PIN_HINT } from "@/utils/reportPin";
 import { useState } from "react"
 import Modal from "../../../components/common/modals/Modal"
 import CommonButton from "../../../components/common/widgets/CommonButton"
@@ -9,6 +10,8 @@ interface PinModalProps {
   open: boolean
   onClose: () => void
   onSubmit: (pin: string) => void
+  requireRejectionReason?: boolean
+  onSubmitReview?: (pin: string, rejectedReason: string) => void
   loading?: boolean
   error?: string
 }
@@ -18,19 +21,24 @@ export default function PinModal({
   open,
   onClose,
   onSubmit,
+  requireRejectionReason = false,
+  onSubmitReview,
   loading = false,
   error,
 }: PinModalProps) {
   const [pin, setPin] = useState("")
+  const [rejectedReason, setRejectedReason] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!pin.trim()) return
-    onSubmit(pin)
+    if (!pin.trim() || (requireRejectionReason && !rejectedReason.trim())) return
+    if (onSubmitReview) onSubmitReview(pin, rejectedReason.trim())
+    else onSubmit(pin)
   }
 
   const handleClose = () => {
     setPin("")
+    setRejectedReason("")
     onClose()
   }
 
@@ -53,6 +61,22 @@ export default function PinModal({
       <h1 className="mb-6 text-3xl font-bold text-gray-900">Authenticate Report</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {requireRejectionReason && (
+          <label className="block text-sm font-medium text-gray-700" htmlFor="rejected-reason">
+            Rejection reason
+            <textarea
+              id="rejected-reason"
+              value={rejectedReason}
+              onChange={(event) => setRejectedReason(event.target.value)}
+              maxLength={1000}
+              required
+              disabled={loading}
+              rows={4}
+              className="resize-none mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-500"
+              placeholder="Explain why this report is being rejected."
+            />
+          </label>
+        )}
         <CommonInput
           id="pin"
           label="PIN"
@@ -61,13 +85,19 @@ export default function PinModal({
           autoComplete="new-password"
           icon={<Lock size={18} />}
           required
-          placeholder="Enter your PIN"
+          placeholder="0482"
+          inputMode="numeric"
+          pattern={REPORT_PIN_PATTERN}
+          minLength={4}
+          maxLength={4}
+          title={REPORT_PIN_HINT}
           value={pin}
-          onChange={(e) => setPin(e.target.value)}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
           disabled={loading}
         />
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <p className="text-xs text-gray-600">Enter your personal report PIN. It identifies the account submitting this report.</p>
+        {error && <p role="alert" className="whitespace-pre-line text-sm text-red-600">{error}</p>}
 
         <CommonButton
           type="submit"

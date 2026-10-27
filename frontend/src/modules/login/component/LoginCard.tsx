@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "@/store/useAuth";
+import { SignInRateLimitError } from "@/api/auth";
 import { ROUTES } from "../../../routes";
 import CommonInput from "../../../components/common/widgets/CommonInput";
 import CommonButton from "../../../components/common/widgets/CommonButton";
@@ -8,8 +9,7 @@ import CommonButton from "../../../components/common/widgets/CommonButton";
 import {
   Mail,
   Lock,
-  Eye,
-  EyeOff,
+  KeyRound,
 } from "lucide-react";
 
 interface LoginCardProps {
@@ -21,33 +21,48 @@ export default function LoginCard({
   onForgotPassword,
 }: LoginCardProps) {
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  useEffect(() => {
+    if (cooldownSeconds === 0) return;
+
+    const countdown = window.setInterval(() => {
+      setCooldownSeconds((remainingSeconds) => Math.max(0, remainingSeconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(countdown);
+  }, [cooldownSeconds]);
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
+    if (cooldownSeconds > 0) return;
     setError("");
     setSubmitting(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(identifier, password);
 
       if (!success) {
-        setError("Invalid username or password.");
+        setError("Invalid email/username or password.");
         return;
 
       }
 
       navigate(ROUTES.ROOT);
-    } catch {
-      setError("Unable to sign in. Please try again.");
+    } catch (requestError) {
+      if (requestError instanceof SignInRateLimitError) {
+        setCooldownSeconds(requestError.retryAfterSeconds);
+      } else {
+        setError("Unable to sign in. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -67,81 +82,40 @@ export default function LoginCard({
       <form onSubmit={handleSubmit} className="space-y-4">
 
         <CommonInput
-          id="name"
-          label="Username"
-          value={username}
+          id="login-identifier"
+          label="Email or username"
+          value={identifier}
           type="text"
-          placeholder="username"
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="name@example.com or username"
+          onChange={(e) => setIdentifier(e.target.value)}
+          autoComplete="username"
+          required
           icon={<Mail size={18} />}
           className="border-none"
         />
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-semibold text-gray-800 mb-1.5"
-          >
-            Security Key / Password
-          </label>
-
-          <div className="relative">
-
-            <Lock
-              size={18}
-              className="
-                absolute left-3.5 top-1/2
-                -translate-y-1/2
-                text-gray-400
-              "
-            />
-
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••"
-              className="
-                w-full rounded-xl bg-white
-                pl-10 pr-11 py-3
-                text-sm text-gray-800
-                outline-none
-                focus:ring-2 focus:ring-orange-400
-                shadow-sm
-              "
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="
-                absolute right-3.5 top-1/2
-                -translate-y-1/2
-                text-gray-400
-                hover:text-gray-600
-              "
-              aria-label={
-                showPassword
-                  ? "Hide password"
-                  : "Show password"
-              }
-            >
-              {showPassword
-                ? <EyeOff size={18} />
-                : <Eye size={18} />
-              }
-            </button>
-
-          </div>
-        </div>
+        <CommonInput
+          id="password"
+          label="Security Key / Password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="••••••••••"
+          autoComplete="current-password"
+          required
+          icon={<KeyRound size={18} />}
+          showPasswordToggle
+          className="border-none"
+        />
 
         <div className="flex justify-between">
 
           <div>
-            {error && (
+            {(error || cooldownSeconds > 0) && (
               <p className="text-sm text-red-600">
-                {error}
+                {cooldownSeconds > 0
+                  ? `Too many sign-in attempts. Try again in ${cooldownSeconds} seconds.`
+                  : error}
               </p>
             )}
           </div>
@@ -163,14 +137,16 @@ export default function LoginCard({
 
         <CommonButton
           type="submit"
-          disabled={submitting}
+          disabled={submitting || cooldownSeconds > 0}
           className="w-full flex items-center justify-center gap-2"
         >
           <Lock size={16} />
 
           {submitting
             ? "Signing in..."
-            : "Sign In"
+            : cooldownSeconds > 0
+              ? `Try again in ${cooldownSeconds}s`
+              : "Sign In"
           }
         </CommonButton>
 

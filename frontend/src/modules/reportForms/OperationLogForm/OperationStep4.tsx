@@ -5,10 +5,15 @@ import SummaryField from "../component/SummaryField"
 import ImagePreviewModal from "../modal/ImagePreviewModal"
 
 import type { OperationLogData, Person, PersonName } from "../../../types/operationLog"
+import type { OperationFormOptions } from "@/api/operationForm"
+import type { FormErrors } from "./formValidation"
 import { useState } from "react"
 
 type OperationStep4Props = {
   formData: OperationLogData
+  options: OperationFormOptions
+  onEditStep: (step: number) => void
+  errors: FormErrors
 }
 
 const formatPersonName = (name: PersonName) => {
@@ -21,9 +26,17 @@ const formatPersonAddress = (person: Person) => {
   return `P${phase} PK${pkg} B${block} L${lot}`
 }
 
-export default function OperationStep4({ formData }: OperationStep4Props) {
+export default function OperationStep4({ formData, options, onEditStep, errors }: OperationStep4Props) {
   const { operationDetails, dispatch, people, operationDescription, inventory } = formData
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const teamNames = operationDetails.teamAssigned.map((teamId) =>
+    options.teams.find((team) => team.team_id === teamId)?.team_name ?? "Team unavailable",
+  )
+  const responderNames = operationDetails.responders.map((responderId) =>
+    options.responders.find((responder) => responder.user_id === responderId)?.name ?? "Responder unavailable",
+  )
+  responderNames.push(...operationDetails.otherResponders)
+  const selectedVehicle = options.vehicles.find((vehicle) => vehicle.vehicle_id === dispatch.vehicle)
 
   const previewFile =
     previewIndex !== null
@@ -34,23 +47,31 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
     <main className="flex w-full flex-col gap-4">
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CommonFormSection title="OPERATION DETAILS" standardHeight={false}>
+        <CommonFormSection title="OPERATION DETAILS" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "operationDetails.")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="Submitter Name" value={operationDetails.submitterName} />
             <SummaryField label="Date" value={operationDetails.date} />
+            <SummaryField label="Time" value={operationDetails.time} />
             <SummaryField label="Nature of Operation" value={operationDetails.natureOfOperation} />
             <SummaryField label="Caller" value={formatPersonName(operationDetails.nameOfCaller)} />
-            <SummaryField label="Team Assigned" value={operationDetails.teamAssigned.join(", ")} />
-            <SummaryField label="Responders" value={operationDetails.responders.join(", ")} />
+            <SummaryField label="Team Assigned" value={teamNames.join(", ")} />
+            <SummaryField label="Responders" value={responderNames.join(", ")} />
           </div>
         </CommonFormSection>
 
-        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false}>
+        <CommonFormSection title="VEHICULAR DISPATCH" standardHeight={false} onClick={() => onEditStep(1)} hasError={hasErrorsForPrefix(errors, "dispatch.")}>
           <div className="grid grid-cols-2 gap-4">
             <SummaryField label="From" value={dispatch.from} />
             <SummaryField label="To" value={dispatch.to} />
-            <SummaryField label="Vehicle" value={dispatch.vehicle} />
-            <SummaryField label="Driver" value={dispatch.driver} />
+            <SummaryField
+              label="Vehicle"
+              value={dispatch.vehicle === "none" ? "None"
+                : dispatch.vehicle === "other" ? dispatch.vehicleOther ?? "Other"
+                : selectedVehicle
+                ? `${selectedVehicle.vehicle_name} (${selectedVehicle.plate_number})`
+                : dispatch.vehicle ? "Vehicle unavailable" : ""}
+            />
+            <SummaryField label="Driver" value={dispatch.vehicle === "none" ? "—" : dispatch.driver} />
             <SummaryField
               label="Depart"
               value={dispatch.departTime && `${dispatch.departTime} ${dispatch.departPeriod}`}
@@ -59,13 +80,13 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
               label="Arrival"
               value={dispatch.arrivalTime && `${dispatch.arrivalTime} ${dispatch.arrivalPeriod}`}
             />
-            <SummaryField label="Odometer In" value={dispatch.odometerIn && `${dispatch.odometerIn} km`} />
-            <SummaryField label="Odometer Out" value={dispatch.odometerOut && `${dispatch.odometerOut} km`} />
+            <SummaryField label="Odometer In" value={dispatch.vehicle !== "none" && dispatch.odometerIn ? `${dispatch.odometerIn} km` : "—"} />
+            <SummaryField label="Odometer Out" value={dispatch.vehicle !== "none" && dispatch.odometerOut ? `${dispatch.odometerOut} km` : "—"} />
           </div>
         </CommonFormSection>
       </section>
 
-      <CommonFormSection title="PEOPLE INVOLVED" standardHeight={false}>
+      <CommonFormSection title="PEOPLE INVOLVED" standardHeight={false} onClick={() => onEditStep(2)} hasError={hasErrorsForPrefix(errors, "people")}>
         <div className="overflow-x-auto rounded-md border border-purple-400">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -107,6 +128,8 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
             title="OPERATION DESCRIPTION"
             standardHeight={false}
             scrollable
+            onClick={() => onEditStep(3)}
+            hasError={hasErrorsForPrefix(errors, "operationDescription.")}
             className="lg:min-h-[200px] sm:flex-1"
           >
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-900">
@@ -118,6 +141,8 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
             title="INVENTORY USED"
             standardHeight={false}
             scrollable
+            onClick={() => onEditStep(3)}
+            hasError={hasErrorsForPrefix(errors, "inventory")}
             className="lg:min-h-[250px] lg:max-h-[500px]"
           >
             <div className="overflow-x-auto rounded-md">
@@ -150,13 +175,16 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
           </CommonFormSection>
         </div>
 
-        <CommonFormSection title="ATTACHED IMAGE" standardHeight={false} scrollable className="w-full sm:min-h-0">
+        <CommonFormSection title="ATTACHED IMAGE" standardHeight={false} scrollable onClick={() => onEditStep(3)} hasError={Boolean(errors["operationDescription.images"])} className="w-full sm:min-h-0">
           <div className="space-y-2">
             {operationDescription.images.map((file, index) => (
               <button
                 key={`${file.name}-${index}`}
                 type="button"
-                onClick={() => setPreviewIndex(index)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setPreviewIndex(index)
+                }}
                 className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm italic text-gray-700 transition hover:border-purple-400 hover:bg-gray-50"
               >
                 <span className="flex items-center gap-2 truncate">
@@ -183,4 +211,8 @@ export default function OperationStep4({ formData }: OperationStep4Props) {
 
     </main>
   )
+}
+
+function hasErrorsForPrefix(errors: FormErrors, prefix: string): boolean {
+  return Object.keys(errors).some((field) => field === prefix || field.startsWith(`${prefix}.`))
 }

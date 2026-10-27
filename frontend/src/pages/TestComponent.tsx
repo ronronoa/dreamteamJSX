@@ -14,6 +14,11 @@ import CommonCheckbox from "../components/common/widgets/CommonCheckbox";
 import CommonSelect from "../components/common/widgets/CommonSelect";
 import CommonTextarea from "../components/common/widgets/CommonTextarea";
 import CommonTimeInput from "../components/common/widgets/CommonTimeInput";
+import CommonSearchSelect from "../components/common/widgets/CommonSearchSelect";
+import CommonVitalField from "../components/common/widgets/CommonVitalField";
+import CommonTopBanner from "../components/common/widgets/CommonToBanner";
+import UserAvatar from "../components/common/widgets/UserAvatar";
+import CommonProgressBar from "../modules/reportForms/component/CommonProgressBar";
 
 function ShowcaseSection({ title, children, }: { title: string; children: React.ReactNode;
 }) {
@@ -38,6 +43,10 @@ export default function TestComponent() {
   const [isForgotPassModalOpen, setIsForgotPassModalOpen] = useState(false);
   const [isContactAdminModalOpen, setIsContactAdminModalOpen] = useState(false);
   const [backgroundActive, setBackgroundActive] = useState(false);
+  const [selectedResponders, setSelectedResponders] = useState<string[]>(["responder-1"]);
+  const [bloodPressure, setBloodPressure] = useState("120/80");
+  const [heartRate, setHeartRate] = useState("72");
+  const [progress, setProgress] = useState(65);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -97,6 +106,61 @@ export default function TestComponent() {
                 label="Name of Submitter (compact)"
                 placeholder="Place holder"
               />
+              <CommonInput variant="compact" label="Disabled input" value="Not editable" disabled readOnly />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonSearchSelect">
+            <div className="w-full max-w-100">
+              <CommonSearchSelect
+                id="responders"
+                label="Responders"
+                placeholder="Search responders..."
+                options={[
+                  { label: "Alex Rivera", value: "responder-1" },
+                  { label: "Jamie Santos", value: "responder-2" },
+                  { label: "Morgan Reyes", value: "responder-3" },
+                ]}
+                value={selectedResponders}
+                onChange={setSelectedResponders}
+              />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonVitalField">
+            <div className="flex flex-wrap gap-5">
+              <CommonVitalField label="BP" allow="/" value={bloodPressure} onChange={(event) => setBloodPressure(event.target.value)} />
+              <CommonVitalField label="PR" value={heartRate} onChange={(event) => setHeartRate(event.target.value)} />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="UserAvatar">
+            <UserAvatar initials="AR" name="Alex Rivera" role="Responder" size="lg" />
+            <UserAvatar initials="JS" name="Jamie Santos" role="Team Leader" size="lg" tone="purple" />
+            <UserAvatar initials="DR" size="xl" orientation="vertical" />
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonProgressBar">
+            <div className="w-full max-w-xl space-y-4">
+              <CommonProgressBar progress={progress} />
+              <input
+                aria-label="Progress percentage"
+                type="range"
+                min={0}
+                max={100}
+                value={progress}
+                onChange={(event) => setProgress(Number(event.target.value))}
+                className="w-full accent-purple-600"
+              />
+            </div>
+          </ShowcaseSection>
+
+          <ShowcaseSection title="CommonTopBanner">
+            <div className="w-full space-y-2">
+              <CommonTopBanner variant="info">Information banner example</CommonTopBanner>
+              <CommonTopBanner variant="success">Report submitted successfully</CommonTopBanner>
+              <CommonTopBanner variant="warning">Please review the report details</CommonTopBanner>
+              <CommonTopBanner variant="error">Unable to load this section</CommonTopBanner>
             </div>
           </ShowcaseSection>
 

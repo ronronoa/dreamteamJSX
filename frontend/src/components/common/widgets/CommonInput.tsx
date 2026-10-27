@@ -1,35 +1,29 @@
-import { useState, type InputHTMLAttributes, type ReactNode } from "react"
-import { Eye, EyeOff, } from "lucide-react";
+import { type ComponentType, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react"
+import { InputBase, type InputBaseProps } from "@/components/base/input/input";
 
 type CommonInputVariant = "default" | "compact"
 
-const styles: Record<CommonInputVariant, { label: string; input: string }> = {
+const styles: Record<CommonInputVariant, { label: string; wrapper: string; input: string }> = {
   default: {
     label: "mb-1.5 block text-sm font-semibold text-gray-800",
-    input: `
-      rounded-xl bg-white border-2 border-gray-400
-      py-3 text-sm text-gray-800
-      focus:ring-2 focus:ring-purple-400 focus:border-purple-400
-      shadow-sm
-    `,
+    wrapper: "rounded-xl border-2 border-gray-400 bg-white shadow-sm ring-0 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-400",
+    input: "rounded-xl py-3 text-sm text-gray-800",
   },
   compact: {
     label: "mb-1 block text-lg font-medium text-slate-900",
-    input: `
-      h-9 rounded-md bg-gray-100 border border-gray-300
-      text-sm text-gray-800
-      focus:border-purple-500
-    `,
+    wrapper: "h-9 rounded-md border border-gray-300 bg-gray-100 shadow-none ring-0 focus-within:border-purple-500",
+    input: "h-full rounded-md py-0 text-sm text-gray-800",
   },
 }
 
-interface CommonInputProps
+export interface CommonInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "autoCapitalize"> {
   label?: string
   icon?: ReactNode
   variant?: CommonInputVariant
   showPasswordToggle?: boolean
   autoCapitalize?: boolean
+  errorMessage?: string
 }
 
 /**
@@ -39,7 +33,7 @@ interface CommonInputProps
  * id="email"
  * label="Email Address"
  * type="email"
- * placeholder="[admin@gmail.com](mailto:admin@gmail.com)"
+ * placeholder="admin@gmail.com"
  * />
  *
  * @example
@@ -74,17 +68,12 @@ export default function CommonInput({
   className = "",
   showPasswordToggle = false,
   autoCapitalize = false,
+  errorMessage,
   type,
   onChange,
   ...props
 }: CommonInputProps) {
-  const { label: labelClass, input: inputClass } = styles[variant]
-
-  const [showPassword, setShowPassword] = useState(false);
-  const inputType =
-    showPasswordToggle && type === "password" && showPassword
-      ? "text"
-      : type;
+  const { label: labelClass, wrapper: wrapperClassName, input: inputClass } = styles[variant]
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (autoCapitalize) {
@@ -94,44 +83,45 @@ export default function CommonInput({
     onChange?.(event)
   }
 
+  // Dynamic padding so icon and password toggle never overlap content
+  // InputBase positions leading icons at 12px with a 20px icon; leave 16px
+  // between the icon and text so values and placeholders never touch it.
+  const leftPadding = icon ? "pl-9" : "pl-4";
+  const rightPadding =
+    showPasswordToggle && type === "password" ? "pr-12" : "pr-4";
+  const LeadingIcon: ComponentType<HTMLAttributes<HTMLOrSVGElement>> | undefined = icon
+    ? ({ className }) => <span className={className}>{icon}</span>
+    : undefined;
+
   return (
     <div>
       {label && (
-        <label htmlFor={props.id} className={labelClass}>
-          {label}
+        <label htmlFor={props.id} className={`${labelClass} flex flex-wrap items-baseline justify-between gap-x-2`}>
+          <span>{label}</span>
+          {errorMessage && <span id={`${props.id}-error`} role="alert" className="text-xs font-medium text-red-700">{errorMessage}</span>}
         </label>
       )}
 
-      <div className="relative">
-        {icon && (
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-            {icon}
-          </span>
-        )}
-
-        <input
-          {...props}
-          type={inputType}
+      <div>
+        <InputBase
+          {...(props as InputBaseProps)}
+          isRequired={props.required}
+          isInvalid={Boolean(errorMessage)}
+          aria-invalid={Boolean(errorMessage)}
+          aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}
+          type={type}
+          icon={LeadingIcon}
+          hidePasswordToggle={!showPasswordToggle}
           onChange={handleChange}
-          className={`
-            w-full outline-none invalid:text-gray-400
-            ${icon ? "pl-10" : "pl-4"} pr-4
-            ${inputClass}
-            ${className}
-            ${showPasswordToggle && type === "password" ? "pr-11" : "pr-4"}
-          `}
+          wrapperClassName={`${wrapperClassName} ${errorMessage ? "ring-2 ring-red-500" : ""}`}
+          inputClassName={`w-full outline-none invalid:text-gray-400 ${leftPadding} ${rightPadding} ${inputClass} ${className}`}
         />
-        {showPasswordToggle && type === "password" && (
-          <button
-            type="button"
-            onClick={() => setShowPassword((value) => !value)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label={showPassword ? "Hide password" : "Show password"}
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        )}
       </div>
+      {!label && errorMessage && (
+        <p id={`${props.id}-error`} role="alert" className="mt-1 text-xs font-medium text-red-700">
+          {errorMessage}
+        </p>
+      )}
     </div>
   )
 }

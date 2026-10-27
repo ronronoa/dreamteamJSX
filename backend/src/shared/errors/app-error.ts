@@ -13,7 +13,7 @@ export class ValidationError extends AppError {
   readonly code = "VALIDATION_ERROR";
   readonly statusCode = 400;
 
-  constructor(message: string, public readonly fields: Record<string, string[]>) {
+  constructor(message: string, public readonly fields: Record<string, string[]> = {}) {
     super(message);
   }
 }
@@ -59,6 +59,15 @@ export class InternalError extends AppError {
   readonly statusCode = 500;
 
   constructor(message = "Internal server error") {
+    super(message);
+  }
+}
+
+export class BadGatewayError extends AppError {
+  readonly code = "UPSTREAM_SERVICE_ERROR";
+  readonly statusCode = 502;
+
+  constructor(message = "The OCR service could not process this image.") {
     super(message);
   }
 }

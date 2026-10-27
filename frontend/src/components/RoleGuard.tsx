@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import { dashboardSectionsByRole } from "@/modules/adminDashboard/DashboardNav";
 
 export default function RoleGuard({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const { pathname } = useLocation();
+
+
+  if (loading) return null;
 
   const role = session?.user?.role ?? "MEMBER";
 

@@ -8,7 +8,8 @@ import OperationStep1 from "../../modules/reportForms/OperationLogForm/Operation
 import OperationStep2 from "../../modules/reportForms/OperationLogForm/OperationStep2"
 import OperationStep3 from "../../modules/reportForms/OperationLogForm/OperationStep3"
 import OperationStep4 from "../../modules/reportForms/OperationLogForm/OperationStep4"
-import { isFormComplete, isFormEmpty } from "../../modules/reportForms/OperationLogForm/formValidation"
+import OperationLogLastStep from "../../modules/reportForms/OperationLogForm/OperationLogLastStep"
+import { isFormEmpty, validateStep, type FormErrors } from "../../modules/reportForms/OperationLogForm/formValidation"
 
 import {
   createEmptyOperationLogData,
@@ -18,11 +19,61 @@ import {
   type InventoryItem,
   type OperationDescription,
 } from "../../types/operationLog"
-import { submitOperationLog } from "../../api/operationForm"
+import { fetchLatestOperationReport, fetchOperationFormOptions, submitOperationLog, type OperationFormOptions } from "../../api/operationForm"
 import { useNavigate } from "react-router"
 import PinModal from "../../modules/reportForms/modal/PinModal"
 import CancelConfirmModal from "../../modules/reportForms/modal/CancelConfirmModal"
 import CommonProgressBar from "../../modules/reportForms/component/CommonProgressBar"
+import { ROUTES } from "../../routes"
+import { hasStoredDraft, hasStoredReport, readStoredReport, removeStoredReport, saveStoredReport } from "../../modules/reportForms/reportFormStorage"
+import { useTitle } from "@/hooks/useTitle"
+
+const OPERATION_DRAFT_KEY = "reportForms.operation.draft"
+const OPERATION_LATEST_KEY = "reportForms.operation.latest"
+
+function normalizeTimeInput(value: unknown): string {
+  if (typeof value !== "string") return ""
+
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim())
+  if (!match) return value
+
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour < 1 || hour > 12 || minute > 59) return value
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+}
+
+function normalizeOperationReport(value: unknown): OperationLogData {
+  const emptyReport = createEmptyOperationLogData()
+  if (typeof value !== "object" || value === null) return emptyReport
+
+  const report = value as Partial<OperationLogData>
+  return {
+    ...emptyReport,
+    ...report,
+    operationDetails: {
+      ...emptyReport.operationDetails,
+      ...report.operationDetails,
+      otherResponders: report.operationDetails?.otherResponders ?? [],
+      date: emptyReport.operationDetails.date,
+      time: emptyReport.operationDetails.time,
+    },
+    dispatch: {
+      ...emptyReport.dispatch,
+      ...report.dispatch,
+      departTime: normalizeTimeInput(report.dispatch?.departTime),
+      arrivalTime: normalizeTimeInput(report.dispatch?.arrivalTime),
+    },
+    people: Array.isArray(report.people) ? report.people : [],
+    operationDescription: {
+      ...emptyReport.operationDescription,
+      ...report.operationDescription,
+      images: [],
+    },
+    inventory: [],
+  }
+}
 
 export default function OperationLogForm() {
   const [step, setStep] = useState(1)
@@ -30,13 +81,94 @@ export default function OperationLogForm() {
   const [pinModalShow, setPinModalShow] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pinError, setPinError] = useState<string>()
-  const [formData, setFormData] = useState<OperationLogData>(createEmptyOperationLogData())
+  const [formData, setFormData] = useState<OperationLogData>(() => {
+    const storedReport = readStoredReport(
+      OPERATION_DRAFT_KEY,
+      OPERATION_LATEST_KEY,
+      createEmptyOperationLogData,
+      normalizeOperationReport,
+    )
+    if (!hasStoredDraft(OPERATION_DRAFT_KEY)) {
+      storedReport.operationDetails.otherResponders = []
+    }
+    return storedReport
+  })
+  const [formOptions, setFormOptions] = useState<OperationFormOptions>({
+    operationNatures: [],
+    teams: [],
+    responders: [],
+    vehicles: [],
+  })
+  const [optionsLoading, setOptionsLoading] = useState(true)
+  const [optionsError, setOptionsError] = useState("")
+  const [optionsRequestId, setOptionsRequestId] = useState(0)
+  const [, setValidationErrors] = useState<FormErrors>({})
   const [confirmCancelModalShow, setConfirmCancelModalShow] = useState(false)
 
   const navigate = useNavigate();
+  useTitle("Operation Form")
+
+  useEffect(() => {
+    let isCurrentRequest = true
+
+    async function loadFormOptions() {
+      setOptionsLoading(true)
+      setOptionsError("")
+      try {
+        const options = await fetchOperationFormOptions()
+        if (isCurrentRequest) setFormOptions(options)
+      } catch (error) {
+        if (isCurrentRequest) {
+          setOptionsError(error instanceof Error ? error.message : "Could not load operation form options.")
+        }
+      } finally {
+        if (isCurrentRequest) setOptionsLoading(false)
+      }
+    }
+
+    void loadFormOptions()
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [optionsRequestId])
+
+  useEffect(() => {
+    if (hasStoredReport(OPERATION_DRAFT_KEY, OPERATION_LATEST_KEY)) return
+
+    let isCurrentRequest = true
+    async function loadPreviousReport() {
+      try {
+        const latestReport = await fetchLatestOperationReport()
+        if (!isCurrentRequest || !latestReport) return
+        const normalizedReport = normalizeOperationReport(latestReport)
+        normalizedReport.operationDetails.otherResponders = []
+        setFormData(normalizedReport)
+        saveStoredReport(OPERATION_LATEST_KEY, normalizedReport)
+      } catch (error) {
+        console.error("Could not load the previous operation report:", error)
+      }
+    }
+
+    void loadPreviousReport()
+    return () => { isCurrentRequest = false }
+  }, [])
+
+  useEffect(() => {
+    if (step !== 5) return
+
+    const redirectTimer = window.setTimeout(() => {
+      navigate(ROUTES.CHOOSE_FORM)
+    }, 5000)
+
+    return () => window.clearTimeout(redirectTimer)
+  }, [navigate, step])
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
+  const reportValidationErrors = [1, 2, 3].reduce<FormErrors>((allErrors, formStep) => ({
+    ...allErrors,
+    ...validateStep(formStep, formData, formOptions),
+  }), {})
 
   const VARIANTS = {
     enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -44,66 +176,89 @@ export default function OperationLogForm() {
     exit: (direction: number) => ({ x: direction > 0 ? "-100%" : "100%", opacity: 0 }),
   }
 
-  const nextStep = () => {
-    if (step >= totalSteps) return
-    setDirection(1)
-    setStep((current) => current + 1)
-  }
+const nextStep = () => {
+  if (step >= totalSteps) return
+
+  const errors = validateStep(step, formData, formOptions)
+  setValidationErrors((current) => ({ ...current, ...errors }))
+  if (Object.keys(errors).length > 0) return
+
+  setDirection(1)
+  setStep((current) => current + 1)
+}
 
   const previousStep = () => {
     if (step <= 1) return
     setDirection(-1)
+    setValidationErrors({})
     setStep((current) => current - 1)
   }
 
   const updateOperationDetails = (patch: Partial<OperationDetails>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, operationDetails: { ...current.operationDetails, ...patch },
     }))
   }
 
   const updateDispatch = (patch: Partial<VehicularDispatch>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, dispatch: { ...current.dispatch, ...patch },
     }))
   }
 
   const updatePeople = (people: OperationLogData["people"]) => {
+    setValidationErrors({})
     setFormData((current) => ({ ...current, people }))
   }
 
   const updateOperationDescription = (patch: Partial<OperationDescription>) => {
+    setValidationErrors({})
     setFormData((current) => ({
       ...current, operationDescription: { ...current.operationDescription, ...patch },
     }))
   }
 
   const updateInventory = (inventory: InventoryItem[]) => {
+    setValidationErrors({})
     setFormData((current) => ({ ...current, inventory })) 
   }
 
   const openPinModal = () => {
+    setValidationErrors(reportValidationErrors)
+    if (Object.keys(reportValidationErrors).length > 0) return
+
     setPinError(undefined)
     setPinModalShow(true)
   }
 
   const handleSubmit = async (pin: string) => {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     setPinError(undefined);
 
 
     try {
       await submitOperationLog(pin, formData);
+      saveStoredReport(OPERATION_LATEST_KEY, normalizeOperationReport(formData))
+      removeStoredReport(OPERATION_DRAFT_KEY)
 
       setPinModalShow(false);
+      setFormData(createEmptyOperationLogData());
+      setStep(5);
+      setValidationErrors({});
     } catch (error) {
       console.error("Failed to submit operation:", error);
-      setPinError("Something went wrong. Please try again.");
+      setPinError(error instanceof Error ? error.message : "Could not submit the operation report.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+
+  useEffect(() => {
+    if (!isFormEmpty(formData)) saveStoredReport(OPERATION_DRAFT_KEY, normalizeOperationReport(formData))
+  }, [formData])
 
   useEffect(() => {
     const hasUnsavedChanges = !isFormEmpty(formData)
@@ -117,6 +272,8 @@ export default function OperationLogForm() {
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [formData])
+
+  if (step === 5) return <OperationLogLastStep />
 
   return (
     <>
@@ -154,6 +311,10 @@ export default function OperationLogForm() {
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div
                   key={step}
+                  onBlurCapture={() => {
+                    if (step > 3) return
+                    setValidationErrors(validateStep(step, formData, formOptions))
+                  }}
                   variants={VARIANTS}
                   custom={direction}
                   initial="enter"
@@ -167,6 +328,9 @@ export default function OperationLogForm() {
                       onOperationDetailsChange={updateOperationDetails}
                       dispatch={formData.dispatch}
                       onDispatchChange={updateDispatch}
+                      options={formOptions}
+                      optionsLoading={optionsLoading}
+                      errors={reportValidationErrors}
                     />
                   )}
 
@@ -174,6 +338,7 @@ export default function OperationLogForm() {
                     <OperationStep2 
                       people={formData.people}
                       onPeopleChange={updatePeople}
+                      errors={reportValidationErrors}
                     />
                   )}
 
@@ -183,15 +348,49 @@ export default function OperationLogForm() {
                       onOperationDescriptionChange={updateOperationDescription}
                       inventory={formData.inventory}
                       onInventoryChange={updateInventory}
+                      errors={reportValidationErrors}
                     />
                   )}
 
 
-                  {step === 4 && <OperationStep4 formData={formData} />}
+                  {step === 4 && (
+                    <OperationStep4
+                      formData={formData}
+                      options={formOptions}
+                      errors={reportValidationErrors}
+                      onEditStep={(targetStep) => {
+                        setDirection(targetStep < step ? -1 : 1)
+                        setStep(targetStep)
+                      }}
+                    />
+                  )}
 
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {step === totalSteps && Object.keys(reportValidationErrors).length > 0 && (
+              <div role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <p className="font-semibold">Please fix these issues before completing the form:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {[...new Set(Object.values(reportValidationErrors))].map((message) => <li key={message}>{message}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {optionsError && (
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p role="alert">{optionsError}</p>
+                <button
+                  type="button"
+                  className="shrink-0 font-semibold underline"
+                  onClick={() => setOptionsRequestId((current) => current + 1)}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {optionsLoading && <p role="status" className="mt-2 text-sm text-slate-600">Loading form options…</p>}
 
             <div className="mt-4 flex h-14 w-full items-center justify-between rounded-md bg-white p-2">
               {step === 1 && ( //cancle
@@ -201,6 +400,7 @@ export default function OperationLogForm() {
                       setConfirmCancelModalShow(true);
                     }}
                   variant="gray" 
+                  className="min-w-[130px]"
                   //className="min-w-[130px] bg-red-700 hover:bg-red-900 text-white"
                 >
                   Cancel
@@ -219,8 +419,8 @@ export default function OperationLogForm() {
 
               {step === totalSteps ? (
                 <CommonButton
-                  variant={isFormComplete(formData) ? "purple" : "gray"}
-                  disabled={!isFormComplete(formData)}
+                  variant={Object.keys(reportValidationErrors).length === 0 ? "purple" : "gray"}
+                  disabled={Object.keys(reportValidationErrors).length > 0 || optionsLoading || Boolean(optionsError)}
                   className="min-w-[130px]"
                   onClick={openPinModal}
                 >
@@ -230,6 +430,11 @@ export default function OperationLogForm() {
                   <CommonButton
                     className="min-w-[130px]"
                     onClick={nextStep}
+                    disabled={
+                      optionsLoading ||
+                      Boolean(optionsError) ||
+                      Object.keys(validateStep(step, formData, formOptions)).length > 0
+                    }
                   >
                     Next
                   </CommonButton>

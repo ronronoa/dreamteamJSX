@@ -7,12 +7,21 @@ export type Role =
 
 export interface ManagedUser {
   id: string;
-  accountHolder: string;
-  info: string;
-  role: string;
-  team: string;
-  contact: string;
-  status: "Active" | "Inactive";
+  name: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleInitial?: string | null;
+  suffix?: string | null;
+  username: string;
+  profileImageUrl: string | null;
+  email: string | null;
+  role: Role;
+  phone: string | null;
+  isActive: boolean;
+  team_id: string | null;
+  team_name: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // export interface User {
@@ -33,6 +42,8 @@ export interface UserSession {
     id: string;
     name: string;
     username: string;
+    email?: string | null;
+    profileImageUrl?: string | null;
     role: Role;
     createdAt: string;
     updatedAt: string;

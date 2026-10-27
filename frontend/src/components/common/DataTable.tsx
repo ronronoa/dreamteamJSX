@@ -12,6 +12,7 @@ export interface Column<T> {
   accessor?: keyof T;
   /** Custom cell — use this for dates, actions, status badges, anything JSX. */
   render?: (row: T) => ReactNode;
+  renderHeader?: () => ReactNode;
   align?: "left" | "center" | "right";
   className?: string;
 }
@@ -155,7 +156,7 @@ export default function DataTable<T>({
                 ""
                 } ${col.className ?? ""}`}
             >
-              {col.label}
+              {col.renderHeader ? col.renderHeader() : col.label}
             </TableHead>
           ))}
         </TableRow>

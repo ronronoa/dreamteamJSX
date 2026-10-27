@@ -1,5 +1,5 @@
 import { Navigate } from "react-router";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/store/useAuth";
 import type { ReactNode } from "react";
 import { ROUTES } from "../routes";
 import LoadingScreen from "./common/LoadingScreen";

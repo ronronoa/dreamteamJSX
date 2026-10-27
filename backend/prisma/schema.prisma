@@ -17,9 +17,8 @@ enum Role {
   MEMBER
 }
 
-enum OperationStatus {
+enum ReportStatus {
   PENDING
-  TO_REVIEW
   VALIDATED
   REJECTED
   ARCHIVED
@@ -43,9 +42,12 @@ enum VehicleStatus {
 }
 
 enum PatientRequestType {
+  TRANSPORT_ASSISTANCE
+  EMERGENCY
   INTER_FACILITY_TRANSFER
-  PICK_UP
-  DROP_OFF
+  FIRST_AID
+  // PICK_UP
+  // DROP_OFF
 }
 
 enum DispatchType {
@@ -58,19 +60,31 @@ enum DispatchType {
 model User {
   user_id           String    @id @default(uuid())
   name              String
+  firstName         String?
+  lastName          String?
+  middleInitial     String?
+  suffix            String?
   username          String    @unique
-  passwordHash      String
+  email             String?   @unique
+  passwordHash      String?
+  pinEncrypted      String?
   pinHash           String?
+  pinLookupHash     String?   @unique
   pinFailedAttempts Int       @default(0)
   pinLockedUntil    DateTime?
   role              Role      @default(MEMBER)
+  phone             String?
+  profileImageUrl   String?
+  isActive          Boolean   @default(true)
+  last_active_at    DateTime?
+  team_id           String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   refreshTokens         RefreshToken[]
+  passwordResetCode     PasswordResetCode?
   submittedOperations   OperationLog[]               @relation("SubmittedBy")
   validatedOperations   OperationLog[]               @relation("ValidatedBy")
-  drivenDispatches      VehicularDispatch[]          @relation("DispatchDriver")
   submittedDispatches   VehicularDispatch[]          @relation("DispatchSubmitter")
   operationResponders   OperationResponder[]
   patientResponders     PatientResponder[]
@@ -82,6 +96,17 @@ model User {
   submittedPatients     PatientLog[]                 @relation("PatientSubmittedBy")
   operationImages       OperationImageAttachment[]
   patientImages         PatientImageAttachment[]
+  activityLogs          ActivityLog[]                @relation("ActivityActor")
+  archivedActivityLogs  ActivityLog[]                @relation("ActivityArchiver")
+  updatedSystemSettings SystemSetting[]              @relation("SystemSettingUpdater")
+  preferences           UserPreference?
+  notifications         Notification[]
+  patientLogArchives    PatientLogArchive[]          @relation("PatientLogArchiver")
+  dispatchArchives      VehicularDispatchArchive[]   @relation("DispatchArchiver")
+  team                  ResponseTeam?                @relation(fields: [team_id], references: [team_id], onDelete: SetNull)
+
+  @@index([team_id])
+  @@index([last_active_at])
 }
 
 model RefreshToken {
@@ -96,13 +121,36 @@ model RefreshToken {
   @@index([userId])
 }
 
+model PasswordResetCode {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
 model ResponseTeam {
   team_id   String   @id @default(uuid())
   team_name String
+  isArchived Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  operations OperationLog[]
+  operations           OperationLog[]
+  members              User[]
+  operationAssignments OperationTeamAssignment[]
+}
+
+model OperationNature {
+  nature_id String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 model OperationLog {
@@ -112,22 +160,26 @@ model OperationLog {
   name_of_caller      String
   nature_of_operation String
   event_description   String
-  submitted_by        String
+  other_responders    String[]        @default([])
+  submitted_by        String?
+  submitter_name      String?
   validated_by        String?
-  status              OperationStatus @default(PENDING)
+  rejected_reason     String?
+  status              ReportStatus @default(PENDING)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  team            ResponseTeam               @relation(fields: [team_id], references: [team_id])
-  submitter       User                       @relation("SubmittedBy", fields: [submitted_by], references: [user_id])
-  validator       User?                      @relation("ValidatedBy", fields: [validated_by], references: [user_id])
-  responders      OperationResponder[]
-  personsInvolved PersonsInvolved[]
-  inventoryItems  OperationInventory[]
-  edits           OperationLogEdit[]
-  archive         OperationLogArchive?
-  dispatches      VehicularDispatch[]
-  images          OperationImageAttachment[]
+  team             ResponseTeam               @relation(fields: [team_id], references: [team_id])
+  submitter        User?                      @relation("SubmittedBy", fields: [submitted_by], references: [user_id], onDelete: SetNull)
+  validator        User?                      @relation("ValidatedBy", fields: [validated_by], references: [user_id])
+  responders       OperationResponder[]
+  teamAssignments  OperationTeamAssignment[]
+  personsInvolved  PersonsInvolved[]
+  inventoryEntries OperationInventoryEntry[]
+  edits            OperationLogEdit[]
+  archive          OperationLogArchive?
+  dispatches       VehicularDispatch[]
+  images           OperationImageAttachment[]
 
   @@index([team_id])
   @@index([submitted_by])
@@ -145,14 +197,30 @@ model OperationResponder {
   @@id([operation_id, user_id])
 }
 
-model PersonsInvolved {
-  person_id    String  @id @default(uuid())
+model OperationTeamAssignment {
   operation_id String
-  full_name    String
-  age          Int
-  sex          Gender
-  contact_no   String?
-  address      String?
+  team_id      String
+
+  operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
+  team      ResponseTeam @relation(fields: [team_id], references: [team_id])
+
+  @@id([operation_id, team_id])
+  @@index([team_id])
+}
+
+model PersonsInvolved {
+  person_id       String    @id @default(uuid())
+  operation_id    String
+  full_name       String
+  age             Int
+  sex             Gender
+  birthdate       DateTime?
+  contact_no      String?
+  address         String?
+  address_phase   String?
+  address_package String?
+  address_block   String?
+  address_lot     String?
 
   operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
 
@@ -163,6 +231,7 @@ model Vehicle {
   vehicle_id   String        @id @default(uuid())
   vehicle_name String
   plate_number String        @unique
+  current_odometer Int       @default(0)
   status       VehicleStatus @default(AVAILABLE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -171,17 +240,19 @@ model Vehicle {
 }
 
 model InventoryItem {
-  item_id        String   @id @default(uuid())
-  item_name      String
-  category       String
-  unit           String
-  stock_quantity Int      @default(0)
-  stock_type     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  item_id          String    @id @default(uuid())
+  item_code        String    @unique
+  item_name        String
+  category         String
+  unit             String
+  stock_quantity   Int       @default(0)
+  minimum_quantity Int       @default(0)
+  expiry_date      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   transactions   InventoryTransaction[]
-  operationItems OperationInventory[]
+  operationEntries OperationInventoryEntry[]
   archive        InventoryArchive?
 
   @@index([category])
@@ -193,6 +264,7 @@ model InventoryTransaction {
   user_id          String
   transaction_type InventoryTransactionType
   quantity         Int
+  reason           String?
   transaction_date DateTime                 @default(now())
 
   item InventoryItem @relation(fields: [item_id], references: [item_id])
@@ -202,15 +274,85 @@ model InventoryTransaction {
   @@index([user_id])
 }
 
-model OperationInventory {
+model ActivityLog {
+  activity_id    String    @id @default(uuid())
+  activity_code  String    @unique
+  actor_id       String?
+  actor_name     String
+  actor_username String?
+  actor_role     Role?
+  module         String
+  action         String
+  record_id      String?
+  status         String
+  details        String?
+  pin_type       String?
+  pin_owner_id   String?
+  pin_owner_name String?
+  pin_owner_role String?
+  createdAt      DateTime  @default(now())
+  archivedAt     DateTime?
+  archived_by    String?
+
+  actor    User? @relation("ActivityActor", fields: [actor_id], references: [user_id], onDelete: SetNull)
+  archiver User? @relation("ActivityArchiver", fields: [archived_by], references: [user_id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([module, status])
+  @@index([actor_id])
+  @@index([archivedAt])
+}
+
+model SystemSetting {
+  setting_key String   @id
+  value       String   @db.Text
+  updated_by  String?
+  updatedAt   DateTime @updatedAt
+
+  updater User? @relation("SystemSettingUpdater", fields: [updated_by], references: [user_id], onDelete: SetNull)
+}
+
+model UserPreference {
+  user_id                 String   @id
+  lowStockAlerts          Boolean  @default(true)
+  approvalNotifications   Boolean  @default(true)
+  sessionTimeout          String   @default("30-min")
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model Notification {
+  notification_id String   @id @default(uuid())
+  user_id         String
+  source_key      String
+  title           String
+  message         String   @db.Text
+  category        String
+  target          String
+  reportFormId    String?  @map("report_form_id")
+  createdAt       DateTime @default(now())
+  readAt          DateTime?
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, source_key])
+  @@index([user_id, createdAt])
+}
+
+model OperationInventoryEntry {
+  entry_id     String  @id @default(uuid())
   operation_id String
-  item_id      String
+  item_id      String?
+  item_name    String
   quantity     Int
+  unit         String?
 
   operation OperationLog  @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
-  item      InventoryItem @relation(fields: [item_id], references: [item_id])
+  item      InventoryItem? @relation(fields: [item_id], references: [item_id], onDelete: SetNull)
 
-  @@id([operation_id, item_id])
+  @@index([operation_id])
+  @@index([item_id])
 }
 
 model OperationLogEdit {
@@ -271,24 +413,31 @@ model PatientLog {
   patient_id              String
   log_date                DateTime
   type_of_request         PatientRequestType
-  submitted_by            String
+  submitted_by            String?
+  submitter_name          String?
+  status                  ReportStatus         @default(PENDING)
+  rejected_reason         String?
   name_of_caller          String?
   bp                      String?
   pr                      String?
   spo2                    String?
   temp                    String?
   medical_assessment      String?
+  waiver_description      String?
+  report_data             Json?
   hospital_name           String?
   hospital_representative String?
   hospital_in_time        DateTime?
   hospital_out_time       DateTime?
+  form_image              String?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
 
   patient    Patient             @relation(fields: [patient_id], references: [patient_id])
-  submitter  User                @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id])
+  submitter  User?               @relation("PatientSubmittedBy", fields: [submitted_by], references: [user_id], onDelete: SetNull)
   responders PatientResponder[]
   dispatches VehicularDispatch[]
+  archive    PatientLogArchive?
 
   @@index([patient_id])
   @@index([submitted_by])
@@ -309,14 +458,19 @@ model VehicularDispatch {
   operation_id   String?
   patient_log_id String?
   dispatch_date  DateTime
-  submitted_by   String
+  submitter_name String?
+  nature_of_operation String?
+  transfers      DispatchType[] @default([])
+  status         ReportStatus @default(PENDING)
+  rejected_reason String?
+  submitted_by   String?
   vehicle_id     String?
-  driver_id      String?
+  vehicle_name   String?
+  driver_name    String?
   depart_time    DateTime?
   arrival_time   DateTime?
-  brgy_in_time   DateTime?
-  brgy_out_time  DateTime?
   dispatch_type  DispatchType?
+  other_responders String[]       @default([])
   from_location  String?
   to_location    String?
   odometer_in    Int?
@@ -327,13 +481,37 @@ model VehicularDispatch {
   operation  OperationLog?                @relation(fields: [operation_id], references: [operation_id])
   patientLog PatientLog?                  @relation(fields: [patient_log_id], references: [patient_log_id])
   vehicle    Vehicle?                     @relation(fields: [vehicle_id], references: [vehicle_id])
-  driver     User?                        @relation("DispatchDriver", fields: [driver_id], references: [user_id])
-  submitter  User                         @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id])
+  submitter  User?                        @relation("DispatchSubmitter", fields: [submitted_by], references: [user_id], onDelete: SetNull)
   responders VehicularDispatchResponder[]
   passengers CivilianPassenger[]
+  archive    VehicularDispatchArchive?
 
   @@index([operation_id])
   @@index([patient_log_id])
+}
+
+model PatientLogArchive {
+  archive_id     String   @id @default(uuid())
+  patient_log_id String   @unique
+  archived_by    String
+  archivedAt     DateTime @default(now())
+
+  patientLog PatientLog @relation(fields: [patient_log_id], references: [patient_log_id])
+  archiver   User       @relation("PatientLogArchiver", fields: [archived_by], references: [user_id])
+
+  @@index([archivedAt])
+}
+
+model VehicularDispatchArchive {
+  archive_id  String   @id @default(uuid())
+  dispatch_id String   @unique
+  archived_by String
+  archivedAt  DateTime @default(now())
+
+  dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id])
+  archiver User              @relation("DispatchArchiver", fields: [archived_by], references: [user_id])
+
+  @@index([archivedAt])
 }
 
 model VehicularDispatchResponder {
@@ -350,11 +528,20 @@ model CivilianPassenger {
   passenger_id String  @id @default(uuid())
   dispatch_id  String
   full_name    String
+  first_name   String?
+  middle_initial String?
+  surname      String?
+  suffix       String?
   age          Int
+  birthdate    DateTime?
   sex          Gender
   contact_no   String?
   barangay     String?
   address      String?
+  address_phase    String?
+  address_package  String?
+  address_block    String?
+  address_lot      String?
 
   dispatch VehicularDispatch @relation(fields: [dispatch_id], references: [dispatch_id], onDelete: Cascade)
 
@@ -366,11 +553,11 @@ model OperationImageAttachment {
   operation_id  String
   image_url     String
   file_type     String?
-  uploaded_by   String
+  uploaded_by   String?
   uploadedAt    DateTime @default(now())
 
   operation OperationLog @relation(fields: [operation_id], references: [operation_id], onDelete: Cascade)
-  uploader  User         @relation(fields: [uploaded_by], references: [user_id])
+  uploader  User?        @relation(fields: [uploaded_by], references: [user_id], onDelete: SetNull)
 
   @@index([operation_id])
 }
@@ -380,11 +567,11 @@ model PatientImageAttachment {
   patient_id    String
   image_url     String
   file_type     String?
-  uploaded_by   String
+  uploaded_by   String?
   uploadedAt    DateTime @default(now())
 
   patient  Patient @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade)
-  uploader User    @relation(fields: [uploaded_by], references: [user_id])
+  uploader User?   @relation(fields: [uploaded_by], references: [user_id], onDelete: SetNull)
 
   @@index([patient_id])
 }

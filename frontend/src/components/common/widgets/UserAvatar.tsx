@@ -1,3 +1,7 @@
+import { ROUTES } from "@/routes";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+
 type Size = "sm" | "md" | "lg" | "xl";
 type Tone = "orange" | "purple";
 type Variant = "onDark" | "onLight";
@@ -14,6 +18,7 @@ interface UserAvatarProps {
   /** How name/role sit next to the circle. Default horizontal (header style). */
   orientation?: Orientation;
   className?: string;
+  imageUrl?: string | null;
 }
 
 const circleSize: Record<Size, string> = {
@@ -56,14 +61,21 @@ export default function UserAvatar({
   variant = "onLight",
   orientation = "horizontal",
   className = "",
+  imageUrl,
 }: UserAvatarProps) {
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageFailed = imageUrl !== null && failedImageUrl === imageUrl;
+
   const colors = textColors[variant];
   const hasText = Boolean(name || role);
   const stacked = orientation === "vertical";
 
+  const navigate = useNavigate();
+
   return (
     <div
-      className={`flex items-center ${
+      onClick={() => navigate(ROUTES.DASHBOARD.PROFILE)}
+      className={`flex items-center cursor-pointer active:scale-95 ${
         stacked ? "flex-col text-center gap-3" : "gap-2"
       } ${className}`}
     >
@@ -77,7 +89,14 @@ export default function UserAvatar({
           shrink-0
         `}
       >
-        {initials}
+        {imageUrl && !imageFailed ? (
+          <img
+            src={imageUrl}
+            alt={name ? `${name} profile photo` : "Profile photo"}
+            className="h-full w-full rounded-full object-cover"
+            onError={() => setFailedImageUrl(imageUrl ?? null)}
+          />
+        ) : initials}
       </div>
 
       {hasText && (
