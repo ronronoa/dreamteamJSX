@@ -48,6 +48,14 @@ export function useInventoryDashboard() {
     })();
   }, [loadInventory]);
 
+  useEffect(() => {
+    function refreshOnFocus() {
+      void loadInventory();
+    }
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, [loadInventory]);
+
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     if (!normalizedSearch) return items;

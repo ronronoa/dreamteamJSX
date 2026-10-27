@@ -33,10 +33,11 @@ import SettingsPage from "./modules/adminDashboard/content/SettingsPage"
 import ActivityLogs from "./modules/adminDashboard/content/ActivityLogs"
 import RoleGuard from "./components/RoleGuard"
 import BackendStatusBanner from "./components/BackendStatusBanner"
+import FirstLoginPasswordModal from "./components/common/modals/FirstLoginPasswordModal"
 
 
 function App() {
-  const { loading, refresh } = useAuth();
+  const { session, loading, refresh } = useAuth();
 
   useEffect(() => {
     void refresh();
@@ -62,7 +63,7 @@ function App() {
     <BrowserRouter>
       <BackendStatusBanner/>
       {loading && <LoadingScreen />}
-      <Routes>
+      {session?.user.mustChangePassword ? <FirstLoginPasswordModal /> : <Routes>
 
         <Route path={ROUTES.ROOT} element={
           <Home/>
@@ -116,7 +117,7 @@ function App() {
         {/* remove after development */}
         <Route path="/test-components" element={<TestComponent/>}/>
 
-      </Routes>
+      </Routes>}
     </BrowserRouter>
   )
 }

@@ -1,3 +1,4 @@
+import { pinService } from "@/services/pin.service";
 import { CreateUserSchema, ResetPasswordSchema, UpdateOwnProfileSchema, UpdateUserSchema, UserIdParamSchema } from "@/schemas/user.schema";
 import { userService } from "@/services/user.service";
 import { ValidationError } from "@/shared/errors";
@@ -36,6 +37,15 @@ function validateOrThrow<T>(parsed: z.ZodSafeParseResult<T>) {
 }
 
 export const userController = {
+    async revealPin(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = validateOrThrow(UserIdParamSchema.safeParse(req.params));
+            await userService.findById(id, req.user!.role);
+            const pin = await pinService.revealPin(id);
+            res.setHeader("Cache-Control", "no-store");
+            res.status(200).json({ pin });
+        } catch (error) { next(error); }
+    },
     async getOwnProfile(req: Request, res: Response, next: NextFunction) {
         try {
             const user = await userService.findProfile(req.user!.userId);
@@ -102,8 +112,8 @@ export const userController = {
     async create(req: Request, res: Response, next: NextFunction) {
         try {
             const data = validateOrThrow(CreateUserSchema.safeParse(req.body))
-            const user = await userService.create(data, req.user!.role)
-            res.status(201).json({ user })
+            const result = await userService.create(data, req.user!.role)
+            res.status(201).json(result)
         } catch (err) {
             next(err)
         }

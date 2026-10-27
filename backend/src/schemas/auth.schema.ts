@@ -9,16 +9,8 @@ export const SignUpSchema = z.object({
 
 export const SignInSchema = z.object({
     identifier: z.string().trim().min(1).max(254),
-    password: z.string().min(1).max(64),
-}).superRefine(({ identifier, password }, context) => {
-    const isBootstrapCredential = identifier.toLowerCase() === "root" && password === "root";
-    if (password.length < 8 && !isBootstrapCredential) {
-        context.addIssue({
-            code: "custom",
-            path: ["password"],
-            message: "Password must be at least 8 characters",
-        });
-    }
+    // Default passwords follow the surname, which can be shorter than eight characters.
+    password: z.string().min(1).max(200),
 })
 
 export const RefreshTokenSchema = z.object({
@@ -26,7 +18,7 @@ export const RefreshTokenSchema = z.object({
 });
 
 export const ChangePasswordSchema = z.object({
-    currentPassword: z.string().min(1).max(64),
+    currentPassword: z.string().min(1).max(200),
     newPassword: z.string().min(8).max(64),
 }).refine((data) => data.currentPassword !== data.newPassword, {
     path: ["newPassword"],

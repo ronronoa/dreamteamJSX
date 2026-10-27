@@ -1,3 +1,7 @@
+import type { ReportPinOwner } from "./pin.service";
+import { getSubmissionStatus } from "./reportReviewWorkflow";
+import { decrementOperationInventory } from "./operation.service";
+import { deductPatientInventory } from "./patientInventory.service";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors";
 import { Prisma } from "@/generated/prisma/client";
@@ -9,6 +13,13 @@ type UploadedFile = Express.Multer.File;
 
 const REPORT_IMAGE_DIRECTORY = "/uploads/report-forms/";
 const SUGGESTION_RECORD_LIMIT = 300;
+const OPERATION_NATURES = [
+  "Prevention and Mitigation",
+  "Disaster Preparedness",
+  "Disaster Response",
+  "Rehabilitation and Recovery",
+  "Other",
+];
 
 type ReportSuggestions = Record<string, string[]>;
 
@@ -133,6 +144,16 @@ function splitPersonName(fullName: string | null | undefined) {
 export const reportFormsService = {
   async getReportFormSuggestions(formType: "operations" | "patients" | "vehicular-dispatches") {
     const suggestions: ReportSuggestions = {};
+    const accounts = await prisma.user.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { name: true },
+    });
+    const accountSuggestions: ReportSuggestions = {};
+    const submitterField = formType === "patients" ? "responderDetails.submitterName" : "details.submitterName";
+    for (const account of accounts) {
+      addSuggestion(accountSuggestions, submitterField, account.name);
+    }
 
     if (formType === "operations") {
       const records = await prisma.operationLog.findMany({
@@ -165,7 +186,7 @@ export const reportFormsService = {
           addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
         }
       }
-      return suggestions;
+      return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
     }
 
     if (formType === "patients") {
@@ -204,7 +225,7 @@ export const reportFormsService = {
         }
         addSavedFormSuggestions(suggestions, record.report_data);
       }
-      return suggestions;
+      return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
     }
 
     const records = await prisma.vehicularDispatch.findMany({
@@ -232,7 +253,7 @@ export const reportFormsService = {
         addAddressSuggestions(suggestions, { phase: person.address_phase, package: person.address_package, block: person.address_block, lot: person.address_lot });
       }
     }
-    return suggestions;
+    return { ...suggestions, [submitterField]: accountSuggestions[submitterField] ?? [] };
   },
 
   async getLatestOperationReport() {
@@ -401,7 +422,7 @@ export const reportFormsService = {
   },
 
   async getOperationFormOptions() {
-    const [teams, responders, vehicles, operationNatures] = await Promise.all([
+    const [teams, responders, vehicles] = await Promise.all([
       prisma.responseTeam.findMany({
         where: { isArchived: false },
         orderBy: { team_name: "asc" },
@@ -417,17 +438,14 @@ export const reportFormsService = {
         orderBy: { vehicle_name: "asc" },
         select: { vehicle_id: true, vehicle_name: true, plate_number: true, current_odometer: true },
       }),
-      prisma.operationNature.findMany({
-        where: { isActive: true },
-        orderBy: { name: "asc" },
-        select: { name: true },
-      }),
     ]);
 
-    return { teams, responders, vehicles, operationNatures };
+    return { teams, responders, vehicles, operationNatures: OPERATION_NATURES.map((name) => ({ name })) };
   },
 
-  async createOperation(form: OperationReportInput, files: UploadedFile[], submittedBy: string | null) {
+  async createOperation(form: OperationReportInput, files: UploadedFile[], owner: ReportPinOwner) {
+    const submittedBy = owner.ownerId;
+    const status = getSubmissionStatus(owner.ownerRole);
     const teamIds = form.operationDetails.teamAssigned;
     const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
     const [teams, responders, linkedInventoryItems] = await Promise.all([
@@ -508,13 +526,15 @@ export const reportFormsService = {
       }
       const operation = await transaction.operationLog.create({
         data: {
+          status,
+          validated_by: status === "VALIDATED" ? submittedBy : null,
           team_id: teamId,
           operation_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
           name_of_caller: formatPersonName(form.operationDetails.nameOfCaller),
           nature_of_operation: form.operationDetails.natureOfOperation,
           event_description: form.operationDescription.description,
           submitted_by: submittedBy,
-          submitter_name: form.operationDetails.submitterName.trim(),
+          submitter_name: owner.ownerName,
           teamAssignments: {
             create: teamIds.map((teamId) => ({ team_id: teamId })),
           },
@@ -546,6 +566,7 @@ export const reportFormsService = {
           },
           dispatches: {
             create: {
+              status,
               dispatch_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
               submitted_by: submittedBy,
               vehicle_id: vehicle?.vehicle_id ?? null,
@@ -572,6 +593,12 @@ export const reportFormsService = {
         },
       });
 
+      if (status === "VALIDATED") {
+        await decrementOperationInventory(transaction, operation.operation_id, submittedBy);
+        await transaction.operationLogEdit.create({
+          data: { operation_id: operation.operation_id, admin_id: submittedBy, edit_notes: "Automatically validated on submission using the submitter’s report PIN." },
+        });
+      }
       return operation;
     });
   },
@@ -579,9 +606,11 @@ export const reportFormsService = {
   async createPatient(
     form: PatientReportInput,
     files: UploadedFile[],
-    submittedBy: string | null,
+    owner: ReportPinOwner,
     formImage: UploadedFile | null = null,
   ) {
+    const submittedBy = owner.ownerId;
+    const status = getSubmissionStatus(owner.ownerRole);
     const [responders, vehicle] = await Promise.all([
       prisma.user.findMany({
         where: {
@@ -625,7 +654,7 @@ export const reportFormsService = {
        if (vehicle && typeof dispatch.odometerIn === "number" && typeof dispatch.odometerOut === "number") {
          await saveVehicleOdometerFromDispatch(transaction, vehicle.vehicle_id, dispatch.odometerIn, dispatch.odometerOut);
        }
-      return transaction.patient.create({
+      const patientRecord = await transaction.patient.create({
       data: {
         full_name: patientFullName,
         birthday: new Date(`${patientDetails.birthdate}T00:00:00`),
@@ -641,8 +670,8 @@ export const reportFormsService = {
             log_date: reportDateTime,
             type_of_request: responderDetails.typeOfRequest,
             submitted_by: submittedBy,
-            submitter_name: responderDetails.submitterName,
-            status: "PENDING",
+            submitter_name: owner.ownerName,
+            status,
             name_of_caller: formatPersonName(responderDetails.caller) || null,
             bp: firstAidHospital.bp || null,
             pr: firstAidHospital.pr || null,
@@ -661,9 +690,10 @@ export const reportFormsService = {
             },
             dispatches: {
               create: {
+                status,
                 dispatch_date: reportDateTime,
                 submitted_by: submittedBy,
-                submitter_name: responderDetails.submitterName,
+                submitter_name: owner.ownerName,
                  vehicle_id: vehicle?.vehicle_id ?? null,
                  vehicle_name: dispatch.vehicle === "other" ? dispatch.vehicleOther?.trim() ?? null : null,
                 driver_name: dispatch.driver || null,
@@ -686,6 +716,12 @@ export const reportFormsService = {
       },
       include: { patientLogs: true, images: true },
       });
+      const patientLog = patientRecord.patientLogs[0];
+      if (!patientLog) throw new ConflictError("Patient report could not be created.");
+      if (status === "VALIDATED") {
+        await deductPatientInventory(transaction, patientLog.patient_log_id, form.inventory, submittedBy);
+      }
+      return patientRecord;
     });
 
     const patientLog = record.patientLogs[0];

@@ -51,7 +51,7 @@ export default function PatientStep1({
           <CommonInput
             variant="compact"
             label="Name of Submitter"
-            placeholder="Place holder"
+            placeholder="Type an account name"
             value={responderDetails.submitterName}
             onChange={(e) => onResponderDetailsChange({ submitterName: e.target.value })}
             errorMessage={errors.submitterName}

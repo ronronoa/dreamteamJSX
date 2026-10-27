@@ -1,3 +1,5 @@
+import type { ReportPinOwner } from "./pin.service";
+import { getSubmissionStatus } from "./reportReviewWorkflow";
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@/generated/prisma/client"
 import type { Role } from "@/generated/prisma/enums"
@@ -205,7 +207,9 @@ export const vehicularDispatchReportService = {
     }
   },
 
-  async create(form: VehicularDispatchReportInput, submittedBy: string | null) {
+  async create(form: VehicularDispatchReportInput, owner: ReportPinOwner) {
+    const submittedBy = owner.ownerId;
+    const status = getSubmissionStatus(owner.ownerRole);
     const [vehicle, responders] = await Promise.all([
       form.dispatch.vehicle === "other" || form.dispatch.vehicle === "none"
         ? Promise.resolve(null)
@@ -244,10 +248,10 @@ export const vehicularDispatchReportService = {
       return transaction.vehicularDispatch.create({
       data: {
         dispatch_date: getFormDateTime(form.details.date, form.details.time),
-        submitter_name: form.details.submitterName,
+        submitter_name: owner.ownerName,
         transfers: form.details.transfers.map((transfer) => transfer === "Drop-Off" ? "DROP_OFF" : "PICK_UP"),
         dispatch_type: form.details.transfers[0] === "Drop-Off" ? "DROP_OFF" : form.details.transfers[0] === "Pick-Up" ? "PICK_UP" : null,
-        status: "PENDING",
+        status,
         submitted_by: submittedBy,
         vehicle_id: vehicle?.vehicle_id ?? null,
         vehicle_name: form.dispatch.vehicle === "other" ? form.dispatch.vehicleOther?.trim() ?? null : null,

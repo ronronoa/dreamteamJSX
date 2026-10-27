@@ -60,10 +60,17 @@ enum DispatchType {
 model User {
   user_id           String    @id @default(uuid())
   name              String
+  firstName         String?
+  lastName          String?
+  middleInitial     String?
+  suffix            String?
   username          String    @unique
   email             String?   @unique
-  passwordHash      String
+  passwordHash      String?
+  mustChangePassword Boolean @default(false)
+  pinEncrypted      String?
   pinHash           String?
+  pinLookupHash     String?   @unique
   pinFailedAttempts Int       @default(0)
   pinLockedUntil    DateTime?
   role              Role      @default(MEMBER)

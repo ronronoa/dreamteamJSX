@@ -86,8 +86,8 @@ export const vehicularDispatchReportController = {
     try {
       const pinResult = VerifyPinSchema.safeParse({ pin: req.body.pinNumber })
       if (!pinResult.success) {
-        throw new ValidationError("Enter a valid 4-6 digit PIN.", {
-          pinNumber: ["Enter a valid 4-6 digit PIN."],
+        throw new ValidationError("Enter your four-digit report PIN.", {
+          pinNumber: ["Enter your four-digit report PIN."],
         })
       }
       const pinUsage = await pinService.verifyReportFormPin(pinResult.data)
@@ -102,8 +102,9 @@ export const vehicularDispatchReportController = {
         throw new ValidationError("Review the vehicular dispatch fields and try again.", fields)
       }
 
-      const dispatch = await vehicularDispatchReportService.create(parsedForm.data, req.user?.userId ?? null)
-      res.locals["activityActorName"] = parsedForm.data.details.submitterName
+      const dispatch = await vehicularDispatchReportService.create(parsedForm.data, pinUsage)
+      res.locals["activityActorId"] = pinUsage.ownerId
+      res.locals["activityActorName"] = pinUsage.ownerName
       res.locals["activityRecordId"] = dispatch.dispatch_id
       res.locals["activityPinType"] = pinUsage.type
       res.locals["activityPinOwnerId"] = pinUsage.ownerId

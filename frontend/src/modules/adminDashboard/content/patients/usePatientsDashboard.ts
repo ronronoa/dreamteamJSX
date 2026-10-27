@@ -108,7 +108,7 @@ export function usePatientsDashboard() {
     { label: "Most common type of request", value: getMostCommonRequest(currentMonthRows), sub: "For this month" },
   ];
 
-  const canReview = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReview = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY" || role === "TEAM_LEADER";
   const canReject = canReview;
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getTodayDateInputValue } from "@/shared/utils/date";
+import { PatientInventorySchema } from "./patientInventory.schema";
 
 const personNameSchema = z.object({
   surname: z.string().trim().max(80),
@@ -88,13 +89,7 @@ export const PatientReportSchema = z.object({
   waiverForm: z.object({
     description: z.string().trim().max(10000).default(""),
   }).default({ description: "" }),
-  inventory: z.array(z.object({
-    id: z.string().max(100),
-    itemName: z.string().trim().min(1).max(120),
-    quantity: z.string().trim().min(1).max(80),
-    inventoryItemId: z.uuid().optional(),
-    unit: z.string().max(40).optional(),
-  })).max(100),
+  inventory: PatientInventorySchema,
 }).refine((form) => form.firstAidHospital.hospitalName.length > 0, {
   path: ["firstAidHospital", "hospitalName"],
   message: "Hospital name is required.",

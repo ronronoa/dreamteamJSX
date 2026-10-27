@@ -40,7 +40,7 @@ export default function VehicularStep1({
           <CommonInput
             variant="compact"
             label="Name of Submitter"
-            placeholder="Enter submitter name"
+            placeholder="Type an account name"
             value={details.submitterName}
             onChange={(e) => onDetailsChange({ submitterName: e.target.value })}
             errorMessage={errors["details.submitterName"]}

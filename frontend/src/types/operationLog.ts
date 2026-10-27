@@ -39,6 +39,7 @@ export type OperationDetails = {
   date: string
   time: string
   natureOfOperation: string
+  natureOfOperationOther?: string
   nameOfCaller: PersonName
   teamAssigned: string[]
   responders: string[]

@@ -39,7 +39,7 @@ function parseJsonField(value: unknown, fieldName: string) {
 function getPin(req: Request) {
   const parsed = VerifyPinSchema.safeParse({ pin: req.body.pinNumber });
   if (!parsed.success) {
-    throw new ValidationError("Enter a valid 4-6 digit PIN.", { pinNumber: ["Enter a valid 4-6 digit PIN."] });
+    throw new ValidationError("Enter your four-digit report PIN.", { pinNumber: ["Enter your four-digit report PIN."] });
   }
   return parsed.data;
 }
@@ -141,8 +141,9 @@ export const reportFormsController = {
         throw new ValidationError("Review the operation report fields and try again.", fields);
       }
       const files = (req.files ?? []) as Express.Multer.File[];
-      const record = await reportFormsService.createOperation(parsedForm.data, files, req.user?.userId ?? null);
-      res.locals["activityActorName"] = parsedForm.data.operationDetails.submitterName.trim() || "Report submitter";
+      const record = await reportFormsService.createOperation(parsedForm.data, files, pinUsage);
+      res.locals["activityActorId"] = pinUsage.ownerId;
+      res.locals["activityActorName"] = pinUsage.ownerName;
       res.locals["activityRecordId"] = record.operation_id;
       res.locals["activityPinType"] = pinUsage.type;
       res.locals["activityPinOwnerId"] = pinUsage.ownerId;
@@ -174,10 +175,11 @@ export const reportFormsController = {
       const record = await reportFormsService.createPatient(
         parsedForm.data,
         files,
-        req.user?.userId ?? null,
+        pinUsage,
         formImage,
       );
-      res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
+      res.locals["activityActorId"] = pinUsage.ownerId;
+      res.locals["activityActorName"] = pinUsage.ownerName;
       res.locals["activityRecordId"] = record.patient_log_id;
       res.locals["activityPinType"] = pinUsage.type;
       res.locals["activityPinOwnerId"] = pinUsage.ownerId;

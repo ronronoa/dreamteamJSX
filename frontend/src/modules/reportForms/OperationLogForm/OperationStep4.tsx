@@ -8,6 +8,7 @@ import type { OperationLogData, Person, PersonName } from "../../../types/operat
 import type { OperationFormOptions } from "@/api/operationForm"
 import type { FormErrors } from "./formValidation"
 import { useState } from "react"
+import { getOperationNature } from "@/utils/operationNature"
 
 type OperationStep4Props = {
   formData: OperationLogData
@@ -52,7 +53,7 @@ export default function OperationStep4({ formData, options, onEditStep, errors }
             <SummaryField label="Submitter Name" value={operationDetails.submitterName} />
             <SummaryField label="Date" value={operationDetails.date} />
             <SummaryField label="Time" value={operationDetails.time} />
-            <SummaryField label="Nature of Operation" value={operationDetails.natureOfOperation} />
+            <SummaryField label="Nature of Operation" value={getOperationNature(operationDetails)} />
             <SummaryField label="Caller" value={formatPersonName(operationDetails.nameOfCaller)} />
             <SummaryField label="Team Assigned" value={teamNames.join(", ")} />
             <SummaryField label="Responders" value={responderNames.join(", ")} />

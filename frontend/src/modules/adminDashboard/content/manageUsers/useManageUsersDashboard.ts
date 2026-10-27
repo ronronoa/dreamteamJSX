@@ -8,7 +8,6 @@ import {
   deactivateManagedUser,
   fetchManagedUsers,
   fetchTeams,
-  resetManagedUserPassword,
   updateManagedUser,
   updateTeam,
   type TeamOption,
@@ -28,6 +27,7 @@ export function useManageUsersDashboard() {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [issuedPin, setIssuedPin] = useState<{ name: string; pin: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
   const [deactivateTarget, setDeactivateTarget] = useState<ManagedUser | null>(null);
@@ -123,17 +123,25 @@ export function useManageUsersDashboard() {
       if (selectedUser) {
         await updateManagedUser(accessToken, selectedUser.id, {
           name: values.name,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          middleInitial: values.middleInitial,
+          suffix: values.suffix,
           username: values.username,
           email: values.email,
           role: values.role,
           phone: values.phone,
           isActive: values.isActive,
           team_id: values.team_id,
+          ...(values.pin ? { pin: values.pin } : {}),
+          ...(values.password ? { password: values.password } : {}),
         });
-        if (values.password) await resetManagedUserPassword(accessToken, selectedUser.id, values.password);
         setSuccessMessage("User account updated.");
       } else {
-        await createManagedUser(accessToken, values);
+        const result = await createManagedUser(accessToken, values);
+        if (result.generatedPin) {
+          setIssuedPin({ name: result.user.name, pin: result.generatedPin });
+        }
         setSuccessMessage("User account created.");
       }
       setModalOpen(false);
@@ -215,7 +223,7 @@ export function useManageUsersDashboard() {
   return {
     session, isDepartmentHead, users, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
-    modalOpen, setModalOpen, submitting, modalError, setModalError, deactivateTarget,
+    issuedPin, setIssuedPin, modalOpen, setModalOpen, submitting, modalError, setModalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
     teamToDelete, setTeamToDelete, teamSubmitting, teamError, setTeamError,
     visibleUsers, filteredUsers, activeCount, administratorCount, canManageTeams,

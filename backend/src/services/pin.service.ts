@@ -1,34 +1,71 @@
 import argon2 from "argon2";
-import { UnauthorizedError } from "@/shared/errors/app-error";
+import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
+import { randomInt } from "node:crypto";
+import { ReportPinSchema } from "@/schemas/pin.schema";
+import { encryptPin, decryptPin } from "@/utils/pin-encryption";
+import { getPinLookupHash } from "@/utils/report-pin";
+import { ConflictError, ValidationError, UnauthorizedError } from "@/shared/errors/app-error";
 import type { SetPinInput, VerifyPinInput } from "@/types/pin.types";
 import { prisma } from "@/lib/prisma";
 
 const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 15;
+const PIN_SPACE_SIZE = 10_000;
 
 export const pinService = {
-  async setGlobalPin(userId: string, pin: string) {
-    const pinHash = await argon2.hash(pin)
-    await prisma.systemSetting.upsert({
-      where: { setting_key: "security.globalPinHash" },
-      create: { setting_key: "security.globalPinHash", value: pinHash, updated_by: userId },
-      update: { value: pinHash, updated_by: userId },
-    })
-    return { success: true }
+  async setGlobalPin(_userId: string, _pin: string) {
+    throw new ConflictError("Shared PINs are no longer supported. Assign each user a personal report PIN in Manage Users.");
+  },
+
+  async generatePin() {
+    const owners = await prisma.user.findMany({
+      where: { pinLookupHash: { not: null } },
+      select: { pinLookupHash: true },
+    });
+    const assignedHashes = new Set(owners.map((owner) => owner.pinLookupHash));
+    const availablePins: string[] = [];
+    for (let number = 0; number < PIN_SPACE_SIZE; number += 1) {
+      const candidate = String(number).padStart(4, "0");
+      if (!assignedHashes.has(getPinLookupHash(candidate))) availablePins.push(candidate);
+    }
+    if (availablePins.length === 0) {
+      throw new ConflictError("All 10,000 four-digit PINs are assigned. Increase the PIN length before adding more users.");
+    }
+    return availablePins[randomInt(availablePins.length)]!;
+  },
+
+  async preparePin(pin: string) {
+    const parsed = ReportPinSchema.safeParse(pin);
+    if (!parsed.success) throw new ValidationError(parsed.error.issues[0]!.message);
+    return {
+      pinHash: await argon2.hash(parsed.data),
+      pinEncrypted: encryptPin(parsed.data),
+      pinLookupHash: getPinLookupHash(parsed.data),
+      pinFailedAttempts: 0,
+      pinLockedUntil: null,
+    };
+  },
+
+  async revealPin(userId: string) {
+    const user = await prisma.user.findUnique({ where: { user_id: userId }, select: { pinEncrypted: true, role: true } });
+    if (user?.role === "MEMBER") throw new ValidationError("Members do not have report PINs.");
+    if (!user?.pinEncrypted) throw new ValidationError("This older PIN cannot be viewed. Assign a new PIN to this user.");
+    return decryptPin(user.pinEncrypted);
   },
 
   async setPin(userId: string, data: SetPinInput) {
-    const pinHash = await argon2.hash(data.pin);
-
-    await prisma.user.update({
-      where: { user_id: userId },
-      data: {
-        pinHash,
-        pinFailedAttempts: 0,
-        pinLockedUntil: null,
-      },
-    });
-
+    const user = await prisma.user.findUnique({ where: { user_id: userId } });
+    if (!user?.isActive) throw new UnauthorizedError("This account is inactive or no longer exists.");
+    if (user.role === "MEMBER") throw new ValidationError("Members do not have report PINs.");
+    const credentials = await this.preparePin(data.pin);
+    try {
+      await prisma.user.update({ where: { user_id: userId }, data: credentials });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictError("This report PIN is already assigned to another user.");
+      }
+      throw error;
+    }
     return { success: true };
   },
 
@@ -37,12 +74,16 @@ export const pinService = {
       where: { user_id: userId },
     });
 
-    if (!user) {
+    if (!user || !user.isActive || user.role === "MEMBER") {
       throw new UnauthorizedError("User not found");
     }
 
-    if (!user.pinHash) {
+    if (!user.pinHash || !user.pinLookupHash) {
       throw new UnauthorizedError("PIN not set. Please set a PIN first.");
+    }
+
+    if (user.mustChangePassword) {
+      throw new UnauthorizedError("Sign in and change your default password before using your report PIN.");
     }
 
     if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
@@ -95,56 +136,22 @@ export const pinService = {
   },
 
   async verifyReportFormPin(data: VerifyPinInput) {
-    const globalPinSetting = await prisma.systemSetting.findUnique({
-      where: { setting_key: "security.globalPinHash" },
-      select: { value: true },
-    })
-    if (globalPinSetting) {
-      if (await argon2.verify(globalPinSetting.value, data.pin)) {
-        return {
-          valid: true,
-          type: "GLOBAL" as const,
-          ownerId: null,
-          ownerName: null,
-          ownerRole: null,
-        };
-      }
-      throw new UnauthorizedError("Invalid global PIN.")
-    }
-
-    const pinOwners = await prisma.user.findMany({
-      where: {
-        isActive: true,
-        role: { not: "MEMBER" },
-        pinHash: { not: null },
-        OR: [{ pinLockedUntil: null }, { pinLockedUntil: { lte: new Date() } }],
-      },
-      select: { user_id: true, name: true, role: true, pinHash: true },
+    const pin = ReportPinSchema.safeParse(data.pin);
+    if (!pin.success) throw new UnauthorizedError("Invalid report PIN.");
+    const owner = await prisma.user.findUnique({
+      where: { pinLookupHash: getPinLookupHash(pin.data) },
+      select: { user_id: true, name: true, role: true, isActive: true },
     });
-    if (pinOwners.length === 0) {
-      throw new UnauthorizedError("A report PIN has not been set by an administrator yet.");
-    }
-
-    for (const pinOwner of pinOwners) {
-      if (pinOwner.pinHash && await argon2.verify(pinOwner.pinHash, data.pin)) {
-        await prisma.systemSetting.upsert({
-          where: { setting_key: "security.globalPinHash" },
-          create: {
-            setting_key: "security.globalPinHash",
-            value: pinOwner.pinHash,
-            updated_by: pinOwner.user_id,
-          },
-          update: {},
-        });
-        return {
-          valid: true,
-          type: "USER" as const,
-          ownerId: pinOwner.user_id,
-          ownerName: pinOwner.name,
-          ownerRole: pinOwner.role,
-        };
-      }
-    }
-    throw new UnauthorizedError("Invalid report PIN.");
+    if (!owner?.isActive || owner.role === "MEMBER") throw new UnauthorizedError("Invalid report PIN.");
+    await this.verifyPin(owner.user_id, { pin: pin.data });
+    return {
+      valid: true,
+      type: "USER" as const,
+      ownerId: owner.user_id,
+      ownerName: owner.name,
+      ownerRole: owner.role,
+    };
   },
 };
+
+export type ReportPinOwner = Awaited<ReturnType<typeof pinService.verifyReportFormPin>>;

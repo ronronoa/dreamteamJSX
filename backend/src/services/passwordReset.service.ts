@@ -50,11 +50,15 @@ async function sendResetCodeEmail(email: string, name: string, code: string) {
 
 export const passwordResetService = {
   async requestCode(emailAddress: string) {
+    if (!env.FORGET_PASS_EMAIL || !env.FORGET_PASS_EMAIL_APP_PASS) {
+      throw new InternalError("Password reset email is not configured. Contact your administrator.");
+    }
     const email = emailAddress.trim().toLowerCase();
     const user = await prisma.user.findFirst({
       where: {
         email: { equals: email, mode: "insensitive" },
         isActive: true,
+        passwordHash: { not: null },
       },
       select: { user_id: true, name: true, email: true },
     });
@@ -91,7 +95,7 @@ export const passwordResetService = {
   async resetPassword(emailAddress: string, code: string, newPassword: string) {
     const email = emailAddress.trim().toLowerCase();
     const user = await prisma.user.findFirst({
-      where: { email: { equals: email, mode: "insensitive" }, isActive: true },
+      where: { email: { equals: email, mode: "insensitive" }, isActive: true, passwordHash: { not: null } },
       select: { user_id: true, role: true },
     });
     if (!user) throw new UnauthorizedError("The reset request is invalid or expired.");
@@ -147,7 +151,7 @@ export const passwordResetService = {
 
       const updated = await transaction.user.update({
         where: { user_id: user.user_id },
-        data: { passwordHash, last_active_at: new Date() },
+        data: { passwordHash, mustChangePassword: false, last_active_at: new Date() },
       });
       await transaction.refreshToken.deleteMany({ where: { userId: user.user_id } });
       await transaction.refreshToken.create({

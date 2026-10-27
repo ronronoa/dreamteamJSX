@@ -8,6 +8,10 @@ export type Role =
 export interface ManagedUser {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleInitial?: string | null;
+  suffix?: string | null;
   username: string;
   profileImageUrl: string | null;
   email: string | null;
@@ -35,6 +39,7 @@ export interface ManagedUser {
 
 export interface UserSession {
   user: {
+    mustChangePassword: boolean;
     id: string;
     name: string;
     username: string;

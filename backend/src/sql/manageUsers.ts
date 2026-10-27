@@ -6,6 +6,10 @@ export async function listManagedUsers(actorRole: Role) {
   return prisma.$queryRaw<Array<{
     id: string;
     name: string;
+    firstName: string | null;
+    lastName: string | null;
+    middleInitial: string | null;
+    suffix: string | null;
     username: string;
     profileImageUrl: string | null;
     email: string | null;
@@ -20,6 +24,10 @@ export async function listManagedUsers(actorRole: Role) {
     SELECT
       u."user_id" AS id,
       u."name",
+      u."firstName",
+      u."lastName",
+      u."middleInitial",
+      u."suffix",
       u."username",
       u."profileImageUrl",
       u."email",

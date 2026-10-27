@@ -1,3 +1,4 @@
+import { REPORT_PIN_PATTERN, REPORT_PIN_REGEX, REPORT_PIN_HINT } from "@/utils/reportPin";
 import { useState } from "react";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import CommonInput from "@/components/common/widgets/CommonInput";
@@ -15,8 +16,8 @@ export default function ReportPinSection({ accessToken }: { accessToken: string 
     setError("");
     setMessage("");
 
-    if (!/^\d{4,6}$/.test(pin)) {
-      setError("PIN must contain 4 to 6 digits.");
+    if (!REPORT_PIN_REGEX.test(pin)) {
+      setError(REPORT_PIN_HINT);
       return;
     }
     if (pin !== confirmPin) {
@@ -47,7 +48,7 @@ export default function ReportPinSection({ accessToken }: { accessToken: string 
       <div>
         <h3 className="text-xs font-bold text-gray-900">Report form PIN</h3>
         <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-          Set or replace the PIN members use when submitting report forms. Your current PIN is
+          Set or replace your personal report PIN. Choose four digits that are not assigned to another user. Your current PIN is
           never shown.
         </p>
       </div>
@@ -57,9 +58,12 @@ export default function ReportPinSection({ accessToken }: { accessToken: string 
           id="profile-report-pin"
           label="New PIN"
           type="password"
+          pattern={REPORT_PIN_PATTERN}
+          placeholder="0482"
           inputMode="numeric"
           autoComplete="new-password"
-          maxLength={6}
+          maxLength={4}
+          minLength={4}
           value={pin}
           onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))}
           required
@@ -69,9 +73,12 @@ export default function ReportPinSection({ accessToken }: { accessToken: string 
           id="profile-confirm-report-pin"
           label="Confirm PIN"
           type="password"
+          pattern={REPORT_PIN_PATTERN}
+          placeholder="0482"
           inputMode="numeric"
           autoComplete="new-password"
-          maxLength={6}
+          maxLength={4}
+          minLength={4}
           value={confirmPin}
           onChange={(event) => setConfirmPin(event.target.value.replace(/\D/g, ""))}
           required

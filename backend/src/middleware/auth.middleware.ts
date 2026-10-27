@@ -5,6 +5,13 @@ import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/client";
 
 const ACTIVE_USER_HEARTBEAT_INTERVAL_MS = 60_000;
+const PASSWORD_CHANGE_ALLOWED_PATHS = new Set(["/auth/change-password", "/auth/logout"]);
+
+function requirePasswordChange(mustChangePassword: boolean, requestPath: string) {
+  if (mustChangePassword && !PASSWORD_CHANGE_ALLOWED_PATHS.has(requestPath)) {
+    throw new ForbiddenError("Change your default password before continuing.");
+  }
+}
 
 declare global {
   namespace Express {
@@ -30,11 +37,13 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   try {
     const user = await prisma.user.findUnique({
       where: { user_id: result.data.userId },
-      select: { user_id: true, role: true, isActive: true, last_active_at: true },
+      select: { user_id: true, role: true, isActive: true, passwordHash: true, last_active_at: true, mustChangePassword: true },
     });
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || !user.passwordHash) {
       return next(new UnauthorizedError("This account is inactive or no longer exists"));
     }
+
+    requirePasswordChange(user.mustChangePassword, req.path);
 
     const now = new Date();
     const lastActiveAt = user.last_active_at?.getTime() ?? 0;
@@ -66,9 +75,10 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
   try {
     const user = await prisma.user.findUnique({
       where: { user_id: result.data.userId },
-      select: { user_id: true, role: true, isActive: true },
+      select: { user_id: true, role: true, isActive: true, passwordHash: true, mustChangePassword: true },
     });
-    if (user?.isActive) {
+    if (user?.isActive && user.passwordHash) {
+      requirePasswordChange(user.mustChangePassword, req.path);
       req.user = { userId: user.user_id, role: user.role };
     }
     next();

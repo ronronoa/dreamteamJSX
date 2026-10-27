@@ -2,7 +2,13 @@ import { apiFetch } from "./apiFetch";
 import type { ManagedUser, Role } from "@/types/auth";
 
 export interface ManagedUserInput {
+  pin?: string;
+  password?: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  middleInitial?: string | null;
+  suffix?: string | null;
   username: string;
   email: string | null;
   role: Role;
@@ -60,8 +66,8 @@ export async function deleteTeam(accessToken: string, teamId: string) {
   return request<{ success: boolean }>(`/teams/${teamId}`, accessToken, { method: "DELETE" });
 }
 
-export async function createManagedUser(accessToken: string, input: ManagedUserInput & { password: string }) {
-  return request<{ user: ManagedUser }>("/users", accessToken, {
+export async function createManagedUser(accessToken: string, input: ManagedUserInput) {
+  return request<{ user: ManagedUser; generatedPin: string | null }>("/users", accessToken, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -83,4 +89,8 @@ export async function resetManagedUserPassword(accessToken: string, id: string, 
     method: "POST",
     body: JSON.stringify({ newPassword }),
   });
+}
+
+export async function revealManagedUserPin(accessToken: string, id: string) {
+  return request<{ pin: string }>(`/users/${id}/reveal-pin`, accessToken, { method: "POST" });
 }

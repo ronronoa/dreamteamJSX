@@ -105,6 +105,7 @@ export default function CommonInput({
       <div>
         <InputBase
           {...(props as InputBaseProps)}
+          isRequired={props.required}
           isInvalid={Boolean(errorMessage)}
           aria-invalid={Boolean(errorMessage)}
           aria-describedby={errorMessage ? `${props.id}-error` : props["aria-describedby"]}

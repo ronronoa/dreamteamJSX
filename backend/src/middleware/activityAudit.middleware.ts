@@ -40,7 +40,7 @@ export const activityAuditMiddleware: RequestHandler = (req, res, next) => {
     if (hasInventoryTransaction && res.statusCode < 400) return;
 
     const responseActorId = res.locals["activityActorId"];
-    const actorId = req.user?.userId ?? (typeof responseActorId === "string" ? responseActorId : undefined);
+    const actorId = typeof responseActorId === "string" ? responseActorId : req.user?.userId;
     const responseActorName = res.locals["activityActorName"];
     const actorName = typeof responseActorName === "string" ? responseActorName : undefined;
     const responseRecordId = res.locals["activityRecordId"];

@@ -32,6 +32,10 @@ export default function OperationStep1({
   optionsLoading,
   errors,
 }: OperationStep1Props) {
+  const nature = operationDetails.natureOfOperation;
+  const isKnownNature = options.operationNatures.some((option) => option.name === nature);
+  const selectedNature = nature && !isKnownNature ? "Other" : nature;
+  const otherNature = nature === "Other" ? operationDetails.natureOfOperationOther ?? "" : nature;
   const toggleTeam = (team: string) => {
     const isSelected = operationDetails.teamAssigned.includes(team)
     const updatedTeams = isSelected
@@ -56,7 +60,7 @@ export default function OperationStep1({
           <CommonInput
             variant="compact"
             label="Name of Submitter"
-            placeholder="Place holder"
+            placeholder="Type an account name"
             value={operationDetails.submitterName}
             onChange={(e) => onOperationDetailsChange({ submitterName: e.target.value })}
             errorMessage={errors["operationDetails.submitterName"]}
@@ -86,13 +90,23 @@ export default function OperationStep1({
           <CommonSelect
             variant="compact"
             label="Nature of Operation"
-            placeholder="Dropdown Menu"
+            placeholder="Choose an operation type"
             options={options.operationNatures.map((nature) => ({ label: nature.name, value: nature.name }))}
-            value={operationDetails.natureOfOperation}
-            onChange={(e) => onOperationDetailsChange({ natureOfOperation: e.target.value })}
+            value={selectedNature}
+            onChange={(e) => onOperationDetailsChange({ natureOfOperation: e.target.value, natureOfOperationOther: "" })}
             disabled={optionsLoading || options.operationNatures.length === 0}
             errorMessage={errors["operationDetails.natureOfOperation"]}
           />
+
+          {selectedNature === "Other" && <CommonInput
+            variant="compact"
+            label="Specify Nature of Operation"
+            placeholder="Enter the nature of operation"
+            value={otherNature}
+            maxLength={100}
+            onChange={(event) => onOperationDetailsChange({ natureOfOperation: "Other", natureOfOperationOther: event.target.value })}
+            errorMessage={errors["operationDetails.natureOfOperationOther"]}
+          />}
 
           <div>
             <label className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-lg font-medium text-slate-900">

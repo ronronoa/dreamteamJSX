@@ -1,3 +1,4 @@
+import { REPORT_PIN_PATTERN, REPORT_PIN_HINT } from "@/utils/reportPin";
 import { useState } from "react"
 import Modal from "../../../components/common/modals/Modal"
 import CommonButton from "../../../components/common/widgets/CommonButton"
@@ -84,12 +85,18 @@ export default function PinModal({
           autoComplete="new-password"
           icon={<Lock size={18} />}
           required
-          placeholder="Enter your PIN"
+          placeholder="0482"
+          inputMode="numeric"
+          pattern={REPORT_PIN_PATTERN}
+          minLength={4}
+          maxLength={4}
+          title={REPORT_PIN_HINT}
           value={pin}
-          onChange={(e) => setPin(e.target.value)}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
           disabled={loading}
         />
 
+        <p className="text-xs text-gray-600">Enter your personal report PIN. It identifies the account submitting this report.</p>
         {error && <p role="alert" className="whitespace-pre-line text-sm text-red-600">{error}</p>}
 
         <CommonButton
