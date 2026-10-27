@@ -11,6 +11,7 @@ import { scanPatientLogImage, type PatientFormOptions, type PatientLogOcrResult 
 import { useNavigate } from "react-router";
 import { ROUTES } from "@/routes";
 import OtherRespondersInput from "@/modules/reportForms/component/OtherRespondersInput";
+import UserAutocompleteInput from "@/modules/reportForms/component/UserAutocompleteInput";
 import {
   calculateAge,
   calculateBirthdateFromAge,
@@ -622,11 +623,18 @@ export default function CreateReportWithAI({
             </div>
 
             <div className="ai-scan-row ai-scan-checked-row grid grid-cols-[0.47fr_0.5fr_0.6fr_0.47fr] rounded-2xl gap-2 items-center bg-black/10 p-3">
-              <label className=" block text-lg font-bold text-slate-100">Checked By</label>
-              <CommonInput variant="compact" value={scanResult.checkedBy} onChange={(event) => updateTextField("checkedBy", event.target.value)} errorMessage={hasScanResult && !scanResult.checkedBy.trim() ? "Checked By is required to proceed." : undefined}/>
+              <label className="block text-lg font-bold text-slate-100">Checked By</label>
+              <UserAutocompleteInput
+                variant="compact"
+                className="min-w-0"
+                value={scanResult.checkedBy}
+                userNames={responderOptions.map((user) => user.name)}
+                onValueChange={(value) => updateTextField("checkedBy", value)}
+                errorMessage={hasScanResult && !scanResult.checkedBy.trim() ? "Checked By is required to proceed." : undefined}
+              />
 
-              <label className=" block text-lg font-bold text-slate-100">Hospital Representative</label>
-              <CommonInput variant="compact" value={scanResult.hospitalRepresentative} onChange={(event) => updateTextField("hospitalRepresentative", event.target.value)} errorMessage={missingFieldMessage(scanResult.hospitalRepresentative, "Hospital representative")}/>
+              <label className="block text-lg font-bold text-slate-100">Hospital Representative</label>
+              <CommonInput className="min-w-0" variant="compact" value={scanResult.hospitalRepresentative} onChange={(event) => updateTextField("hospitalRepresentative", event.target.value)} errorMessage={missingFieldMessage(scanResult.hospitalRepresentative, "Hospital representative")}/>
             </div>
 
           </div>
