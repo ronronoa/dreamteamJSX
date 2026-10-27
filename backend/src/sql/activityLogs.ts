@@ -29,6 +29,46 @@ export interface ActivityOverview {
   importantActionCount: number;
 }
 
+function buildActivityLogConditions(query: ActivityLogsQuery) {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`log."archivedAt" IS NULL`,
+    Prisma.sql`log."actor_name" <> 'Unauthenticated user'`,
+  ];
+
+  if (query.search) {
+    const searchPattern = `%${query.search}%`;
+    const searchableFields = [
+      Prisma.sql`log."activity_code" ILIKE ${searchPattern}`,
+      Prisma.sql`log."actor_name" ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."actor_username", '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."actor_id"::text, '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."actor_role"::text, '') ILIKE ${searchPattern}`,
+      Prisma.sql`log."module" ILIKE ${searchPattern}`,
+      Prisma.sql`log."action" ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."record_id", '') ILIKE ${searchPattern}`,
+      Prisma.sql`log."status" ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."details", '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."pin_type"::text, '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."pin_owner_id", '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."pin_owner_name", '') ILIKE ${searchPattern}`,
+      Prisma.sql`COALESCE(log."pin_owner_role", '') ILIKE ${searchPattern}`,
+    ];
+    conditions.push(Prisma.sql`(${Prisma.join(searchableFields, " OR ")})`);
+  }
+
+  if (query.module) conditions.push(Prisma.sql`log."module" = ${query.module}`);
+  if (query.role) conditions.push(Prisma.sql`COALESCE(log."actor_role"::text, 'Unknown') = ${query.role}`);
+  if (query.status) conditions.push(Prisma.sql`log."status" = ${query.status}`);
+  if (query.from) {
+    conditions.push(Prisma.sql`log."createdAt" >= (${query.from}::date::timestamp AT TIME ZONE ${ACTIVITY_TIME_ZONE})`);
+  }
+  if (query.to) {
+    conditions.push(Prisma.sql`log."createdAt" < ((${query.to}::date + 1)::timestamp AT TIME ZONE ${ACTIVITY_TIME_ZONE})`);
+  }
+
+  return Prisma.join(conditions, " AND ");
+}
+
 async function getNextActivityCode() {
   const rows = await prisma.$queryRaw<Array<{ sequence_value: string }>>(Prisma.sql`
     SELECT nextval('"ActivityLogCode_seq"')::text AS sequence_value
@@ -69,7 +109,8 @@ export async function createActivityLog(data: ActivityLogInput) {
 
 export async function listActivityLogs(query: ActivityLogsQuery) {
   const offset = (query.page - 1) * query.pageSize;
-  const [rows, statsRows] = await Promise.all([
+  const filteredConditions = buildActivityLogConditions(query);
+  const [rows, statsRows, matchingRows] = await Promise.all([
     prisma.$queryRaw<ActivityLogRow[]>`
       SELECT
         log."activity_code" AS id,
@@ -87,8 +128,7 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
         log."pin_owner_name" AS "pinOwnerName",
         log."pin_owner_role" AS "pinOwnerRole"
       FROM "ActivityLog" AS log
-      WHERE log."archivedAt" IS NULL
-        AND log."actor_name" <> 'Unauthenticated user'
+      WHERE ${filteredConditions}
       ORDER BY log."createdAt" DESC, log."activity_id" DESC
       LIMIT ${query.pageSize}
       OFFSET ${offset}
@@ -133,6 +173,11 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
       WHERE log."archivedAt" IS NULL
         AND log."actor_name" <> 'Unauthenticated user'
     `,
+    prisma.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(*)::int AS count
+      FROM "ActivityLog" AS log
+      WHERE ${filteredConditions}
+    `,
   ]);
 
   return {
@@ -146,6 +191,7 @@ export async function listActivityLogs(query: ActivityLogsQuery) {
     },
     page: query.page,
     pageSize: query.pageSize,
+    totalMatchingCount: matchingRows[0]?.count ?? 0,
   };
 }
 

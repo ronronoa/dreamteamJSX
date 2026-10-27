@@ -29,7 +29,7 @@ export function useAuth() {
     }
   }, [dispatch]);
 
-  async function logout() {
+  const logout = useCallback(async () => {
     dispatch(setLoading(true));
     try {
       await apiLogout();
@@ -37,7 +37,7 @@ export function useAuth() {
       dispatch(setSession(null));
       dispatch(setLoading(false));
     }
-  }
+  }, [dispatch]);
 
   function updateProfileSession(profile: UserProfileData) {
     dispatch(updateProfile(profile));

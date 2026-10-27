@@ -7,6 +7,7 @@ import {
   UpdateInventoryItemSchema,
 } from "@/schemas/inventory.schema";
 import { inventoryService } from "@/services/inventory.service";
+import { notificationsService } from "@/services/notifications.service";
 import { validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
 
@@ -43,7 +44,18 @@ export const inventoryController = {
     try {
       const { id } = validateOrThrow(InventoryItemIdSchema.safeParse(req.params));
       const data = validateOrThrow(UpdateInventoryItemSchema.safeParse(req.body));
-      const item = await inventoryService.update(id, data, req.user!.userId);
+      const { item, previousQuantity, previousMinimum } = await inventoryService.update(id, data, req.user!.userId);
+      const stockDroppedToLowThreshold =
+        data.stockQuantity !== undefined &&
+        item.stock_quantity < previousQuantity &&
+        previousQuantity > previousMinimum &&
+        item.stock_quantity <= item.minimum_quantity;
+
+      if (stockDroppedToLowThreshold) {
+        void notificationsService.createLowStockNotificationForItem(item).catch((error: unknown) => {
+          console.error("Could not create a low-stock notification:", error);
+        });
+      }
       res.status(200).json({ item });
     } catch (error) {
       next(error);

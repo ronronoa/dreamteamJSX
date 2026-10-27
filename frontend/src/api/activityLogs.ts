@@ -30,6 +30,16 @@ export interface ActivityLogPage {
   stats: ActivityLogStats;
   page: number;
   pageSize: number;
+  totalMatchingCount: number;
+}
+
+export interface ActivityLogFilters {
+  search?: string;
+  module?: string;
+  role?: string;
+  status?: "Success" | "Failed" | "Warning";
+  from?: string;
+  to?: string;
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -44,8 +54,14 @@ export async function fetchActivityLogs(
   accessToken: string,
   page: number,
   pageSize: number,
+  filters: ActivityLogFilters = {},
 ): Promise<ActivityLogPage> {
-  const response = await apiFetch(`/activity-logs?page=${page}&pageSize=${pageSize}`, {
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) query.set(key, value);
+  });
+
+  const response = await apiFetch(`/activity-logs?${query.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const result = await parseResponse<Omit<ActivityLogPage, "logs"> & {

@@ -140,6 +140,7 @@ export const authController = {
         });
       }
 
+      res.locals["activityActorName"] = parsed.data.identifier;
       const result = await authService.signIn(parsed.data);
       res.locals["activityActorId"] = result.user.id;
 

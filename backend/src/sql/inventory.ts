@@ -92,13 +92,15 @@ async function findActiveItemForUpdate(transaction: Prisma.TransactionClient, it
     item_name: string;
     unit: string;
     stock_quantity: number;
+    minimum_quantity: number;
   }>>(Prisma.sql`
     SELECT
       item."item_id",
       item."stock_quantity",
       item."item_code",
       item."item_name",
-      item."unit"
+      item."unit",
+      item."minimum_quantity"
     FROM "InventoryItem" AS item
     LEFT JOIN "InventoryArchive" AS archive ON archive."item_id" = item."item_id"
     WHERE item."item_id" = ${itemId}
@@ -229,7 +231,11 @@ export async function updateInventoryItem(itemId: string, data: UpdateInventoryI
       });
     }
 
-    return updatedItem;
+    return {
+      item: updatedItem,
+      previousQuantity: existingItem.stock_quantity,
+      previousMinimum: existingItem.minimum_quantity,
+    };
   });
 }
 

@@ -1,5 +1,5 @@
 import Detail from "../component/Detail";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Search } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import Modal from "@/components/common/modals/Modal";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
@@ -19,7 +19,9 @@ export default function ActivityLogs() {
   const {
     logs, stats, page, setPage, loading, busy, pageError, successMessage,
     archiveModalOpen, setArchiveModalOpen, selectedLog, setSelectedLog,
-    pageCount, statCards, handleArchive, handleExport, loadLogs,
+    pageCount, totalMatchingCount, search, moduleFilter, roleFilter, statusFilter, fromDate, toDate,
+    updateSearch, updateModuleFilter, updateRoleFilter, updateStatusFilter, updateFromDate, updateToDate,
+    statCards, handleArchive, handleExport, loadLogs,
   } = useActivityLogsDashboard();
 
   function getPinUsageLabel(log: (typeof logs)[number]) {
@@ -85,7 +87,7 @@ export default function ActivityLogs() {
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col">
               <h2 className="text-sm font-bold text-gray-900">Audit Ledger</h2>
-              <span className="text-xs text-gray-600/60">Latest activity first</span>
+              <span className="text-xs text-gray-600/60">Latest activity first · {totalMatchingCount.toLocaleString()} matching records</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -101,11 +103,63 @@ export default function ActivityLogs() {
           </div>
 
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div className="grid grid-cols-1 gap-3 border-b border-gray-100 bg-gray-50 p-3 sm:grid-cols-2 xl:grid-cols-7">
+              <label className="sm:col-span-2">
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">Search activity</span>
+                <span className="flex h-9 items-center gap-2 rounded-md border border-gray-200 bg-white px-3 focus-within:border-purple-400">
+                  <Search size={14} className="shrink-0 text-gray-400" />
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => updateSearch(event.target.value)}
+                    placeholder="User, action, record ID, details…"
+                    className="w-full bg-transparent text-xs text-gray-700 outline-none placeholder:text-gray-400"
+                  />
+                </span>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">Module</span>
+                <select value={moduleFilter} onChange={(event) => updateModuleFilter(event.target.value)} className="h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-purple-400">
+                  <option value="">All modules</option>
+                  {["Authentication", "Users", "Operations", "Patients", "Dispatch", "Inventory", "System"].map((module) => <option key={module} value={module}>{module}</option>)}
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">Role</span>
+                <select value={roleFilter} onChange={(event) => updateRoleFilter(event.target.value)} className="h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-purple-400">
+                  <option value="">All roles</option>
+                  {["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER", "MEMBER", "Unknown"].map((role) => <option key={role} value={role}>{ROLE_LABELS[role] ?? role}</option>)}
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">Status</span>
+                <select value={statusFilter} onChange={(event) => updateStatusFilter(event.target.value as typeof statusFilter)} className="h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-purple-400">
+                  <option value="">All statuses</option>
+                  <option value="Success">Success</option>
+                  <option value="Warning">Warning</option>
+                  <option value="Failed">Failed</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">From date</span>
+                <input type="date" value={fromDate} max={toDate || undefined} onChange={(event) => updateFromDate(event.target.value)} className="h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-purple-400" />
+              </label>
+
+              <label>
+                <span className="mb-1 block text-[11px] font-semibold text-gray-600">To date</span>
+                <input type="date" value={toDate} min={fromDate || undefined} onChange={(event) => updateToDate(event.target.value)} className="h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-purple-400" />
+              </label>
+            </div>
+
             <DataTable
               rows={logs}
               loading={loading}
               rowKey={(row) => row.id}
-              emptyMessage="No activity has been recorded yet."
+              emptyMessage={totalMatchingCount === 0 ? "No activity matches these filters." : "No activity has been recorded yet."}
               columns={[
                 { label: "ID", accessor: "id" },
                 { label: "Date", render: (row) => <DateCell date={row.date} /> },
