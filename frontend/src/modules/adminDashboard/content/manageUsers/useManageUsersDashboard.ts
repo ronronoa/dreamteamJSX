@@ -196,7 +196,7 @@ export function useManageUsersDashboard() {
     setSuccessMessage("");
     try {
       await deleteTeam(accessToken, teamToDelete.team_id);
-      setTeams((currentTeams) => currentTeams.filter((team) => team.team_id !== teamToDelete.team_id));
+      await loadUsers();
       setSuccessMessage(`${teamToDelete.team_name} team was deleted.`);
       setTeamToDelete(null);
     } catch (error) {
@@ -208,7 +208,7 @@ export function useManageUsersDashboard() {
   }
 
   return {
-    session, isDepartmentHead, users, teams, loading, pageError, successMessage, search, setSearch,
+    session, isDepartmentHead, users, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
     modalOpen, setModalOpen, submitting, modalError, setModalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,

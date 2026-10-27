@@ -4,6 +4,7 @@ import DataTable from "@/components/common/DataTable";
 import Modal from "@/components/common/modals/Modal";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import RefreshButton from "@/components/common/widgets/RefreshButton";
 import StatCard from "../component/StatCard";
 import TwoLineCell from "../component/TwoLineCell";
 import TableStatus from "../component/TableStatus";
@@ -18,7 +19,7 @@ export default function ActivityLogs() {
   const {
     logs, stats, page, setPage, loading, busy, pageError, successMessage,
     archiveModalOpen, setArchiveModalOpen, selectedLog, setSelectedLog,
-    pageCount, statCards, handleArchive, handleExport,
+    pageCount, statCards, handleArchive, handleExport, loadLogs,
   } = useActivityLogsDashboard();
 
   return (
@@ -76,6 +77,7 @@ export default function ActivityLogs() {
             </div>
 
             <div className="flex items-center gap-2">
+              <RefreshButton label="Refresh activity logs" loading={loading} onRefresh={() => loadLogs()} />
               <CommonButton compact variant="gray" disabled={busy || stats.totalCount === 0} onClick={() => setArchiveModalOpen(true)}>
                 Archive Activity Logs
               </CommonButton>

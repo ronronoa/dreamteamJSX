@@ -233,6 +233,7 @@ export function useOperationsDashboard() {
   return {
     role,
     loading,
+    loadRecords,
     busy,
     pageError,
     successMessage,

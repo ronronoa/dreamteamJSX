@@ -3,6 +3,7 @@ import UserAvatar from "@/components/common/widgets/UserAvatar";
 import { getProfilePhotoSource } from "@/api/profile";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import RefreshButton from "@/components/common/widgets/RefreshButton";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import EditUserModal from "@/components/common/modals/EditUserModal";
 import StatCard from "../component/StatCard";
@@ -15,7 +16,7 @@ import { useManageUsersDashboard } from "./manageUsers/useManageUsersDashboard";
 
 export default function ManageUsers() {
   const {
-    session, isDepartmentHead, users, teams, loading, pageError, successMessage, search, setSearch,
+    session, isDepartmentHead, users, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
     modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
@@ -40,7 +41,7 @@ export default function ManageUsers() {
         onClose={() => setTeamToDelete(null)}
         onConfirm={removeTeam}
         title={`Delete ${teamToDelete?.team_name ?? "this team"}?`}
-        description="This permanently deletes the team. Reassign its users first; teams referenced by operation records cannot be deleted."
+        description="This permanently deletes the team and unassigns its users. Teams referenced by operation records cannot be deleted."
         confirmLabel={teamSubmitting ? "Deleting…" : "Delete team"}
         variant="danger"
       />
@@ -124,6 +125,7 @@ export default function ManageUsers() {
               <select aria-label="Filter users by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600">
                 <option value="ALL">All statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option>
               </select>
+              <RefreshButton label="Refresh user accounts" loading={loading} onRefresh={loadUsers} />
             </div>
           </div>
 

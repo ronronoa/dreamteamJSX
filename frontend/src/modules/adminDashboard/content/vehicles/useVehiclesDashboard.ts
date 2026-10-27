@@ -60,6 +60,7 @@ export function useVehiclesDashboard() {
       setFleetLoading(false);
       return;
     }
+    setFleetLoading(true);
     try {
       setFleetVehicles(await fetchFleetVehicles(accessToken));
       setFleetError("");
@@ -341,6 +342,7 @@ export function useVehiclesDashboard() {
     setPlateNumber,
 
     fleetLoading,
+    loadFleet,
     savingVehicle,
     savingOdometerId,
     savingDetailsId,

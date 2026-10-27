@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { Check, ChevronRight, Filter, Pencil, RefreshCw, X } from "lucide-react"
+import { Check, ChevronRight, Filter, Pencil, X } from "lucide-react"
 import DataTable from "@/components/common/DataTable"
 import Modal from "@/components/common/modals/Modal"
 import AreYouSureModal from "@/components/common/modals/AreYouSure"
 import CommonButton from "@/components/common/widgets/CommonButton"
+import RefreshButton from "@/components/common/widgets/RefreshButton"
 import PinModal from "@/modules/reportForms/modal/PinModal"
 import type { VehicleDispatchRecord, VehicleLogStatus } from "@/api/vehicularDispatches"
 import { formatDuration } from "@/utils/dateTime"
@@ -178,11 +179,14 @@ export default function Vehicles() {
         {dashboard.successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{dashboard.successMessage}</p>}
 
         <section>
-          <div className="mb-3 flex items-center gap-3">
-            <h2 className="text-sm font-bold text-gray-900">Pending Approval Requests</h2>
-            <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-semibold text-pink-700">
-              {dashboard.pendingRows.length} {dashboard.pendingRows.length === 1 ? "request" : "requests"}
-            </span>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-bold text-gray-900">Pending Approval Requests</h2>
+              <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-semibold text-pink-700">
+                {dashboard.pendingRows.length} {dashboard.pendingRows.length === 1 ? "request" : "requests"}
+              </span>
+            </div>
+            <RefreshButton label="Refresh pending vehicle logs" loading={dashboard.dispatchLoading} onRefresh={dashboard.loadDispatchRecords} />
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <DataTable
@@ -238,9 +242,7 @@ export default function Vehicles() {
                   </div>
                 )}
               </div>
-              <button type="button" aria-label="Refresh vehicle logs" title="Refresh vehicle logs" onClick={() => void dashboard.loadDispatchRecords()} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">
-                <RefreshCw size={14} />
-              </button>
+              <RefreshButton label="Refresh vehicle logs" loading={dashboard.dispatchLoading} onRefresh={dashboard.loadDispatchRecords} />
             </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -271,8 +273,13 @@ export default function Vehicles() {
 
         <section className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="mb-4">
-            <h2 className="text-sm font-bold text-gray-900">Vehicle Fleet</h2>
-            <p className="mt-1 text-xs text-gray-500">Register vehicles available for dispatch.</p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Vehicle Fleet</h2>
+                <p className="mt-1 text-xs text-gray-500">Register vehicles available for dispatch.</p>
+              </div>
+              <RefreshButton label="Refresh vehicle fleet" loading={dashboard.fleetLoading} onRefresh={dashboard.loadFleet} />
+            </div>
           </div>
           {dashboard.canManageFleet && (
             <form onSubmit={dashboard.handleAddVehicle} className="mb-5 flex flex-wrap items-end gap-3">

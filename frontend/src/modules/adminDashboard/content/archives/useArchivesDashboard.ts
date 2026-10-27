@@ -91,6 +91,6 @@ export function useArchivesDashboard() {
     records, totalMatching, stats, page, setPage, search, sourceType,
     filterOpen, setFilterOpen, loading, pageError, restoreTarget, setRestoreTarget,
     selectedRecord, setSelectedRecord, restoring, pageCount, statCards,
-    handleRestore, updateSearch, updateSourceType,
+    handleRestore, updateSearch, updateSourceType, loadArchives,
   };
 }

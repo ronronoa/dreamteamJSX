@@ -136,11 +136,6 @@ export const operationService = {
 
         if (team.isArchived) return { success: true };
 
-        const assignedUserCount = await transaction.user.count({ where: { team_id: teamId } });
-        if (assignedUserCount > 0) {
-          throw new ConflictError(`This team is assigned to ${assignedUserCount} user${assignedUserCount === 1 ? "" : "s"}. Reassign those users before deleting it.`);
-        }
-
         const [operationCount, assignmentCount] = await Promise.all([
           transaction.operationLog.count({ where: { team_id: teamId } }),
           transaction.operationTeamAssignment.count({ where: { team_id: teamId } }),
@@ -149,6 +144,10 @@ export const operationService = {
           throw new ConflictError("This team is referenced by operation records and cannot be deleted.");
         }
 
+        await transaction.user.updateMany({
+          where: { team_id: teamId },
+          data: { team_id: null },
+        });
         await transaction.responseTeam.delete({ where: { team_id: teamId } });
         return { success: true };
       });

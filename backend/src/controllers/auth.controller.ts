@@ -6,9 +6,8 @@ import { authService } from "@/services/auth.service";
 import { env } from "@/config/env";
 import { passwordResetService } from "@/services/passwordReset.service";
 
-const REFRESH_COOKIE = "refreshToken";
-const LEGACY_REFRESH_COOKIE = "refresh_token";
-const LEGACY_REFRESH_COOKIE_PATHS = ["/", "/api", "/api/auth"];
+// const REFRESH_COOKIE = "refreshToken";
+const REFRESH_COOKIE = "__session";
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const isProduction = env.NODE_ENV === "production";
 const REFRESH_COOKIE_OPTIONS = {
@@ -38,8 +37,6 @@ function requireTrustedRefreshRequest(req: Request) {
 }
 
 function setRefreshCookie(res: Response, token: string) {
-  clearLegacyRefreshCookies(res);
-
   // Clear the old narrower path so clients do not send duplicate cookies after upgrading.
   // Deletion cookies need the same cross-site attributes as the cookie being replaced.
   res.clearCookie(REFRESH_COOKIE, {
@@ -64,16 +61,6 @@ function clearRefreshCookie(res: Response) {
     ...REFRESH_COOKIE_OPTIONS,
     path: "/api/auth",
   });
-  clearLegacyRefreshCookies(res);
-}
-
-function clearLegacyRefreshCookies(res: Response) {
-  for (const path of LEGACY_REFRESH_COOKIE_PATHS) {
-    res.clearCookie(LEGACY_REFRESH_COOKIE, {
-      ...REFRESH_COOKIE_OPTIONS,
-      path,
-    });
-  }
 }
 
 function getFirstZodIssue(error: z.ZodError): z.ZodIssue {

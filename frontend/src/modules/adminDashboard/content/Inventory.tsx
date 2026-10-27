@@ -1,6 +1,7 @@
 import { Filter, Pencil } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import RefreshButton from "@/components/common/widgets/RefreshButton";
 import AddInventoryModal from "@/components/common/modals/AddInventoryModal";
 import InventoryItemCell from "../component/InventoryItemCell";
 import StatCard from "../component/StatCard";
@@ -11,7 +12,7 @@ import { useInventoryDashboard } from "./inventory/useInventoryDashboard";
 
 export default function Inventory() {
   const {
-    loading, pageError, modalError, search, setSearch, setPage,
+    loading, loadInventory, pageError, modalError, search, setSearch, setPage,
     addInventoryModalOpen, editingItem, nextItemCode, filteredItems, pageCount,
     currentPage, pageItems, stats, handleCreateItem, openAddInventoryModal,
     openEditInventoryModal, closeInventoryModal, getInitialValues,
@@ -60,6 +61,7 @@ export default function Inventory() {
               >
                 <Filter size={14} />
               </button>
+              <RefreshButton label="Refresh inventory" loading={loading} onRefresh={loadInventory} />
             </div>
           </div>
 

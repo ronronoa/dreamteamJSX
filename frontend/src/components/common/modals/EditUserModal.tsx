@@ -64,7 +64,10 @@ export default function EditUserModal({
   }
 
   const inputClassName = "!h-10 !rounded-lg !border !border-gray-300 !bg-white !py-2 !pl-3 !text-[13px]";
-  const teamOptions = teams.map((team) => ({ label: team.team_name, value: team.team_id }));
+  const teamOptions = [
+    { label: "Unassigned", value: "" },
+    ...teams.map((team) => ({ label: team.team_name, value: team.team_id })),
+  ];
   const availableRoleOptions = allowSuperAdminRole
     ? roleOptions
     : roleOptions.filter((option) => option.value !== "SUPER_ADMIN");
@@ -91,14 +94,14 @@ export default function EditUserModal({
             <CommonInput id="user-email" label="Email (optional)" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" className={inputClassName} />
             <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)} options={availableRoleOptions} />
             <CommonInput id="user-phone" label="Mobile" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={20} pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}" placeholder="09171234567 or +639171234567" className={inputClassName} />
-            <CommonSelect id="user-team" label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} placeholder="No team assigned" options={teamOptions} />
-            <CommonSelect
+            <CommonSelect id="user-team" label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
+            {user && <CommonSelect
               id="user-status"
               label="Account status"
               value={isActive ? "active" : "inactive"}
               onChange={(event) => setIsActive(event.target.value === "active")}
               options={[{ label: "Active", value: "active" }, { label: "Inactive", value: "inactive" }]}
-            />
+            />}
             <div className="sm:col-span-2">
               <CommonInput
                 id="user-password"

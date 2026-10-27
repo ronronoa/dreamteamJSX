@@ -15,6 +15,7 @@ import {
   pieConfig,
 } from "./dashboard/dashboardData"
 import { Card, LegendDot, ProgressRow, StatCard } from "./dashboard/DashboardPrimitives"
+import { ROUTES } from "@/routes"
 
 const BAR_COLORS = ["#7c3aed", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe"]
 
@@ -48,6 +49,7 @@ export default function Dashboard() {
       icon: <ClipboardList size={16} />,
       tone: "purple" as const,
       footer: <><strong className="font-semibold text-purple-700">{monthlyReportCounts[monthlyReportCounts.length - 1]?.value ?? 0}</strong> submitted this month</>,
+      link: ROUTES.DASHBOARD.OPERATIONS
     },
     {
       label: "Patient logs",
@@ -55,6 +57,7 @@ export default function Dashboard() {
       icon: <HeartPulse size={16} />,
       tone: "green" as const,
       footer: <><strong className="font-semibold text-amber-700">{patientPendingCount}</strong> awaiting review</>,
+      link: ROUTES.DASHBOARD.PATIENTS
     },
     {
       label: "Vehicle dispatches",
@@ -62,6 +65,7 @@ export default function Dashboard() {
       icon: <Truck size={16} />,
       tone: "blue" as const,
       footer: <><strong className="font-semibold text-blue-700">{dispatchPendingCount}</strong> awaiting review</>,
+      link: ROUTES.DASHBOARD.VEHICLES
     },
     {
       label: "Items needing attention",
@@ -71,6 +75,7 @@ export default function Dashboard() {
       footer: dashboard.inventory
         ? <>{activeInventoryWarnings.slice(0, 2).map((item) => item.item).join(", ") || "All stock is within limits"}</>
         : <>Inventory data unavailable</>,
+      link: ROUTES.DASHBOARD.INVENTORY
     },
   ]
 

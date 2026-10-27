@@ -4,6 +4,7 @@ import DataTable from "@/components/common/DataTable";
 import Modal from "@/components/common/modals/Modal";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import RefreshButton from "@/components/common/widgets/RefreshButton";
 import TableSearch from "../component/TableSearch";
 import TablePagination from "../component/TablePagination";
 import DateCell from "../component/DateCell";
@@ -17,7 +18,7 @@ export default function Archives() {
     records, totalMatching, page, setPage, search, sourceType, filterOpen,
     setFilterOpen, loading, pageError, restoreTarget, setRestoreTarget,
     selectedRecord, setSelectedRecord, restoring, pageCount, statCards,
-    handleRestore, updateSearch, updateSourceType,
+    handleRestore, updateSearch, updateSourceType, loadArchives,
   } = useArchivesDashboard();
 
   return (
@@ -104,6 +105,7 @@ export default function Archives() {
                   </div>
                 )}
               </div>
+              <RefreshButton label="Refresh archived records" loading={loading} onRefresh={loadArchives} />
             </div>
           </div>
 

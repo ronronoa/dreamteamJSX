@@ -3,6 +3,7 @@ import DataTable from "@/components/common/DataTable";
 import AreYouSureModal from "@/components/common/modals/AreYouSure";
 import Modal from "@/components/common/modals/Modal";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import RefreshButton from "@/components/common/widgets/RefreshButton";
 import PinModal from "@/modules/reportForms/modal/PinModal";
 import StatCard from "../component/StatCard";
 import DateCell from "../component/DateCell";
@@ -74,9 +75,12 @@ export default function Patients() {
         {dashboard.successMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{dashboard.successMessage}</p>}
 
         <section>
-          <div className="mb-3 flex items-center gap-3">
-            <h2 className="text-sm font-bold text-gray-900">Pending Approval Requests</h2>
-            <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-semibold text-pink-700">{pendingCountLabel}</span>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-bold text-gray-900">Pending Approval Requests</h2>
+              <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-semibold text-pink-700">{pendingCountLabel}</span>
+            </div>
+            <RefreshButton label="Refresh pending patient records" loading={dashboard.loading} onRefresh={dashboard.loadRecords} />
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <DataTable
@@ -166,6 +170,7 @@ export default function Patients() {
                   </div>
                 }
               </div>
+              <RefreshButton label="Refresh patient records" loading={dashboard.loading} onRefresh={dashboard.loadRecords} />
             </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">

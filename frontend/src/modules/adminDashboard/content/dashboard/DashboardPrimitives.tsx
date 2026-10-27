@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router";
 
 /* ── Primitives ───────────────────────────────────────────── */
 
@@ -18,17 +19,21 @@ const toneMap = {
 } as const;
 
 export function StatCard({
-  label, value, icon, tone, footer,
+  label, value, icon, tone, footer, link
 }: {
   label: string;
   value: string;
   icon: ReactNode;
   tone: keyof typeof toneMap;
   footer: ReactNode;
+  link?: string;
 }) {
   const t = toneMap[tone];
+  const navigate = useNavigate();
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
+    <div
+      onClick={() => navigate(link || "")}
+      className={`rounded-2xl border border-gray-200 bg-white p-5 ${link ? "cursor-pointer hover:border-gray-500" : ""}`}>
       <div className="flex items-start justify-between">
         <p className="text-xs text-gray-500">{label}</p>
         <span className={`flex h-7 w-7 items-center justify-center rounded-md ${t.bg} ${t.fg}`}>

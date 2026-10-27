@@ -134,7 +134,7 @@ export function useInventoryDashboard() {
   } : undefined;
 
   return {
-    items, loading, pageError, modalError, search, setSearch, page, setPage,
+    items, loading, loadInventory, pageError, modalError, search, setSearch, page, setPage,
     addInventoryModalOpen, editingItem, nextItemCode, filteredItems, pageCount,
     currentPage, pageItems, stats, handleCreateItem, openAddInventoryModal,
     openEditInventoryModal, closeInventoryModal, getInitialValues,

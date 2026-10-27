@@ -221,7 +221,7 @@ export function usePatientsDashboard() {
   }
 
   return {
-    role, loading, busy, pageError, successMessage, search, statusFilter, filterOpen,
+    role, loading, loadRecords, busy, pageError, successMessage, search, statusFilter, filterOpen,
     pendingPage, reviewedPage, selectedIds, selectedRecord, reviewTarget, pinError,
     pdfConfirmationOpen, archiveConfirmationOpen, stats, pendingRows, reviewedRows,
     selectedRows, selectedPendingRows, visiblePendingRows, visibleReviewedRows, canReview, canReject, canArchive,

@@ -118,6 +118,6 @@ export function useActivityLogsDashboard() {
   return {
     logs, stats, page, setPage, loading, busy, pageError, successMessage,
     archiveModalOpen, setArchiveModalOpen, selectedLog, setSelectedLog,
-    pageCount, statCards, handleArchive, handleExport,
+    pageCount, statCards, handleArchive, handleExport, loadLogs,
   };
 }
