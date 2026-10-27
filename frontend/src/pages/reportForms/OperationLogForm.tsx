@@ -181,6 +181,7 @@ const nextStep = () => {
 
   const errors = validateStep(step, formData, formOptions)
   setValidationErrors((current) => ({ ...current, ...errors }))
+  if (Object.keys(errors).length > 0) return
 
   setDirection(1)
   setStep((current) => current + 1)
@@ -429,7 +430,11 @@ const nextStep = () => {
                   <CommonButton
                     className="min-w-[130px]"
                     onClick={nextStep}
-                    disabled={optionsLoading || Boolean(optionsError)}
+                    disabled={
+                      optionsLoading ||
+                      Boolean(optionsError) ||
+                      Object.keys(validateStep(step, formData, formOptions)).length > 0
+                    }
                   >
                     Next
                   </CommonButton>

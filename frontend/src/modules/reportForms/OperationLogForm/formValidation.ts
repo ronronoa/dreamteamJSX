@@ -2,6 +2,7 @@ import type { OperationFormOptions } from "../../../api/operationForm";
 import type { OperationLogData, Person } from "../../../types/operationLog";
 import { calculateAge } from "../../../types/operationLog";
 import { formatDate, isValidDateInputNotInFuture } from "../../../utils/dateTime";
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules";
 
 export type FormErrors = Record<string, string>;
 
@@ -108,12 +109,18 @@ export function validatePerson(person: Person): FormErrors {
   }
 
   if (person.gender === "") errors.gender = "Select a sex.";
-  if (person.contactNumber.trim().length > 20) errors.contactNumber = "Contact number must be 20 characters or fewer.";
+  if (!/^\d*$/.test(person.contactNumber) || person.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH) {
+    errors.contactNumber = `Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`;
+  }
 
-  validateOptionalTextLength(person.address.phase, 30, "Phase must be 30 characters or fewer.", "address.phase", errors);
-  validateOptionalTextLength(person.address.package, 30, "Package must be 30 characters or fewer.", "address.package", errors);
-  validateOptionalTextLength(person.address.block, 30, "Block must be 30 characters or fewer.", "address.block", errors);
-  validateOptionalTextLength(person.address.lot, 30, "Lot must be 30 characters or fewer.", "address.lot", errors);
+  validateOptionalTextLength(person.address.phase, MAX_ADDRESS_PART_LENGTH, `Phase must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.phase", errors);
+  validateOptionalTextLength(person.address.package, MAX_ADDRESS_PART_LENGTH, `Package must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.package", errors);
+  validateOptionalTextLength(person.address.block, MAX_ADDRESS_PART_LENGTH, `Block must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.block", errors);
+  validateOptionalTextLength(person.address.lot, MAX_ADDRESS_PART_LENGTH, `Lot must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`, "address.lot", errors);
+  validateAddressCharacters(person.address.phase, "Phase", "address.phase", errors);
+  validateAddressCharacters(person.address.package, "Package", "address.package", errors);
+  validateAddressCharacters(person.address.block, "Block", "address.block", errors);
+  validateAddressCharacters(person.address.lot, "Lot", "address.lot", errors);
 
   return errors;
 }
@@ -192,4 +199,10 @@ function validateOptionalNamePart(value: string, maxLength: number, message: str
 
 function validateOptionalTextLength(value: string, maxLength: number, message: string, field: string, errors: FormErrors) {
   if (value.trim().length > maxLength) errors[field] = message;
+}
+
+function validateAddressCharacters(value: string, label: string, field: string, errors: FormErrors) {
+  if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
+    errors[field] = `${label} can contain only letters and numbers.`;
+  }
 }

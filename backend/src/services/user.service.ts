@@ -7,13 +7,16 @@ import { listManagedUsers, lockSuperAdminChanges } from "@/sql/manageUsers";
 import type { Prisma, Role } from "@/generated/prisma/client";
 
 export const userService = {
-    async findAll() {
-        return listManagedUsers()
+    async findAll(actorRole: Role) {
+        return listManagedUsers(actorRole)
     },
 
-    async findById(userId: string) {
-        const user = await prisma.user.findUnique({
-            where: { user_id: userId }
+    async findById(userId: string, actorRole: Role) {
+        const user = await prisma.user.findFirst({
+            where: {
+                user_id: userId,
+                ...(actorRole === "DEPARTMENT_HEAD" && { role: { not: "SUPER_ADMIN" } }),
+            },
         });
 
         if(!user) throw new NotFoundError("User", userId)

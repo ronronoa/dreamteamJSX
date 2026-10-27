@@ -129,7 +129,7 @@ export const reportFormsController = {
 
   async submitOperation(req: Request, res: Response, next: NextFunction) {
     try {
-      await pinService.verifyReportFormPin(getPin(req));
+      const pinUsage = await pinService.verifyReportFormPin(getPin(req));
       const submittedForm = removeIncompleteOperationRows(parseJsonField(req.body.formData, "formData"));
       const parsedForm = OperationReportSchema.safeParse(submittedForm);
       if (!parsedForm.success) {
@@ -144,6 +144,10 @@ export const reportFormsController = {
       const record = await reportFormsService.createOperation(parsedForm.data, files, req.user?.userId ?? null);
       res.locals["activityActorName"] = parsedForm.data.operationDetails.submitterName.trim() || "Report submitter";
       res.locals["activityRecordId"] = record.operation_id;
+      res.locals["activityPinType"] = pinUsage.type;
+      res.locals["activityPinOwnerId"] = pinUsage.ownerId;
+      res.locals["activityPinOwnerName"] = pinUsage.ownerName;
+      res.locals["activityPinOwnerRole"] = pinUsage.ownerRole;
       res.status(201).json({ operation: record });
     } catch (error) {
       await removeUploadedFiles(req);
@@ -153,7 +157,7 @@ export const reportFormsController = {
 
   async submitPatient(req: Request, res: Response, next: NextFunction) {
     try {
-      await pinService.verifyReportFormPin(getPin(req));
+      const pinUsage = await pinService.verifyReportFormPin(getPin(req));
       const form = parseJsonField(req.body.formData, "formData");
       const parsedForm = PatientReportSchema.safeParse(form);
       if (!parsedForm.success) {
@@ -175,6 +179,10 @@ export const reportFormsController = {
       );
       res.locals["activityActorName"] = parsedForm.data.responderDetails.submitterName.trim() || "Report submitter";
       res.locals["activityRecordId"] = record.patient_log_id;
+      res.locals["activityPinType"] = pinUsage.type;
+      res.locals["activityPinOwnerId"] = pinUsage.ownerId;
+      res.locals["activityPinOwnerName"] = pinUsage.ownerName;
+      res.locals["activityPinOwnerRole"] = pinUsage.ownerRole;
       res.status(201).json({ patientLog: record });
     } catch (error) {
       await removeUploadedFiles(req);

@@ -51,8 +51,8 @@ export function useVehiclesDashboard() {
   const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
   const role = session?.user.role;
   const canManageFleet = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(role ?? "");
-  const canReview = role !== undefined && role !== "MEMBER";
-  const canReject = role === "TEAM_LEADER" || role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReview = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReject = canReview;
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 
   const loadFleet = useCallback(async () => {

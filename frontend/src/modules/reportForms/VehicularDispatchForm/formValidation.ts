@@ -2,6 +2,7 @@ import type { Person } from "../../../types/vehicularDispatchReport"
 import type { VehicularDispatchReportData } from "../../../types/vehicularDispatchReport"
 import { calculateAge } from "../../../types/operationLog"
 import { formatDate } from "../../../utils/dateTime"
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules"
 
 export type VehicularDispatchErrors = Record<string, string>
 
@@ -69,10 +70,25 @@ function validatePassengers(passengers: Person[]): VehicularDispatchErrors {
       errors[`${prefix}.birthdate`] = "Check the passenger's birthdate."
     }
     if (!person.gender) errors[`${prefix}.gender`] = "Select each passenger's sex."
-    if (person.contactNumber.trim().length > 20) errors[`${prefix}.contactNumber`] = "Contact number must be 20 characters or fewer."
+    if (!/^\d*$/.test(person.contactNumber) || person.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH) {
+      errors[`${prefix}.contactNumber`] = `Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`
+    }
+    validateAddressValue(person.address.phase, "Phase", `${prefix}.address.phase`, errors)
+    validateAddressValue(person.address.package, "Package", `${prefix}.address.package`, errors)
+    validateAddressValue(person.address.block, "Block", `${prefix}.address.block`, errors)
+    validateAddressValue(person.address.lot, "Lot", `${prefix}.address.lot`, errors)
   })
 
   return errors
+}
+
+function validateAddressValue(value: string, label: string, field: string, errors: VehicularDispatchErrors) {
+  if (value.length > MAX_ADDRESS_PART_LENGTH) {
+    errors[field] = `${label} must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`
+  }
+  if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
+    errors[field] = `${label} can contain only letters and numbers.`
+  }
 }
 
 function isValidDate(value: string) {

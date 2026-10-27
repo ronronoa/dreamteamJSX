@@ -9,10 +9,10 @@ const personNameSchema = z.object({
 });
 
 const personAddressSchema = z.object({
-  phase: z.string().trim().max(30),
-  package: z.string().trim().max(30),
-  block: z.string().trim().max(30),
-  lot: z.string().trim().max(30),
+  phase: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  package: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  block: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
+  lot: z.string().trim().max(2).regex(/^[a-zA-Z0-9]*$/),
 });
 
 const inventoryQuantity = z.string()
@@ -76,7 +76,7 @@ export const OperationReportSchema = z.object({
     birthdate: z.iso.date(),
     age: z.number().int().min(0).max(150),
     gender: z.enum(["Male", "Female"]),
-    contactNumber: z.string().trim().max(20),
+    contactNumber: z.string().trim().max(11).regex(/^\d*$/),
     address: personAddressSchema,
   })).max(100),
   operationDescription: z.object({

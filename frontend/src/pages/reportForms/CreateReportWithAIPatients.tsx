@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 
 import CommonBackground from "@/components/common/background/CommonBackground";
 import CommonButton from "@/components/common/widgets/CommonButton";
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeContactNumber } from "@/modules/reportForms/reportFieldRules";
 import {
   fetchPatientFormOptions,
   submitPatientLog,
@@ -146,7 +147,7 @@ function createPatientReportFromScan(
         ? "Male"
         : scanResult.patient.gender === "FEMALE" ? "Female" : "",
       contactPerson: splitPersonName(scanResult.patient.contactPerson),
-      contactNumber: scanResult.patient.contactNumber,
+      contactNumber: sanitizeContactNumber(scanResult.patient.contactNumber),
       address: {
         phase: scanResult.patient.address.phase?.toString() ?? "",
         package: scanResult.patient.address.package?.toString() ?? "",
@@ -197,6 +198,22 @@ function getSubmissionIssues(formData: PatientLogData) {
   if (!patientDetails.sex) issues.push("Select the patient's gender.");
   if (!patientDetails.contactPerson.firstName || !patientDetails.contactPerson.surname) issues.push("Enter the contact person's first and last name.");
   if (!patientDetails.contactNumber.trim()) issues.push("Enter a contact number.");
+  else if (
+    !/^\d+$/.test(patientDetails.contactNumber) ||
+    patientDetails.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH
+  ) {
+    issues.push(`Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`);
+  }
+  for (const [addressPart, label] of [
+    [patientDetails.address.phase, "Phase"],
+    [patientDetails.address.package, "Package"],
+    [patientDetails.address.block, "Block"],
+    [patientDetails.address.lot, "Lot"],
+  ] as const) {
+    if (addressPart.length > MAX_ADDRESS_PART_LENGTH || (addressPart && !/^[a-zA-Z0-9]+$/.test(addressPart))) {
+      issues.push(`${label} must be no more than ${MAX_ADDRESS_PART_LENGTH} letters or numbers.`);
+    }
+  }
   if (!firstAidHospital.medicalAssessment.trim()) issues.push("Enter the medical assessment.");
   if (!firstAidHospital.hospitalName.trim()) issues.push("Enter the destination or hospital name.");
   if (!firstAidHospital.hospitalInTime) issues.push("Enter the hospital arrival time.");
@@ -206,6 +223,10 @@ function getSubmissionIssues(formData: PatientLogData) {
   }
 
   return issues;
+}
+
+function hasIncompleteInventory(formData: PatientLogData) {
+  return formData.inventory.some((item) => !item.itemName.trim() || !item.quantity.trim());
 }
 
 export default function CreateReportWithAIPatients() {
@@ -381,6 +402,7 @@ export default function CreateReportWithAIPatients() {
                 <CommonButton
                   className="min-w-[130px]"
                   type="button"
+                  disabled={hasIncompleteInventory(formData)}
                   onClick={() => setStep(3)}
                 >
                   Proceed

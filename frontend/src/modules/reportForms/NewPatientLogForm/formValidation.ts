@@ -1,5 +1,6 @@
 import type { PatientLogData } from "../../../types/patientLog"
 import { isValidDateInputNotInFuture } from "@/utils/dateTime"
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH } from "../reportFieldRules"
 
 export function isFormEmpty(formData: PatientLogData): boolean {
   const { responderDetails, dispatch, patientDetails, firstAidHospital, waiverForm, inventory } = formData
@@ -150,10 +151,27 @@ export function getPatientStepErrors(step: number, formData: PatientLogData): Re
     if (!patientDetails.contactPerson.surname.trim()) errors.contactSurname = "Enter the contact person's surname."
     if (!patientDetails.contactPerson.firstName.trim()) errors.contactFirstName = "Enter the contact person's first name."
     if (!patientDetails.contactNumber.trim()) errors.contactNumber = "Enter a contact number."
+    else if (!/^\d+$/.test(patientDetails.contactNumber) || patientDetails.contactNumber.length > MAX_CONTACT_NUMBER_LENGTH) {
+      errors.contactNumber = `Contact number must contain no more than ${MAX_CONTACT_NUMBER_LENGTH} digits.`
+    }
     if (!patientDetails.address.phase.trim()) errors.phase = "Enter the phase."
     if (!patientDetails.address.package.trim()) errors.package = "Enter the package."
     if (!patientDetails.address.block.trim()) errors.block = "Enter the block."
     if (!patientDetails.address.lot.trim()) errors.lot = "Enter the lot."
+    validatePatientAddressValue(patientDetails.address.phase, "Phase", "phase", errors)
+    validatePatientAddressValue(patientDetails.address.package, "Package", "package", errors)
+    validatePatientAddressValue(patientDetails.address.block, "Block", "block", errors)
+    validatePatientAddressValue(patientDetails.address.lot, "Lot", "lot", errors)
+    for (const [value, label, field] of [
+      [patientDetails.address.phase, "Phase", "phase"],
+      [patientDetails.address.package, "Package", "package"],
+      [patientDetails.address.block, "Block", "block"],
+      [patientDetails.address.lot, "Lot", "lot"],
+    ]) {
+      if (value.length > MAX_ADDRESS_PART_LENGTH) {
+        errors[field] = `${label} must be ${MAX_ADDRESS_PART_LENGTH} characters or fewer.`
+      }
+    }
     if (!firstAidHospital.medicalAssessment.trim()) errors.medicalAssessment = "Enter the medical assessment."
     if (!firstAidHospital.hospitalName.trim()) errors.hospitalName = "Enter the hospital name."
     if (!firstAidHospital.hospitalRepresentative.surname.trim()) errors.hospitalSurname = "Enter the representative's surname."
@@ -171,4 +189,10 @@ export function getPatientStepErrors(step: number, formData: PatientLogData): Re
   }
 
   return errors
+}
+
+function validatePatientAddressValue(value: string, label: string, field: string, errors: Record<string, string>) {
+  if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
+    errors[field] = `${label} can contain only letters and numbers.`
+  }
 }

@@ -22,6 +22,17 @@ export default function ActivityLogs() {
     pageCount, statCards, handleArchive, handleExport, loadLogs,
   } = useActivityLogsDashboard();
 
+  function getPinUsageLabel(log: (typeof logs)[number]) {
+    if (!log.pinType) return "—";
+    if (log.pinType === "GLOBAL") return "Global PIN";
+
+    const pinRole = log.pinType === "USER"
+      ? ROLE_LABELS[log.pinOwnerRole ?? ""] ?? "User"
+      : ROLE_LABELS[log.pinType] ?? log.pinType.replaceAll("_", " ");
+    const ownerName = log.pinOwnerName ?? log.pinOwnerId;
+    return ownerName ? `${pinRole} PIN · ${ownerName}` : `${pinRole} PIN`;
+  }
+
   return (
     <>
       <AreYouSureModal
@@ -51,6 +62,7 @@ export default function ActivityLogs() {
               <Detail label="Role" value={ROLE_LABELS[selectedLog.role] ?? selectedLog.role} />
               <Detail label="Record ID" value={selectedLog.recordId ?? "—"} />
               <Detail label="Status" value={selectedLog.status} />
+              <Detail label="PIN used" value={getPinUsageLabel(selectedLog)} />
               <Detail label="Date" value={formatDateTime(selectedLog.date)} />
               <Detail label="Request" value={selectedLog.details || "No additional details."} />
             </dl>
@@ -102,6 +114,7 @@ export default function ActivityLogs() {
                 { label: "Actions", render: (row) => <TwoLineCell top={row.action} bottom={row.module} /> },
                 { label: "Record ID", accessor: "recordId" },
                 { label: "Status", render: (row) => <TableStatus variant={STATUS_VARIANTS[row.status]} /> },
+                { label: "PIN used", render: (row) => getPinUsageLabel(row) },
                 {
                   label: "Details",
                   align: "center",

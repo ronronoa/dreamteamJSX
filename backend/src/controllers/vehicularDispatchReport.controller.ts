@@ -50,7 +50,7 @@ export const vehicularDispatchReportController = {
     try {
       let requestedAction = req.params["action"]
       if (requestedAction === "authenticate") {
-        requestedAction = req.user?.role === "TEAM_LEADER" ? "authorize" : "validate"
+        requestedAction = "validate"
       }
       const { id, action } = validateOrThrow(VehicularDispatchReviewParamsSchema.safeParse({
         ...req.params,
@@ -90,7 +90,7 @@ export const vehicularDispatchReportController = {
           pinNumber: ["Enter a valid 4-6 digit PIN."],
         })
       }
-      await pinService.verifyReportFormPin(pinResult.data)
+      const pinUsage = await pinService.verifyReportFormPin(pinResult.data)
 
       const parsedForm = VehicularDispatchReportSchema.safeParse(parseFormData(req.body.formData))
       if (!parsedForm.success) {
@@ -105,6 +105,10 @@ export const vehicularDispatchReportController = {
       const dispatch = await vehicularDispatchReportService.create(parsedForm.data, req.user?.userId ?? null)
       res.locals["activityActorName"] = parsedForm.data.details.submitterName
       res.locals["activityRecordId"] = dispatch.dispatch_id
+      res.locals["activityPinType"] = pinUsage.type
+      res.locals["activityPinOwnerId"] = pinUsage.ownerId
+      res.locals["activityPinOwnerName"] = pinUsage.ownerName
+      res.locals["activityPinOwnerRole"] = pinUsage.ownerRole
       res.status(201).json({ dispatch })
     } catch (error) {
       next(error)

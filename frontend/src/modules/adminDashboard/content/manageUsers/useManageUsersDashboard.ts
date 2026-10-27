@@ -36,6 +36,7 @@ export function useManageUsersDashboard() {
   const [teamToDelete, setTeamToDelete] = useState<TeamOption | null>(null);
   const [teamSubmitting, setTeamSubmitting] = useState(false);
   const [teamError, setTeamError] = useState("");
+  const isDepartmentHead = session?.user.role === "DEPARTMENT_HEAD";
 
   const loadUsers = useCallback(async () => {
     if (!accessToken) {
@@ -67,21 +68,25 @@ export function useManageUsersDashboard() {
     })();
   }, [loadUsers]);
 
+  const visibleUsers = useMemo(() => {
+    if (!isDepartmentHead) return users;
+    return users.filter((user) => user.role !== "SUPER_ADMIN");
+  }, [users, isDepartmentHead]);
+
   const filteredUsers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return users.filter((user) => {
+    return visibleUsers.filter((user) => {
       const matchesSearch = !normalizedSearch || [user.name, user.username, user.email ?? "", user.phone ?? "", user.team_name ?? ""]
         .some((value) => value.toLowerCase().includes(normalizedSearch));
       const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
       const matchesStatus = statusFilter === "ALL" || (statusFilter === "ACTIVE" ? user.isActive : !user.isActive);
       return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [users, search, roleFilter, statusFilter]);
+  }, [visibleUsers, search, roleFilter, statusFilter]);
 
-  const activeCount = users.filter((user) => user.isActive).length;
-  const administratorCount = users.filter((user) => user.isActive && user.role === "SUPER_ADMIN").length;
+  const activeCount = visibleUsers.filter((user) => user.isActive).length;
+  const administratorCount = visibleUsers.filter((user) => user.isActive && user.role === "SUPER_ADMIN").length;
   const canManageTeams = session?.user.role === "SUPER_ADMIN" || session?.user.role === "DEPARTMENT_HEAD";
-  const isDepartmentHead = session?.user.role === "DEPARTMENT_HEAD";
 
   function openCreateModal() {
     setSelectedUser(null);
@@ -213,7 +218,7 @@ export function useManageUsersDashboard() {
     modalOpen, setModalOpen, submitting, modalError, setModalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
     teamToDelete, setTeamToDelete, teamSubmitting, teamError, setTeamError,
-    filteredUsers, activeCount, administratorCount, canManageTeams,
+    visibleUsers, filteredUsers, activeCount, administratorCount, canManageTeams,
     openCreateModal, openEditModal, saveUser, deactivateUser, saveTeam, removeTeam,
   };
 }

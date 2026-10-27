@@ -11,6 +11,10 @@ export interface ActivityLogRecord {
   recordId: string | null;
   status: "Success" | "Failed" | "Warning";
   details: string;
+  pinType: string | null;
+  pinOwnerId: string | null;
+  pinOwnerName: string | null;
+  pinOwnerRole: string | null;
 }
 
 export interface ActivityLogStats {

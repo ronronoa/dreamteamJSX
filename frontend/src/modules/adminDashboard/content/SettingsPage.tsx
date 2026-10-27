@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useState } from "react"
 import { Bell, FileText, FormInput, Shield, Sparkles } from "lucide-react"
 import { useNavigate } from "react-router"
 import CommonButton from "@/components/common/widgets/CommonButton"
 import CommonInput from "@/components/common/widgets/CommonInput"
 import { useAuth } from "@/store/useAuth"
-import { fetchSettings, setGlobalPin, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
+import { fetchSettings, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
 import { ROUTES } from "@/routes"
 import { Row, Select, SettingsSection, Toggle } from "./settings/SettingsPrimitives"
 
@@ -27,9 +27,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [pin, setPin] = useState("")
-  const [pinConfirm, setPinConfirm] = useState("")
-  const canManageGlobalPin = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER"].includes(session?.user.role ?? "")
+  // const [pin, setPin] = useState("")
+  // const [pinConfirm, setPinConfirm] = useState("")
+  // const canManageGlobalPin = ["SUPER_ADMIN", "DEPARTMENT_HEAD"].includes(session?.user.role ?? "")
   const canManageWorkspace = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(session?.user.role ?? "")
 
   useEffect(() => {
@@ -68,20 +68,20 @@ export default function SettingsPage() {
     } finally { setSaving(false) }
   }
 
-  async function submitGlobalPin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(""); setMessage("")
-    if (!/^\d{4,6}$/.test(pin)) { setError("Global PIN must contain 4 to 6 digits."); return }
-    if (pin !== pinConfirm) { setError("PIN entries do not match."); return }
-    if (!session?.accessToken) { setError("Sign in again to update the global PIN."); return }
-    setSaving(true)
-    try {
-      await setGlobalPin(session.accessToken, pin)
-      setPin(""); setPinConfirm("")
-      setSettings((current) => ({ ...current, globalPinConfigured: true }))
-      setMessage("Global PIN saved.")
-    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not save the global PIN.") }
-    finally { setSaving(false) }
-  }
+  // async function submitGlobalPin(event: FormEvent<HTMLFormElement>) {
+  //   event.preventDefault(); setError(""); setMessage("")
+  //   if (!/^\d{4,6}$/.test(pin)) { setError("Global PIN must contain 4 to 6 digits."); return }
+  //   if (pin !== pinConfirm) { setError("PIN entries do not match."); return }
+  //   if (!session?.accessToken) { setError("Sign in again to update the global PIN."); return }
+  //   setSaving(true)
+  //   try {
+  //     await setGlobalPin(session.accessToken, pin)
+  //     setPin(""); setPinConfirm("")
+  //     setSettings((current) => ({ ...current, globalPinConfigured: true }))
+  //     setMessage("Global PIN saved.")
+  //   } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not save the global PIN.") }
+  //   finally { setSaving(false) }
+  // }
 
   if (loading) return <div className="p-6 text-sm text-gray-500">Loading settings…</div>
 
@@ -136,14 +136,14 @@ export default function SettingsPage() {
         {canManageWorkspace && <div className="flex justify-end"><CommonButton compact disabled={saving} onClick={() => void saveWorkspace()}>{saving ? "Saving…" : "Save retention policy"}</CommonButton></div>}
       </SettingsSection>
 
-      {canManageGlobalPin && <SettingsSection icon={Shield} title="Global PIN" description="Shared PIN used to submit report forms.">
-        <p className="text-xs text-gray-600">{settings.globalPinConfigured ? "A global PIN is configured." : "No global PIN has been set yet."}</p>
-        <form onSubmit={(event) => void submitGlobalPin(event)} className="max-w-md space-y-3">
-          <CommonInput label="New global PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} disabled={saving} required />
-          <CommonInput label="Confirm global PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value.replace(/\D/g, ""))} disabled={saving} required />
-          <CommonButton type="submit" compact disabled={saving}>{saving ? "Saving…" : "Save global PIN"}</CommonButton>
-        </form>
-      </SettingsSection>}
+      {/* {canManageGlobalPin && <SettingsSection icon={Shield} title="Global PIN" description="Shared PIN used to submit report forms."> */}
+      {/*   <p className="text-xs text-gray-600">{settings.globalPinConfigured ? "A global PIN is configured." : "No global PIN has been set yet."}</p> */}
+      {/*   <form onSubmit={(event) => void submitGlobalPin(event)} className="max-w-md space-y-3"> */}
+      {/*     <CommonInput label="New global PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))} disabled={saving} required /> */}
+      {/*     <CommonInput label="Confirm global PIN" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value.replace(/\D/g, ""))} disabled={saving} required /> */}
+      {/*     <CommonButton type="submit" compact disabled={saving}>{saving ? "Saving…" : "Save global PIN"}</CommonButton> */}
+      {/*   </form> */}
+      {/* </SettingsSection>} */}
 
       <SettingsSection icon={Shield} title="Security & accessibility" description="Choose how long an inactive session stays signed in.">
         <Row label="Session timeout" hint="You will be signed out after this period without activity." isLast>

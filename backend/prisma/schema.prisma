@@ -280,6 +280,10 @@ model ActivityLog {
   record_id      String?
   status         String
   details        String?
+  pin_type       String?
+  pin_owner_id   String?
+  pin_owner_name String?
+  pin_owner_role String?
   createdAt      DateTime  @default(now())
   archivedAt     DateTime?
   archived_by    String?

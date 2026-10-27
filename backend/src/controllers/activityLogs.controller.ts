@@ -31,7 +31,7 @@ export const activityLogsController = {
   async export(_req: Request, res: Response, next: NextFunction) {
     try {
       const logs = await activityLedgerService.export();
-      const header = ["Activity ID", "Date", "User", "Username", "Role", "Module", "Action", "Record ID", "Status", "Details"];
+      const header = ["Activity ID", "Date", "User", "Username", "Role", "Module", "Action", "Record ID", "Status", "Details", "PIN Type", "PIN Owner ID", "PIN Owner", "PIN Owner Role"];
       const rows = logs.map((log) => [
         log.id,
         log.date.toISOString(),
@@ -43,6 +43,10 @@ export const activityLogsController = {
         log.recordId,
         log.status,
         log.details,
+        log.pinType,
+        log.pinOwnerId,
+        log.pinOwnerName,
+        log.pinOwnerRole,
       ]);
       const csv = [header, ...rows]
         .map((row) => row.map(escapeCsvValue).join(","))

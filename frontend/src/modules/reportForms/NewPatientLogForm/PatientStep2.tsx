@@ -4,6 +4,7 @@ import CommonCheckbox from "../../../components/common/widgets/CommonCheckbox"
 import CommonTimeInput from "../../../components/common/widgets/CommonTimeInput"
 import CommonVitalField from "@/components/common/widgets/CommonVitalField"
 import CommonFormSection from "../component/CommonFormSection"
+import { MAX_ADDRESS_PART_LENGTH, MAX_CONTACT_NUMBER_LENGTH, sanitizeAddressValue, sanitizeContactNumber } from "../reportFieldRules"
 
 import {
   calculateAge,
@@ -192,7 +193,8 @@ export default function PatientStep2({
             label="Contact Number"
             placeholder="0912345678"
             value={patientDetails.contactNumber}
-            onChange={(e) => onPatientDetailsChange({ contactNumber: e.target.value })}
+            maxLength={MAX_CONTACT_NUMBER_LENGTH}
+            onChange={(e) => onPatientDetailsChange({ contactNumber: sanitizeContactNumber(e.target.value) })}
             errorMessage={errors.contactNumber}
           />
 
@@ -204,12 +206,13 @@ export default function PatientStep2({
               <CommonInput
                 variant="compact"
                 className="w-9 px-1 text-center"
+                maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="9"
                 value={patientDetails.address.phase}
                 errorMessage={errors.phase}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, phase: e.target.value },
+                    address: { ...patientDetails.address, phase: sanitizeAddressValue(e.target.value) },
                   })
                 }
               />
@@ -217,12 +220,13 @@ export default function PatientStep2({
               <CommonInput
                 variant="compact"
                 className="w-9 px-1 text-center"
+                maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="3"
                 value={patientDetails.address.package}
                 errorMessage={errors.package}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, package: e.target.value },
+                    address: { ...patientDetails.address, package: sanitizeAddressValue(e.target.value) },
                   })
                 }
               />
@@ -230,12 +234,13 @@ export default function PatientStep2({
               <CommonInput
                 variant="compact"
                 className="w-9 px-1 text-center"
+                maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="25"
                 value={patientDetails.address.block}
                 errorMessage={errors.block}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, block: e.target.value },
+                    address: { ...patientDetails.address, block: sanitizeAddressValue(e.target.value) },
                   })
                 }
               />
@@ -243,12 +248,13 @@ export default function PatientStep2({
               <CommonInput
                 variant="compact"
                 className="w-9 px-1 text-center"
+                maxLength={MAX_ADDRESS_PART_LENGTH}
                 placeholder="16"
                 value={patientDetails.address.lot}
                 errorMessage={errors.lot}
                 onChange={(e) =>
                   onPatientDetailsChange({
-                    address: { ...patientDetails.address, lot: e.target.value },
+                    address: { ...patientDetails.address, lot: sanitizeAddressValue(e.target.value) },
                   })
                 }
               />

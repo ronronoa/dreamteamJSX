@@ -12,5 +12,5 @@ const pinLimiter = rateLimit({
 
 export const pinRoutes = Router();
 
-pinRoutes.post("/auth/set-pin", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER"), pinLimiter, pinController.setPin);
+pinRoutes.post("/auth/set-pin", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), pinLimiter, pinController.setPin);
 pinRoutes.post("/auth/verify-pin", requireAuth, pinLimiter ,pinController.verifyPin);

@@ -80,9 +80,9 @@ export const userController = {
         }
     },
 
-    async list(_req: Request, res: Response, next: NextFunction) {
+    async list(req: Request, res: Response, next: NextFunction) {
         try {
-            const users = await userService.findAll()
+            const users = await userService.findAll(req.user!.role)
             res.status(200).json({users})
         } catch (err) {
             next(err)
@@ -92,7 +92,7 @@ export const userController = {
     async getById(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = validateOrThrow(UserIdParamSchema.safeParse(req.params))
-            const user = await userService.findById(id)
+            const user = await userService.findById(id, req.user!.role)
             res.status(200).json({ user })
         } catch (err) {
             next(err)

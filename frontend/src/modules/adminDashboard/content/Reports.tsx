@@ -1,6 +1,7 @@
 import { Printer } from "lucide-react";
 import CommonButton from "@/components/common/widgets/CommonButton";
 import { REPORT_CARDS as reports } from "./reports/reportCards";
+import { createDashboardReportPdf } from "./reports/reportPrintsLayout";
 
 export default function Reports() {
   return (
@@ -20,7 +21,10 @@ export default function Reports() {
             {description}
           </p>
 
-          <CommonButton className="mt-5 w-full">
+          <CommonButton
+            className="mt-5 w-full"
+            onClick={title === "Operation Log Reports" ? createDashboardReportPdf : undefined}
+          >
             <span className="inline-flex items-center justify-center gap-2">
               <Printer size={14} />
               Generate / Print
