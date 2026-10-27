@@ -1,3 +1,4 @@
+import { ReportPinSchema } from "./pin.schema";
 import { z } from "zod"
 
 const GenderEnum = z.enum(["MALE", "FEMALE"])
@@ -131,15 +132,15 @@ export const operationLogsFormSchema = z.object({
 })
 
 export const AuthorizeOperationSchema = z.object({
-    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
+    pin: ReportPinSchema
 })
 
 export const ValidateOperationSchema = z.object({
-    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits.")
+    pin: ReportPinSchema
 })
 
 export const RejectOperationSchema = z.object({
-    pin: z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits."),
+    pin: ReportPinSchema,
     rejected_reason: z.string().trim().min(1, "A rejection reason is required.").max(1000),
 })
 

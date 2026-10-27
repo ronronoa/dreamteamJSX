@@ -17,7 +17,7 @@ async function fuckSake(
     })
 }
 
-async function decrementOperationInventory(
+export async function decrementOperationInventory(
   transaction: Prisma.TransactionClient,
   operationId: string,
   actorId: string,
@@ -125,6 +125,10 @@ export const operationService = {
   async updateTeam(teamId: string, data: UpdateTeamInput) {
     const team = await this.findTeamById(teamId)
     if (team.isArchived) throw new ConflictError("Archived teams cannot be edited.")
+    if (team.team_name.trim().charAt(0).toUpperCase() !== data.team_name.trim().charAt(0).toUpperCase()) {
+      const pinOwners = await prisma.user.count({ where: { team_id: teamId, pinLookupHash: { not: null } } });
+      if (pinOwners > 0) throw new ConflictError("This team has report PINs. Keep its initial or reassign its users before renaming it.");
+    }
     return prisma.responseTeam.update({ where: { team_id: teamId}, data})
   },
 

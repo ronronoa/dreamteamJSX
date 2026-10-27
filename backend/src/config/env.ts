@@ -6,6 +6,7 @@ export const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   ACCESS_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_SECRET: z.string().min(32),
+  REPORT_PIN_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   OCR_BACKEND_URL: z.string().url().optional(),
   FORGET_PASS_EMAIL: z.string().email().optional(),
   FORGET_PASS_EMAIL_APP_PASS: z.string().min(1).optional(),

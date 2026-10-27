@@ -30,9 +30,9 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   try {
     const user = await prisma.user.findUnique({
       where: { user_id: result.data.userId },
-      select: { user_id: true, role: true, isActive: true, last_active_at: true },
+      select: { user_id: true, role: true, isActive: true, passwordHash: true, last_active_at: true },
     });
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || !user.passwordHash) {
       return next(new UnauthorizedError("This account is inactive or no longer exists"));
     }
 
@@ -66,9 +66,9 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
   try {
     const user = await prisma.user.findUnique({
       where: { user_id: result.data.userId },
-      select: { user_id: true, role: true, isActive: true },
+      select: { user_id: true, role: true, isActive: true, passwordHash: true },
     });
-    if (user?.isActive) {
+    if (user?.isActive && user.passwordHash) {
       req.user = { userId: user.user_id, role: user.role };
     }
     next();

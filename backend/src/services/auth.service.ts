@@ -27,7 +27,7 @@ export const authService = {
     const user = await prisma.user.findUnique({
       where: { user_id: parsed.data.userId },
     });
-    if (!user || !user.isActive) return null;
+    if (!user || !user.isActive || !user.passwordHash) return null;
 
     await prisma.user.update({
       where: { user_id: user.user_id },
@@ -96,7 +96,7 @@ export const authService = {
       },
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       const dummyHash = await getDummyPasswordHash();
       await argon2.verify(dummyHash, data.password);
       throw new UnauthorizedError("Invalid username or password");
@@ -140,7 +140,7 @@ export const authService = {
 
   async changePassword(userId: string, data: z.infer<typeof ChangePasswordSchema>) {
     const user = await prisma.user.findUnique({ where: { user_id: userId } });
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || !user.passwordHash) {
       throw new UnauthorizedError("This account is inactive or no longer exists");
     }
 
@@ -190,7 +190,7 @@ export const authService = {
       throw new UnauthorizedError("Refresh token is invalid or has been revoked");
     }
 
-    if (!storedToken.user.isActive) {
+    if (!storedToken.user.isActive || !storedToken.user.passwordHash) {
       await prisma.refreshToken.deleteMany({ where: { userId: storedToken.userId } });
       throw new UnauthorizedError("This account is inactive");
     }

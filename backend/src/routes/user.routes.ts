@@ -37,6 +37,7 @@ userRoutes.use(
 );
 
 userRoutes.get("/users", userController.list)
+userRoutes.post("/users/:id/reveal-pin", userController.revealPin)
 userRoutes.get("/users/:id", userController.getById)
 userRoutes.post("/users", userController.create)
 userRoutes.patch("/users/:id", userController.update)

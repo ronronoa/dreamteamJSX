@@ -114,7 +114,7 @@ export function useOperationsDashboard() {
     { label: "Most frequent area of operation", value: getMostFrequent(monthlyRows.map((row) => row.location)), sub: "For this month" },
   ];
 
-  const canReview = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+  const canReview = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD" || role === "DEPUTY" || role === "TEAM_LEADER";
   const canReject = canReview;
   const canArchive = role === "SUPER_ADMIN" || role === "DEPARTMENT_HEAD";
 

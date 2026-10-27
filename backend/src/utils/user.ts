@@ -4,6 +4,10 @@ export function toSafeUser(user: User) {
   return {
     id: user.user_id,
     name: user.name,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    middleInitial: user.middleInitial,
+    suffix: user.suffix,
     username: user.username,
     email: user.email,
     role: user.role,

@@ -1,3 +1,6 @@
+import type { ReportPinOwner } from "./pin.service";
+import { getSubmissionStatus } from "./reportReviewWorkflow";
+import { decrementOperationInventory } from "./operation.service";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors";
 import { Prisma } from "@/generated/prisma/client";
@@ -427,7 +430,9 @@ export const reportFormsService = {
     return { teams, responders, vehicles, operationNatures };
   },
 
-  async createOperation(form: OperationReportInput, files: UploadedFile[], submittedBy: string | null) {
+  async createOperation(form: OperationReportInput, files: UploadedFile[], owner: ReportPinOwner) {
+    const submittedBy = owner.ownerId;
+    const status = getSubmissionStatus(owner.ownerRole);
     const teamIds = form.operationDetails.teamAssigned;
     const inventoryItemIds = [...new Set(form.inventory.flatMap((entry) => entry.inventoryItemId ? [entry.inventoryItemId] : []))];
     const [teams, responders, linkedInventoryItems] = await Promise.all([
@@ -508,13 +513,15 @@ export const reportFormsService = {
       }
       const operation = await transaction.operationLog.create({
         data: {
+          status,
+          validated_by: status === "VALIDATED" ? submittedBy : null,
           team_id: teamId,
           operation_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
           name_of_caller: formatPersonName(form.operationDetails.nameOfCaller),
           nature_of_operation: form.operationDetails.natureOfOperation,
           event_description: form.operationDescription.description,
           submitted_by: submittedBy,
-          submitter_name: form.operationDetails.submitterName.trim(),
+          submitter_name: owner.ownerName,
           teamAssignments: {
             create: teamIds.map((teamId) => ({ team_id: teamId })),
           },
@@ -546,6 +553,7 @@ export const reportFormsService = {
           },
           dispatches: {
             create: {
+              status,
               dispatch_date: getFormDateTime(form.operationDetails.date, form.operationDetails.time),
               submitted_by: submittedBy,
               vehicle_id: vehicle?.vehicle_id ?? null,
@@ -572,6 +580,12 @@ export const reportFormsService = {
         },
       });
 
+      if (status === "VALIDATED") {
+        await decrementOperationInventory(transaction, operation.operation_id, submittedBy);
+        await transaction.operationLogEdit.create({
+          data: { operation_id: operation.operation_id, admin_id: submittedBy, edit_notes: "Automatically validated on submission using the submitter’s report PIN." },
+        });
+      }
       return operation;
     });
   },
@@ -579,9 +593,11 @@ export const reportFormsService = {
   async createPatient(
     form: PatientReportInput,
     files: UploadedFile[],
-    submittedBy: string | null,
+    owner: ReportPinOwner,
     formImage: UploadedFile | null = null,
   ) {
+    const submittedBy = owner.ownerId;
+    const status = getSubmissionStatus(owner.ownerRole);
     const [responders, vehicle] = await Promise.all([
       prisma.user.findMany({
         where: {
@@ -641,8 +657,8 @@ export const reportFormsService = {
             log_date: reportDateTime,
             type_of_request: responderDetails.typeOfRequest,
             submitted_by: submittedBy,
-            submitter_name: responderDetails.submitterName,
-            status: "PENDING",
+            submitter_name: owner.ownerName,
+            status,
             name_of_caller: formatPersonName(responderDetails.caller) || null,
             bp: firstAidHospital.bp || null,
             pr: firstAidHospital.pr || null,
@@ -661,9 +677,10 @@ export const reportFormsService = {
             },
             dispatches: {
               create: {
+                status,
                 dispatch_date: reportDateTime,
                 submitted_by: submittedBy,
-                submitter_name: responderDetails.submitterName,
+                submitter_name: owner.ownerName,
                  vehicle_id: vehicle?.vehicle_id ?? null,
                  vehicle_name: dispatch.vehicle === "other" ? dispatch.vehicleOther?.trim() ?? null : null,
                 driver_name: dispatch.driver || null,

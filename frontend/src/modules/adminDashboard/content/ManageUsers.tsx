@@ -1,3 +1,4 @@
+import GeneratedPinModal from "@/components/common/modals/GeneratedPinModal";
 import { Filter, Pencil, Plus, Trash2, UserRoundX } from "lucide-react";
 import UserAvatar from "@/components/common/widgets/UserAvatar";
 import { getProfilePhotoSource } from "@/api/profile";
@@ -18,7 +19,7 @@ export default function ManageUsers() {
   const {
     session, isDepartmentHead, teams, loading, loadUsers, pageError, successMessage, search, setSearch,
     roleFilter, setRoleFilter, statusFilter, setStatusFilter, selectedUser,
-    modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
+    issuedPin, setIssuedPin, modalOpen, setModalOpen, submitting, modalError, deactivateTarget,
     setDeactivateTarget, teamModalOpen, setTeamModalOpen, teamToEdit, setTeamToEdit,
     teamToDelete, setTeamToDelete, teamSubmitting, teamError, setTeamError,
     visibleUsers, filteredUsers, activeCount, administratorCount, canManageTeams,
@@ -45,10 +46,12 @@ export default function ManageUsers() {
         confirmLabel={teamSubmitting ? "Deleting…" : "Delete team"}
         variant="danger"
       />
+      {issuedPin && <GeneratedPinModal name={issuedPin.name} pin={issuedPin.pin} onClose={() => setIssuedPin(null)} />}
       {modalOpen && 
         <EditUserModal
           open={modalOpen}
           user={selectedUser}
+          accessToken={session?.accessToken}
           teams={teams}
           allowSuperAdminRole={!isDepartmentHead}
           submitting={submitting}

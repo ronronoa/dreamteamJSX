@@ -1,3 +1,6 @@
+import { formatUserName, getUserNameParts, suggestUsername } from "@/utils/userName";
+import { revealManagedUserPin } from "@/api/manageUsers";
+import { REPORT_PIN_PATTERN, REPORT_PIN_HINT } from "@/utils/reportPin";
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
 import Modal from "./Modal";
@@ -16,11 +19,13 @@ const roleOptions: { label: string; value: Role }[] = [
 ];
 
 export interface UserFormValues extends ManagedUserInput {
-  password: string;
+  password?: string;
+  pin?: string;
 }
 
 interface EditUserModalProps {
   open: boolean;
+  accessToken?: string;
   user: ManagedUser | null;
   teams: TeamOption[];
   allowSuperAdminRole: boolean;
@@ -32,6 +37,7 @@ interface EditUserModalProps {
 
 export default function EditUserModal({
   open,
+  accessToken,
   user,
   teams,
   allowSuperAdminRole,
@@ -40,7 +46,12 @@ export default function EditUserModal({
   onClose,
   onSubmit,
 }: EditUserModalProps) {
-  const [name, setName] = useState(user?.name ?? "");
+  const [nameParts, setNameParts] = useState(() => getUserNameParts(user));
+  const [usernameEdited, setUsernameEdited] = useState(Boolean(user));
+  const [currentPin, setCurrentPin] = useState<string | null>(null);
+  const [pinVisible, setPinVisible] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinError, setPinError] = useState("");
   const [username, setUsername] = useState(user?.username ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<Role>(user?.role ?? "MEMBER");
@@ -48,18 +59,42 @@ export default function EditUserModal({
   const [teamId, setTeamId] = useState(user?.team_id ?? "");
   const [isActive, setIsActive] = useState(user?.isActive ?? true);
   const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
+  const passwordRequired = role !== "MEMBER" && (!user || user.role === "MEMBER");
+
+  function changeName(field: keyof typeof nameParts, value: string) {
+    const next = { ...nameParts, [field]: value };
+    setNameParts(next);
+    if (!usernameEdited) setUsername(suggestUsername(next.firstName, next.lastName));
+  }
+
+  async function showCurrentPin() {
+    if (pinVisible) { setPinVisible(false); return; }
+    if (!user || !accessToken) return;
+    setPinError("");
+    setPinLoading(true);
+    try {
+      const result = await revealManagedUserPin(accessToken, user.id);
+      setCurrentPin(result.pin);
+      setPinVisible(true);
+    } catch (error) {
+      setPinError(error instanceof Error ? error.message : "Could not load the current PIN.");
+    } finally { setPinLoading(false); }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onSubmit({
-      name: name.trim(),
+      name: formatUserName(nameParts),
+      ...nameParts,
       username: username.trim(),
       email: email.trim() || null,
       role,
       phone: phone.trim() || null,
       team_id: teamId || null,
       isActive,
-      password,
+      ...(role !== "MEMBER" && password ? { password } : {}),
+      ...(user && pin ? { pin } : {}),
     });
   }
 
@@ -89,12 +124,15 @@ export default function EditUserModal({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <CommonInput id="user-name" label="Full name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={50} className={inputClassName} />
-            <CommonInput id="user-username" label="Username" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={50} pattern="[a-zA-Z0-9._-]+" className={inputClassName} />
+            <CommonInput id="user-last-name" label="Last name" value={nameParts.lastName} onChange={(event) => changeName("lastName", event.target.value)} required={!user || Boolean(user.lastName)} maxLength={80} className={inputClassName} />
+            <CommonInput id="user-first-name" label="First name" value={nameParts.firstName} onChange={(event) => changeName("firstName", event.target.value)} required maxLength={80} className={inputClassName} />
+            <CommonInput id="user-middle-initial" label="MI (optional)" value={nameParts.middleInitial} onChange={(event) => changeName("middleInitial", event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={1} className={inputClassName} />
+            <CommonInput id="user-suffix" label="Suffix (optional)" value={nameParts.suffix} onChange={(event) => changeName("suffix", event.target.value)} maxLength={20} placeholder="Jr., Sr., III" className={inputClassName} />
+            <CommonInput id="user-username" label="Username" value={username} onChange={(event) => { setUsername(event.target.value); setUsernameEdited(Boolean(event.target.value)); }} required minLength={3} maxLength={50} pattern="[a-zA-Z0-9._-]+" className={inputClassName} />
             <CommonInput id="user-email" label="Email (optional)" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" className={inputClassName} />
-            <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)} options={availableRoleOptions} />
+            <CommonSelect id="user-role" label="Role" value={role} onChange={(event) => { setRole(event.target.value as Role); setPassword(""); }} options={availableRoleOptions} />
             <CommonInput id="user-phone" label="Mobile" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={20} pattern="(?:\\+?63|0)9(?:[ -]?\\d){9}" placeholder="09171234567 or +639171234567" className={inputClassName} />
-            <CommonSelect id="user-team" label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
+            <CommonSelect id="user-team" required label="Team" value={teamId} onChange={(event) => setTeamId(event.target.value)} options={teamOptions} />
             {user && <CommonSelect
               id="user-status"
               label="Account status"
@@ -102,14 +140,39 @@ export default function EditUserModal({
               onChange={(event) => setIsActive(event.target.value === "active")}
               options={[{ label: "Active", value: "active" }, { label: "Inactive", value: "inactive" }]}
             />}
-            <div className="sm:col-span-2">
+            {user && <div className="sm:col-span-2 space-y-2">
+              <CommonButton type="button" variant="gray" compact onClick={() => void showCurrentPin()} disabled={pinLoading || submitting}>
+                {pinLoading ? "Loading PIN…" : pinVisible ? "Hide current PIN" : "View current PIN"}
+              </CommonButton>
+              {pinVisible && currentPin && <CommonInput id="user-current-report-pin" label="Current report PIN" value={currentPin} readOnly className={inputClassName} />}
+              {pinError && <p role="alert" className="text-xs text-red-700">{pinError}</p>}
+              <CommonInput
+                id="user-report-pin"
+                label={user ? "New report PIN (leave blank to keep current)" : "Report PIN"}
+                type="password"
+                showPasswordToggle
+                autoComplete="new-password"
+                value={pin}
+                onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))}
+                disabled={submitting}
+                minLength={4}
+                maxLength={4}
+                pattern={REPORT_PIN_PATTERN}
+                inputMode="numeric"
+                placeholder="0482"
+                className={inputClassName}
+              />
+              <p className="mt-1 text-xs text-gray-600">{REPORT_PIN_HINT} This PIN must not belong to another user.</p>
+            </div>}
+            {!user && <p className="text-xs text-gray-600 sm:col-span-2">A unique, random four-digit report PIN will be generated after saving. You can view it again by editing this user.</p>}
+            {role !== "MEMBER" && <div className="sm:col-span-2">
               <CommonInput
                 id="user-password"
-                label={user ? "Set a new password (optional)" : "Account password"}
+                label={passwordRequired ? "Account password" : "Set a new password (optional)"}
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                required={!user}
+                required={passwordRequired}
                 minLength={8}
                 maxLength={64}
                 autoComplete="new-password"
@@ -117,8 +180,9 @@ export default function EditUserModal({
                 className={inputClassName}
               />
               {!user && <p className="mt-1 text-xs text-gray-500">The user will use this password to sign in. They can contact an administrator if they need it reset.</p>}
-              {user && <p className="mt-1 text-xs text-gray-500">Leave blank to keep the current password. Passwords must be 8–64 characters.</p>}
-            </div>
+              {user && !passwordRequired && <p className="mt-1 text-xs text-gray-500">Leave blank to keep the current password. Passwords must be 8–64 characters.</p>}
+            </div>}
+            {role === "MEMBER" && <p className="text-xs text-gray-600 sm:col-span-2">Members submit reports using their personal PIN. They do not need a portal password.</p>}
           </div>
 
           {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

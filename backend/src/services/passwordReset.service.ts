@@ -58,6 +58,7 @@ export const passwordResetService = {
       where: {
         email: { equals: email, mode: "insensitive" },
         isActive: true,
+        passwordHash: { not: null },
       },
       select: { user_id: true, name: true, email: true },
     });
@@ -94,7 +95,7 @@ export const passwordResetService = {
   async resetPassword(emailAddress: string, code: string, newPassword: string) {
     const email = emailAddress.trim().toLowerCase();
     const user = await prisma.user.findFirst({
-      where: { email: { equals: email, mode: "insensitive" }, isActive: true },
+      where: { email: { equals: email, mode: "insensitive" }, isActive: true, passwordHash: { not: null } },
       select: { user_id: true, role: true },
     });
     if (!user) throw new UnauthorizedError("The reset request is invalid or expired.");
