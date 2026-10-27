@@ -18,6 +18,9 @@ export const ocrController = {
   async scanPatientLogImage(req: Request, res: ExpressResponse, next: NextFunction) {
     console.log("ocr start")
     try {
+      if (!env.OCR_BACKEND_URL) {
+        throw new BadGatewayError("Image scanning is not configured. Set OCR_BACKEND_URL on the server.");
+      }
       const image = req.file;
       if (!image) {
         throw new ValidationError("Choose an image to scan.", {

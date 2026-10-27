@@ -124,7 +124,7 @@ export const operationLogsFormSchema = z.object({
   pin: z.number(),
   operationDetails: operationDetailsSchema,
   vehicularDispatch: vehicularDispatchSchema,
-  peopleInvolved: z.array(personSchema), 
+  peopleInvolved: z.array(personSchema),
   operationDescription: z.string(),
   inventory: z.array(inventoryItemSchema),
   files: z.any().optional(),

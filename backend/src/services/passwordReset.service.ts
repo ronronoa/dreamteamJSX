@@ -50,6 +50,9 @@ async function sendResetCodeEmail(email: string, name: string, code: string) {
 
 export const passwordResetService = {
   async requestCode(emailAddress: string) {
+    if (!env.FORGET_PASS_EMAIL || !env.FORGET_PASS_EMAIL_APP_PASS) {
+      throw new InternalError("Password reset email is not configured. Contact your administrator.");
+    }
     const email = emailAddress.trim().toLowerCase();
     const user = await prisma.user.findFirst({
       where: {

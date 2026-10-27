@@ -280,6 +280,10 @@ model ActivityLog {
   record_id      String?
   status         String
   details        String?
+  pin_type       String?
+  pin_owner_id   String?
+  pin_owner_name String?
+  pin_owner_role String?
   createdAt      DateTime  @default(now())
   archivedAt     DateTime?
   archived_by    String?
@@ -304,8 +308,8 @@ model SystemSetting {
 
 model UserPreference {
   user_id                 String   @id
-  lowStockAlerts          Boolean  @default(false)
-  approvalNotifications   Boolean  @default(false)
+  lowStockAlerts          Boolean  @default(true)
+  approvalNotifications   Boolean  @default(true)
   sessionTimeout          String   @default("30-min")
   updatedAt               DateTime @updatedAt
 
