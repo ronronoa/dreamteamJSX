@@ -111,22 +111,22 @@ export default function UserAvatar({
         ) : initials}
       </div>
 
-      {hasText && (
-        <div className={stacked ? "" : "min-w-0"}>
-          {name && (
-            <p
-              className={`${nameSize[size]} ${colors.name} font-semibold ${
-                stacked ? "" : "truncate"
-              }`}
-            >
-              {name}
-            </p>
-          )}
-          {role && (
-            <p className={`${roleSize[size]} ${colors.role}`}>{role}</p>
-          )}
-        </div>
-      )}
+        {hasText && (
+          <div className={stacked ? "" : "min-w-0"}>
+            {name && (
+              <p
+                className={`${nameSize[size]} ${colors.name} font-semibold ${
+                    stacked ? "" : "truncate"
+                    }`}
+              >
+                {name}
+              </p>
+            )}
+            {role && (
+              <p className={`${roleSize[size]} ${colors.role}`}>{role}</p>
+            )}
+          </div>
+        )}
     </button>
   );
 }

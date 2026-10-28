@@ -7,6 +7,7 @@ import { useAuth } from "@/store/useAuth";
 import { getProfilePhotoSource } from "@/api/profile";
 import { formatDate } from "@/utils/dateTime";
 import { getInitials } from "@/utils/name";
+import { formatUserRole } from "@/utils/reportUser";
 import { ROUTES } from "@/routes";
 import { useNotifications } from "./useNotifications";
 
@@ -130,6 +131,7 @@ export default function DashboardHeader({
           name={displayName}
           imageUrl={getProfilePhotoSource(user?.profileImageUrl ?? null)}
           variant="onDark"
+          role={user?.role ? formatUserRole(user.role) : undefined}
         />
       </div>
     </header>

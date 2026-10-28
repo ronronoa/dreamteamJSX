@@ -12,9 +12,12 @@ export interface ReportUser {
   role: string;
 }
 
+export function formatUserRole(role: string): string {
+  return ROLE_LABELS[role] ?? role.replaceAll("_", " ");
+}
+
 export function formatReportUser(user: ReportUser | null | undefined, fallback: string): string {
   if (!user) return fallback;
 
-  const role = ROLE_LABELS[user.role] ?? user.role.replaceAll("_", " ");
-  return `${user.name} (@${user.username}) · ${role}`;
+  return `${user.name} (@${user.username}) · ${formatUserRole(user.role)}`;
 }

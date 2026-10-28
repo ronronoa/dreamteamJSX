@@ -2,6 +2,7 @@ import "dotenv/config";
 import { app } from "./app";
 import { env } from "@/config/env";
 import { ensureSuperAdminAccount } from "@/services/bootstrap.service";
+import { startDailyDatabaseBackupScheduler } from "@/services/databaseBackup.service";
 
 function getOption(name: string): string | undefined {
   const optionIndex = process.argv.indexOf(`--${name}`);
@@ -22,9 +23,11 @@ async function startServer() {
   const server = app.listen(port, host, () => {
     console.log(`Server running at http://${host}:${port} in ${env.NODE_ENV} mode`);
   });
+  const stopDatabaseBackupScheduler = startDailyDatabaseBackupScheduler();
 
   process.on("SIGTERM", () => {
     console.log("SIGTERM received, shutting down gracefully");
+    stopDatabaseBackupScheduler();
     server.close(() => {
       console.log("Process terminated");
       process.exit(0);
@@ -33,6 +36,7 @@ async function startServer() {
 
   process.on("SIGINT", () => {
     console.log("SIGINT received, shutting down gracefully");
+    stopDatabaseBackupScheduler();
     server.close(() => {
       console.log("Process terminated");
       process.exit(0);
