@@ -236,6 +236,7 @@ export default function SettingsPage() {
             )}
             options={[
               { value: "1-min", label: "1 minute" },
+              { value: "2-min", label: "2 minutes" },
               { value: "15-min", label: "15 minutes" },
               { value: "30-min", label: "30 minutes" },
               { value: "1-hour", label: "1 hour" },

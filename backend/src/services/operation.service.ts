@@ -172,10 +172,16 @@ export const operationService = {
   },
 
   // Operation Log
-  async findAll(filters?: {status?: string; team_id?: string; from?: string; to?: string}) {
+  async findAll(filters?: {status?: string; team_id?: string; from?: string; to?: string; submitted_by?: string}) {
     const where: Record<string, unknown> = {}
     if(filters?.status) where["status"] = filters.status
     if(filters?.team_id) where["team_id"] = filters.team_id
+    if (filters?.submitted_by) {
+      where["OR"] = [
+        { submitted_by: filters.submitted_by },
+        { status: { in: ["VALIDATED", "REJECTED"] } },
+      ]
+    }
     if(filters?.from || filters?.to) {
       where["operation_date"] = {
         ...(filters.from && { gte: new Date(filters.from)}),
@@ -200,7 +206,7 @@ export const operationService = {
     })
   },
 
-  async findById(operationId: string) {
+  async findById(operationId: string, submittedBy?: string) {
     const op = await prisma.operationLog.findUnique({
       where: { operation_id: operationId },
       include: {
@@ -218,6 +224,10 @@ export const operationService = {
     })
 
     if (!op) throw new NotFoundError("OperationLog", operationId)
+    const isReviewed = op.status === "VALIDATED" || op.status === "REJECTED"
+    if (submittedBy && op.submitted_by !== submittedBy && !isReviewed) {
+      throw new NotFoundError("OperationLog", operationId)
+    }
     return op
   },
 

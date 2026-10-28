@@ -128,16 +128,19 @@ export const notificationsService = {
           { preferences: { is: null } },
         ],
       },
-      select: { user_id: true },
+      select: { user_id: true, role: true },
     })
-    if (recipients.length === 0) return 0
+    const eligibleRecipients = recipients.filter((recipient) =>
+      recipient.role !== "TEAM_LEADER" || recipient.user_id === activity.pin_owner_id,
+    )
+    if (eligibleRecipients.length === 0) return 0
 
     const result = await prisma.notification.createMany({
-      data: recipients.map(({ user_id }) => getApprovalNotificationData(user_id, activity)),
+      data: eligibleRecipients.map(({ user_id }) => getApprovalNotificationData(user_id, activity)),
       skipDuplicates: true,
     })
     await pushNotifications(
-      recipients.map(({ user_id }) => user_id),
+      eligibleRecipients.map(({ user_id }) => user_id),
       [`activity:${activity.activity_id}`],
     )
     return result.count
@@ -145,31 +148,32 @@ export const notificationsService = {
 
   async syncApprovalNotifications(userId: string) {
     const historyStart = new Date(Date.now() - NOTIFICATION_HISTORY_DAYS * 24 * 60 * 60 * 1000)
-    const [recipient, submissions] = await Promise.all([
-      prisma.user.findFirst({
-        where: {
-          user_id: userId,
-          isActive: true,
-          OR: [
-            { preferences: { is: { approvalNotifications: true } } },
-            { preferences: { is: null } },
-          ],
-        },
-        select: { user_id: true },
-      }),
-      prisma.activityLog.findMany({
-        where: {
-          archivedAt: null,
-          createdAt: { gte: historyStart },
-          action: { startsWith: "Submitted " },
-          module: { in: ["Operations", "Patients", "Dispatch"] },
-          status: "Success",
-        },
-        orderBy: { createdAt: "desc" },
-        take: MAX_NOTIFICATIONS,
-      }),
-    ])
-    if (!recipient || submissions.length === 0) return 0
+    const recipient = await prisma.user.findFirst({
+      where: {
+        user_id: userId,
+        isActive: true,
+        OR: [
+          { preferences: { is: { approvalNotifications: true } } },
+          { preferences: { is: null } },
+        ],
+      },
+      select: { user_id: true, role: true },
+    })
+    if (!recipient) return 0
+
+    const submissions = await prisma.activityLog.findMany({
+      where: {
+        archivedAt: null,
+        createdAt: { gte: historyStart },
+        action: { startsWith: "Submitted " },
+        module: { in: ["Operations", "Patients", "Dispatch"] },
+        status: "Success",
+        ...(recipient.role === "TEAM_LEADER" && { pin_owner_id: userId }),
+      },
+      orderBy: { createdAt: "desc" },
+      take: MAX_NOTIFICATIONS,
+    })
+    if (submissions.length === 0) return 0
 
     const result = await prisma.notification.createMany({
       data: submissions.map((activity) => getApprovalNotificationData(userId, activity)),

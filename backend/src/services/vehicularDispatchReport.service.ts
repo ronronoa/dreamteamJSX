@@ -48,10 +48,19 @@ function toDispatchRecord(dispatch: DispatchRecord) {
   }
 }
 
-async function findDispatchRecordById(id: string) {
+async function findDispatchRecordById(id: string, submittedBy?: string) {
   const dispatch = await prisma.vehicularDispatch.findFirst({
     // where: { dispatch_id: id, operation_id: null, patient_log_id: null, archive: null },
-    where: { dispatch_id: id, archive: null },
+    where: {
+      dispatch_id: id,
+      archive: null,
+      ...(submittedBy && {
+        OR: [
+          { submitted_by: submittedBy },
+          { status: { in: ["VALIDATED", "REJECTED"] } },
+        ],
+      }),
+    },
     include: dispatchRecordInclude,
   })
   if (!dispatch) throw new NotFoundError("Vehicle dispatch", id)
@@ -105,9 +114,17 @@ function formatPassengerAddress(person: VehicularDispatchReportInput["passengers
 }
 
 export const vehicularDispatchReportService = {
-  async list() {
+  async list(submittedBy?: string) {
     const dispatches = await prisma.vehicularDispatch.findMany({
-      where: { archive: null },
+      where: {
+        archive: null,
+        ...(submittedBy && {
+          OR: [
+            { submitted_by: submittedBy },
+            { status: { in: ["VALIDATED", "REJECTED"] } },
+          ],
+        }),
+      },
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
       include: dispatchRecordInclude,
     })
@@ -115,8 +132,8 @@ export const vehicularDispatchReportService = {
     return dispatches.map(toDispatchRecord)
   },
 
-  async getById(id: string) {
-    return findDispatchRecordById(id)
+  async getById(id: string, submittedBy?: string) {
+    return findDispatchRecordById(id, submittedBy)
   },
 
   async review(id: string, actor: { userId: string; role: Role }, pin: string, action: ReportReviewAction, rejectedReason?: string) {

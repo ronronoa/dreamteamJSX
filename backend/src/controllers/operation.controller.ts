@@ -62,6 +62,7 @@ export const operationController = {
         try {
             const { status, team_id, from, to} = req.query as Record<string, string | undefined>
             const operations = await operationService.findAll({
+                ...(req.user?.role === "TEAM_LEADER" && { submitted_by: req.user.userId }),
                 ...(status !== undefined && { status }),
                 ...(team_id !== undefined && { team_id }),
                 ...(from !== undefined && { from }),
@@ -76,7 +77,7 @@ export const operationController = {
     async getById(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = validateOrThrow(OperationIdParamSchema.safeParse(req.params))
-            const operation = await operationService.findById(id)
+            const operation = await operationService.findById(id, req.user?.role === "TEAM_LEADER" ? req.user.userId : undefined)
             res.status(200).json({ operation })
         } catch (err) { next(err) }
     },

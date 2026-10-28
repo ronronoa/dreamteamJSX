@@ -14,20 +14,31 @@ const patientLogIncludes = {
 } as const;
 
 export const patientLogService = {
-  list() {
+  list(submittedBy?: string) {
     return prisma.patientLog.findMany({
-      where: { archive: null },
+      where: {
+        archive: null,
+        ...(submittedBy && {
+          OR: [
+            { submitted_by: submittedBy },
+            { status: { in: ["VALIDATED", "REJECTED"] } },
+          ],
+        }),
+      },
       include: patientLogIncludes,
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     });
   },
 
-  async getById(id: string) {
+  async getById(id: string, submittedBy?: string) {
     const patientLog = await prisma.patientLog.findUnique({
       where: { patient_log_id: id },
       include: patientLogIncludes,
     });
-    if (!patientLog || patientLog.archive) throw new NotFoundError("Patient log", id);
+    const isReviewed = patientLog?.status === "VALIDATED" || patientLog?.status === "REJECTED"
+    if (!patientLog || patientLog.archive || (submittedBy && patientLog.submitted_by !== submittedBy && !isReviewed)) {
+      throw new NotFoundError("Patient log", id);
+    }
     return patientLog;
   },
 

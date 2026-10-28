@@ -4,9 +4,10 @@ import { validateOrThrow } from "@/shared/utils";
 import type { Request, Response, NextFunction } from "express";
 
 export const patientLogController = {
-  async list(_req: Request, res: Response, next: NextFunction) {
+  async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const patientLogs = await patientLogService.list();
+      const submitterId = req.user?.role === "TEAM_LEADER" ? req.user.userId : undefined;
+      const patientLogs = await patientLogService.list(submitterId);
       res.status(200).json({ patientLogs });
     } catch (error) {
       next(error);
@@ -16,7 +17,8 @@ export const patientLogController = {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = validateOrThrow(PatientLogParamsSchema.safeParse(req.params));
-      const patientLog = await patientLogService.getById(id);
+      const submitterId = req.user?.role === "TEAM_LEADER" ? req.user.userId : undefined;
+      const patientLog = await patientLogService.getById(id, submitterId);
       res.status(200).json({ patientLog });
     } catch (error) {
       next(error);

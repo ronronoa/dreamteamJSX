@@ -27,9 +27,10 @@ function parseFormData(value: unknown) {
 }
 
 export const vehicularDispatchReportController = {
-  async list(_req: Request, res: Response, next: NextFunction) {
+  async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const dispatches = await vehicularDispatchReportService.list()
+      const submitterId = req.user?.role === "TEAM_LEADER" ? req.user.userId : undefined
+      const dispatches = await vehicularDispatchReportService.list(submitterId)
       res.status(200).json({ dispatches })
     } catch (error) {
       next(error)
@@ -39,7 +40,8 @@ export const vehicularDispatchReportController = {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = validateOrThrow(VehicularDispatchParamsSchema.safeParse(req.params))
-      const dispatch = await vehicularDispatchReportService.getById(id)
+      const submitterId = req.user?.role === "TEAM_LEADER" ? req.user.userId : undefined
+      const dispatch = await vehicularDispatchReportService.getById(id, submitterId)
       res.status(200).json({ dispatch })
     } catch (error) {
       next(error)
