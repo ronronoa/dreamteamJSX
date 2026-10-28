@@ -10,7 +10,7 @@ import { pipeline } from "node:stream/promises";
 import { env } from "@/config/env";
 
 const BACKUP_DIRECTORY = fileURLToPath(new URL("../../backups/", import.meta.url));
-const SYSTEM_DATE_CHECK_INTERVAL_MS = 10_000;
+const SYSTEM_DATE_CHECK_INTERVAL_MS = 10800_000; // 3 hours
 
 export function startDatabaseDump(): ChildProcessWithoutNullStreams {
   const databaseUrl = new URL(env.DATABASE_URL);
@@ -38,6 +38,7 @@ export async function createDailyDatabaseBackup(): Promise<void> {
   const temporaryPath = `${backupPath}.${randomUUID()}.tmp`;
 
   await mkdir(BACKUP_DIRECTORY, { recursive: true, mode: 0o700 });
+  console.log("Creating daily database...")
   try {
     await access(backupPath, constants.F_OK);
     console.info(`Daily database backup already exists: ${backupPath}`);

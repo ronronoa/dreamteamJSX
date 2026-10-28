@@ -37,7 +37,17 @@ const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Use
 
 const defaultSections: DashboardSidebarSection[] = [];
 
-const fullAccessSections: DashboardSidebarSection[] = [
+const superAdminSections: DashboardSidebarSection[] = [
+  // { label: "Main", items: [dashboardItem] },
+  { label: "Archives", items: [archiveItem] },
+  {
+    label: "Administration",
+    // items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],
+    items: [usersItem, activityItem, profileItem, settingsItem],
+  },
+];
+
+const departmentHeadSections: DashboardSidebarSection[] = [
   { label: "Main", items: [dashboardItem] },
   { label: "Operations", items: operationItems },
   { label: "Archives", items: [archiveItem] },
@@ -63,14 +73,15 @@ const teamLeadSections: DashboardSidebarSection[] = [
       { label: "Operation Log Records", href: D.OPERATIONS, icon: ClipboardList },
       { label: "Patient Log Records",   href: D.PATIENTS,   icon: HeartPulse },
       { label: "Vehicle Log Records",   href: D.VEHICLES,   icon: Truck },
+      { label: "Inventory",             href: D.INVENTORY,  icon: Package },
     ],
   },
-  { label: "Administration", items: [profileItem] },
+  { label: "Administration", items: [profileItem, settingsItem] },
 ];
 
 export const dashboardSectionsByRole: Record<Role, DashboardSidebarSection[]> = {
-  SUPER_ADMIN: fullAccessSections,
-  DEPARTMENT_HEAD: fullAccessSections,
+  SUPER_ADMIN: superAdminSections,
+  DEPARTMENT_HEAD: departmentHeadSections,
   DEPUTY: departmentDeputySections,
   TEAM_LEADER: teamLeadSections,
   MEMBER: defaultSections,

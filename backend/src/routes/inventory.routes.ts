@@ -4,7 +4,7 @@ import { Router } from "express";
 
 export const inventoryRoutes = Router();
 
-const inventoryManagers = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"] as const;
+const inventoryManagers = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEADER"] as const;
 
 inventoryRoutes.get("/inventory/report-form-options", inventoryController.listForReport);
 inventoryRoutes.get("/inventory", requireAuth, inventoryController.list);
