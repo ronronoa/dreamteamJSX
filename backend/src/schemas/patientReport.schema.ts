@@ -18,6 +18,7 @@ const addressSchema = z.object({
 });
 
 const timeSchema = z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]$/);
+const optionalTimeSchema = z.union([timeSchema, z.literal("")]);
 const dispatchTimeSchema = z.preprocess((value) => value === "" ? "12:00" : value, timeSchema);
 const formTimeSchema = z.preprocess(
   (value) => value === "" || value === undefined
@@ -80,20 +81,27 @@ export const PatientReportSchema = z.object({
     temp: z.string().trim().max(30),
     medicalAssessment: z.string().trim().min(1).max(10000),
     firstAidGiven: z.string().trim().max(10000),
-    hospitalName: z.string().trim().min(1).max(200),
+    hospitalName: z.string().trim().max(200),
     hospitalRepresentative: personNameSchema,
-    hospitalInTime: timeSchema,
+    hospitalInTime: optionalTimeSchema,
     hospitalInPeriod: z.enum(["AM", "PM"]),
-    hospitalOutTime: timeSchema,
+    hospitalOutTime: optionalTimeSchema,
     hospitalOutPeriod: z.enum(["AM", "PM"]),
   }),
   waiverForm: z.object({
     description: z.string().trim().max(10000).default(""),
   }).default({ description: "" }),
   inventory: PatientInventorySchema,
-}).refine((form) => form.firstAidHospital.hospitalName.length > 0, {
-  path: ["firstAidHospital", "hospitalName"],
-  message: "Hospital name is required.",
+}).superRefine((form, context) => {
+  const { firstAidHospital } = form;
+  if (firstAidHospital.hospitalName) {
+    if (!firstAidHospital.hospitalInTime) {
+      context.addIssue({ code: "custom", path: ["firstAidHospital", "hospitalInTime"], message: "Hospital in time is required when a hospital is entered." });
+    }
+    if (!firstAidHospital.hospitalOutTime) {
+      context.addIssue({ code: "custom", path: ["firstAidHospital", "hospitalOutTime"], message: "Hospital out time is required when a hospital is entered." });
+    }
+  }
 }).refine((form) => form.responderDetails.responders.length + form.responderDetails.otherResponders.length > 0, {
   path: ["responderDetails", "responders"],
   message: "Add at least one responder.",

@@ -73,6 +73,9 @@ export const OperationReportSchema = z.object({
     arrivalPeriod: z.enum(["AM", "PM"]),
     odometerIn: optionalOdometer,
     odometerOut: optionalOdometer,
+  }).refine((dispatch) => dispatch.vehicle === "none" || Boolean(dispatch.driver.trim()), {
+    path: ["driver"],
+    message: "Enter the driver's name.",
   }),
   people: ReportPeopleSchema,
   operationDescription: z.object({

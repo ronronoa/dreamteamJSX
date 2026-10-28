@@ -642,9 +642,15 @@ export const reportFormsService = {
     const departure = getDateTime(reportDate, dispatch.departTime, dispatch.departPeriod);
     const arrival = getDateTime(reportDate, dispatch.arrivalTime, dispatch.arrivalPeriod);
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
-    const hospitalIn = getDateTime(reportDate, firstAidHospital.hospitalInTime, firstAidHospital.hospitalInPeriod);
-    const hospitalOut = getDateTime(reportDate, firstAidHospital.hospitalOutTime, firstAidHospital.hospitalOutPeriod);
-    if (hospitalOut < hospitalIn) hospitalOut.setDate(hospitalOut.getDate() + 1);
+    const hospitalIn = firstAidHospital.hospitalInTime
+      ? getDateTime(reportDate, firstAidHospital.hospitalInTime, firstAidHospital.hospitalInPeriod)
+      : null;
+    const hospitalOut = firstAidHospital.hospitalOutTime
+      ? getDateTime(reportDate, firstAidHospital.hospitalOutTime, firstAidHospital.hospitalOutPeriod)
+      : null;
+    if (hospitalIn && hospitalOut && hospitalOut < hospitalIn) {
+      hospitalOut.setDate(hospitalOut.getDate() + 1);
+    }
     const reportPayload = {
       ...form,
       dispatch: { ...dispatch, odometerIn: String(dispatch.odometerIn), odometerOut: String(dispatch.odometerOut) },
