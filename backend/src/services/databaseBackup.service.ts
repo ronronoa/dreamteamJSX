@@ -25,9 +25,10 @@ export function startDatabaseDump(): ChildProcessWithoutNullStreams {
   const sslMode = databaseUrl.searchParams.get("sslmode");
   if (sslMode) processEnvironment["PGSSLMODE"] = sslMode;
 
-  return spawn("pg_dump", ["--format=custom", "--no-password"], {
+  return spawn(env.PG_DUMP_PATH ?? "pg_dump", ["--format=custom", "--no-password"], {
     env: processEnvironment,
     stdio: ["pipe", "pipe", "pipe"],
+    windowsHide: true,
   });
 }
 
