@@ -112,45 +112,47 @@ export default function SettingsPage() {
       {error && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {message && <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 
-      <SettingsSection icon={Sparkles} title="Workspace identity" description="Set the shared system name and office contact details.">
-        <Row label="System name" wide>
-          <CommonInput
-            className="w-full"
-            aria-label="System name"
-            value={settings.workspace.systemName}
-            onChange={(event) => setSettings((current) =>
-              ({ ...current, workspace:
-                { ...current.workspace, systemName: event.target.value }
-              }))}
-            disabled={!canManageWorkspace || saving} />
-        </Row>
-        <Row
-          label="Office name"
-          wide>
-          <CommonInput
-            className="w-full"
-            aria-label="Office name"
-            value={settings.workspace.officeName}
-            onChange={(event) => setSettings((current) => ({
-              ...current, workspace:
-              { ...current.workspace, officeName: event.target.value }
-            }))}
-            disabled={!canManageWorkspace || saving} />
-        </Row>
-        <Row
-          label="Office hotline"
-          wide>
-          <CommonInput
-            className="w-full"
-            aria-label="Office hotline"
-            value={settings.workspace.officeHotline}
-            onChange={(event) => setSettings((current) => ({
-              ...current, workspace: {
-                ...current.workspace, officeHotline: event.target.value }
-            }))}
-            disabled={!canManageWorkspace || saving} />
-        </Row>
         {canManageWorkspace &&
+      <SettingsSection icon={Sparkles} title="Workspace identity" description="Set the shared system name and office contact details.">
+
+            <Row label="System name" wide>
+              <CommonInput
+                className="w-full"
+                aria-label="System name"
+                value={settings.workspace.systemName}
+                onChange={(event) => setSettings((current) =>
+                  ({ ...current, workspace:
+                    { ...current.workspace, systemName: event.target.value }
+                  }))}
+                disabled={!canManageWorkspace || saving} />
+            </Row>
+            <Row
+              label="Office name"
+              wide>
+              <CommonInput
+                className="w-full"
+                aria-label="Office name"
+                value={settings.workspace.officeName}
+                onChange={(event) => setSettings((current) => ({
+                  ...current, workspace:
+                  { ...current.workspace, officeName: event.target.value }
+                }))}
+                disabled={!canManageWorkspace || saving} />
+            </Row>
+            <Row
+              label="Office hotline"
+              wide>
+              <CommonInput
+                className="w-full"
+                aria-label="Office hotline"
+                value={settings.workspace.officeHotline}
+                onChange={(event) => setSettings((current) => ({
+                  ...current, workspace: {
+                    ...current.workspace, officeHotline: event.target.value }
+                }))}
+                disabled={!canManageWorkspace || saving} />
+            </Row>
+
           <div
             className="flex justify-end">
             <CommonButton
@@ -158,8 +160,10 @@ export default function SettingsPage() {
               disabled={saving}
               onClick={() => void saveWorkspace()}>
               {saving ? "Saving…" : "Save workspace"}
-            </CommonButton></div>}
+            </CommonButton>
+          </div>
       </SettingsSection>
+        }
 
       <SettingsSection icon={Bell} title="Alerts & notifications" description="Choose which operational changes require attention.">
         <Row label="Low stock alerts" hint="Notify when supplies are low or expired.">
@@ -231,7 +235,7 @@ export default function SettingsPage() {
               sessionTimeout: sessionTimeout as SettingsResponse["preferences"]["sessionTimeout"] }
             )}
             options={[
-              // { value: "1-min", label: "1 minute" },
+              { value: "1-min", label: "1 minute" },
               { value: "15-min", label: "15 minutes" },
               { value: "30-min", label: "30 minutes" },
               { value: "1-hour", label: "1 hour" },
