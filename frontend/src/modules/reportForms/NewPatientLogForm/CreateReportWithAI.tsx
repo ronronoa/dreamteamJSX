@@ -633,8 +633,8 @@ export default function CreateReportWithAI({
                 errorMessage={hasScanResult && !scanResult.checkedBy.trim() ? "Checked By is required to proceed." : undefined}
               />
 
-              <label className="block text-lg font-bold text-slate-100">Hospital Representative</label>
-              <CommonInput className="min-w-0" variant="compact" value={scanResult.hospitalRepresentative} onChange={(event) => updateTextField("hospitalRepresentative", event.target.value)} errorMessage={missingFieldMessage(scanResult.hospitalRepresentative, "Hospital representative")}/>
+              <label className="block text-lg font-bold text-slate-100">Hospital Representative (optional)</label>
+              <CommonInput className="min-w-0" variant="compact" value={scanResult.hospitalRepresentative} onChange={(event) => updateTextField("hospitalRepresentative", event.target.value)}/>
             </div>
 
           </div>

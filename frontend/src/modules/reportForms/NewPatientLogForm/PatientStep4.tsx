@@ -125,10 +125,12 @@ export default function PatientStep4({ formData, options, onEditStep, invalidSte
             <SummaryField label="PR" value={firstAidHospital.pr} />
             <SummaryField label="SPO2" value={firstAidHospital.spo2} />
             <SummaryField label="Temp" value={firstAidHospital.temp} />
-            <SummaryField label="Hospital Name" value={firstAidHospital.hospitalName} />
+            <SummaryField label="Hospital Name" value={firstAidHospital.hospitalName || "—"} />
             <SummaryField
               label="Hospital Representative"
-              value={formatPersonName(firstAidHospital.hospitalRepresentative)}
+              value={firstAidHospital.hospitalRepresentative.surname || firstAidHospital.hospitalRepresentative.firstName
+                ? formatPersonName(firstAidHospital.hospitalRepresentative)
+                : "—"}
             />
             <SummaryField
               label="Hospital In"

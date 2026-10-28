@@ -121,6 +121,7 @@ export default function VehicularDispatchSection({
           formType={formType}
           variant="compact"
           label="Driver"
+          required
           placeholder="e.g Juan Cruz"
           value={dispatch.driver}
           onChange={(e) => onDispatchChange({ driver: e.target.value })}

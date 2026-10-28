@@ -84,7 +84,8 @@ export function validateStep1(formData: OperationLogData, options: OperationForm
   }
   if (isOtherVehicle && !dispatch.vehicleOther?.trim()) errors["dispatch.vehicleOther"] = "Specify the vehicle.";
   if (hasSelectedVehicle) {
-    validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
+    if (!dispatch.driver.trim()) errors["dispatch.driver"] = "Enter the driver's name.";
+    else validateOptionalTextLength(dispatch.driver, 120, "Driver name must be 120 characters or fewer.", "dispatch.driver", errors);
     if (!OPERATION_TIME_PATTERN.test(dispatch.departTime)) errors["dispatch.departTime"] = "Enter a valid departure time.";
     if (!OPERATION_TIME_PATTERN.test(dispatch.arrivalTime)) errors["dispatch.arrivalTime"] = "Enter a valid arrival time.";
 

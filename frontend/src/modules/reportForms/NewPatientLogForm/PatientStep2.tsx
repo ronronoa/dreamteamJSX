@@ -30,6 +30,8 @@ export default function PatientStep2({
   onFirstAidHospitalChange,
   errors,
 }: PatientStep2Props) {
+  const hasHospitalName = Boolean(firstAidHospital.hospitalName.trim())
+
   function handleBirthdateChange(value: string) {
     onPatientDetailsChange({
       birthdate: value,
@@ -335,7 +337,7 @@ export default function PatientStep2({
 
           <CommonInput
             variant="compact"
-            label="Hospital Name"
+            label="Hospital Name (optional)"
             placeholder="Ex. Tala Hospital"
             value={firstAidHospital.hospitalName}
             onChange={(e) => onFirstAidHospitalChange({ hospitalName: e.target.value })}
@@ -344,7 +346,7 @@ export default function PatientStep2({
 
           <div>
             <label className="mb-1 block text-lg font-medium text-slate-900">
-              Hospital Representative
+              Hospital Representative (optional)
             </label>
 
             <div className="grid grid-cols-[1fr_1fr_80px_80px] gap-2">
@@ -407,7 +409,7 @@ export default function PatientStep2({
 
           <div className="grid grid-cols-2 gap-5">
             <CommonTimeInput
-              label="Hospital In"
+              label={`Hospital In${hasHospitalName ? " (required)" : ""}`}
               time={firstAidHospital.hospitalInTime}
               period={firstAidHospital.hospitalInPeriod}
               onTimeChange={(value) => onFirstAidHospitalChange({ hospitalInTime: value })}
@@ -415,7 +417,7 @@ export default function PatientStep2({
               errorMessage={errors.hospitalInTime}
             />
             <CommonTimeInput
-              label="Hospital Out"
+              label={`Hospital Out${hasHospitalName ? " (required)" : ""}`}
               time={firstAidHospital.hospitalOutTime}
               period={firstAidHospital.hospitalOutPeriod}
               onTimeChange={(value) => onFirstAidHospitalChange({ hospitalOutTime: value })}

@@ -69,6 +69,10 @@ export const isStep1Complete = (formData: PatientLogData) => {
 
 export const isStep2Complete = (formData: PatientLogData) => {
   const { patientDetails, firstAidHospital } = formData
+  const hospitalDetailsAreComplete = !firstAidHospital.hospitalName.trim() || (
+    firstAidHospital.hospitalInTime.trim() !== "" &&
+    firstAidHospital.hospitalOutTime.trim() !== ""
+  )
 
   return (
     patientDetails.name.surname.trim() !== "" &&
@@ -84,11 +88,8 @@ export const isStep2Complete = (formData: PatientLogData) => {
     patientDetails.address.block.trim() !== "" &&
     patientDetails.address.lot.trim() !== "" &&
     firstAidHospital.medicalAssessment.trim() !== "" &&
-    firstAidHospital.hospitalName.trim() !== "" &&
-    firstAidHospital.hospitalRepresentative.surname.trim() !== "" &&
-    firstAidHospital.hospitalRepresentative.firstName.trim() !== "" &&
-    firstAidHospital.hospitalInTime.trim() !== "" &&
-    firstAidHospital.hospitalOutTime.trim() !== ""
+    firstAidHospital.hospitalName.trim().length <= 200 &&
+    hospitalDetailsAreComplete
   )
 }
 
@@ -163,11 +164,12 @@ export function getPatientStepErrors(step: number, formData: PatientLogData): Re
     validatePatientAddressValue(patientDetails.address.block, "Block", "block", errors)
     validatePatientAddressValue(patientDetails.address.lot, "Lot", "lot", errors)
     if (!firstAidHospital.medicalAssessment.trim()) errors.medicalAssessment = "Enter the medical assessment."
-    if (!firstAidHospital.hospitalName.trim()) errors.hospitalName = "Enter the hospital name."
-    if (!firstAidHospital.hospitalRepresentative.surname.trim()) errors.hospitalSurname = "Enter the representative's surname."
-    if (!firstAidHospital.hospitalRepresentative.firstName.trim()) errors.hospitalFirstName = "Enter the representative's first name."
-    if (!firstAidHospital.hospitalInTime.trim()) errors.hospitalInTime = "Enter the hospital in time."
-    if (!firstAidHospital.hospitalOutTime.trim()) errors.hospitalOutTime = "Enter the hospital out time."
+    const hospitalName = firstAidHospital.hospitalName.trim()
+    if (hospitalName.length > 200) errors.hospitalName = "Hospital name must be 200 characters or fewer."
+    if (hospitalName) {
+      if (!firstAidHospital.hospitalInTime.trim()) errors.hospitalInTime = "Enter the hospital in time."
+      if (!firstAidHospital.hospitalOutTime.trim()) errors.hospitalOutTime = "Enter the hospital out time."
+    }
     return errors
   }
 
