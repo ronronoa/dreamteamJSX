@@ -61,7 +61,7 @@ export default function UserProfile() {
      * vertical space while the password card stays at its natural height.
      * The sidebar spans both rows so it lines up with the taller column.
      */
-    <div className="grid grid-cols-1 gap-3 xl:mt-10 xl:grid-cols-[380px_1fr] xl:grid-rows-[1fr_auto]">
+    <div className="grid grid-cols-1 gap-3  xl:grid-cols-[380px_1fr] xl:grid-rows-[1fr_auto]">
       <aside className={`${CARD_CLASS} flex flex-col p-6 xl:row-span-2`}>
         <IdentityCard
           profile={profile}
