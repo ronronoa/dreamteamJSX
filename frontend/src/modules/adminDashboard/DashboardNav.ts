@@ -37,16 +37,7 @@ const usersItem    = { label: "Manage Users",  href: D.MANAGEUSERS,    icon: Use
 
 const defaultSections: DashboardSidebarSection[] = [];
 
-const superAdminSections: DashboardSidebarSection[] = [
-  // { label: "Main", items: [dashboardItem] },
-  {
-    label: "Administration",
-    // items: [usersItem, activityItem, vehiclesItem, profileItem, settingsItem],
-    items: [usersItem, activityItem, profileItem, settingsItem],
-  },
-];
-
-const departmentHeadSections: DashboardSidebarSection[] = [
+const fullAccessSections: DashboardSidebarSection[] = [
   { label: "Main", items: [dashboardItem] },
   { label: "Operations", items: operationItems },
   { label: "Archives", items: [archiveItem] },
@@ -78,8 +69,8 @@ const teamLeadSections: DashboardSidebarSection[] = [
 ];
 
 export const dashboardSectionsByRole: Record<Role, DashboardSidebarSection[]> = {
-  SUPER_ADMIN: superAdminSections,
-  DEPARTMENT_HEAD: departmentHeadSections,
+  SUPER_ADMIN: fullAccessSections,
+  DEPARTMENT_HEAD: fullAccessSections,
   DEPUTY: departmentDeputySections,
   TEAM_LEADER: teamLeadSections,
   MEMBER: defaultSections,

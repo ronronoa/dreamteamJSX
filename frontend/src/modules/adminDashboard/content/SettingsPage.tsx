@@ -32,7 +32,7 @@ export default function SettingsPage() {
   // const [pinConfirm, setPinConfirm] = useState("")
   // const canManageGlobalPin = ["SUPER_ADMIN", "DEPARTMENT_HEAD"].includes(session?.user.role ?? "")
   const canManageWorkspace = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"].includes(session?.user.role ?? "")
-  const canManageForms = ["DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEAD"].includes(session?.user.role ?? "")
+  const canManageForms = ["SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY", "TEAM_LEAD"].includes(session?.user.role ?? "")
   const canDownloadDatabaseBackup = session?.user.role === "SUPER_ADMIN"
 
   useEffect(() => {

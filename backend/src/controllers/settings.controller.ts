@@ -70,7 +70,7 @@ export const settingsController = {
         res.destroy();
         return;
       }
-      next(new InternalError("The pg_dump utility is unavailable on the server."));
+      next(new InternalError("The database backup tool could not start. Configure PG_DUMP_PATH on the server or add pg_dump to PATH."));
     });
 
     dumpProcess.on("close", (exitCode) => {
