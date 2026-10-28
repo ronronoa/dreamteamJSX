@@ -15,10 +15,12 @@ import { useArchivesDashboard } from "./archives/useArchivesDashboard";
 
 export default function Archives() {
   const {
-    records, totalMatching, page, setPage, search, sourceType, filterOpen,
+    records, totalMatching, page, search, sourceType, filterOpen,
     setFilterOpen, loading, pageError, restoreTarget, setRestoreTarget,
     selectedRecord, setSelectedRecord, restoring, pageCount, statCards,
-    handleRestore, updateSearch, updateSourceType, loadArchives,
+    selectedRecords, allPageRecordsSelected, bulkRestoreOpen, setBulkRestoreOpen, restoreMessage,
+    handleRestore, handleRestoreSelected, toggleRecordSelection, toggleSelectAllPage,
+    clearSelectedRecords, updateSearch, updateSourceType, loadArchives, changePage,
   } = useArchivesDashboard();
 
   return (
@@ -32,6 +34,14 @@ export default function Archives() {
           ? `“${restoreTarget.record}” will be returned to its active records.`
           : "This record will be returned to the active records."}
         confirmLabel={restoring ? "Restoring…" : "Restore record"}
+      />
+      <AreYouSureModal
+        open={bulkRestoreOpen}
+        onClose={() => setBulkRestoreOpen(false)}
+        onConfirm={handleRestoreSelected}
+        title={`Restore ${selectedRecords.length} selected records?`}
+        description="The selected archived records will be returned to their active records."
+        confirmLabel={restoring ? "Restoring…" : "Restore selected"}
       />
 
       <Modal open={selectedRecord !== null} onClose={() => setSelectedRecord(null)}>
@@ -60,6 +70,7 @@ export default function Archives() {
         </div>
 
         {pageError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p>}
+        {restoreMessage && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{restoreMessage}</p>}
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -116,6 +127,29 @@ export default function Archives() {
               rowKey={(record) => record.archiveId}
               emptyMessage="No archived records match your search."
               columns={[
+                {
+                  label: "Select",
+                  align: "center",
+                  renderHeader: () => (
+                    <input
+                      type="checkbox"
+                      aria-label="Select all archived records on this page"
+                      checked={allPageRecordsSelected}
+                      onChange={toggleSelectAllPage}
+                      disabled={records.length === 0 || loading}
+                      className="h-4 w-4 rounded border-gray-300 accent-purple-700"
+                    />
+                  ),
+                  render: (record) => (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select archived record ${record.record}`}
+                      checked={selectedRecords.some((selected) => selected.archiveId === record.archiveId)}
+                      onChange={() => toggleRecordSelection(record)}
+                      className="h-4 w-4 rounded border-gray-300 accent-purple-700"
+                    />
+                  ),
+                },
                 { label: "Record ID", accessor: "id" },
                 { label: "Archived Date", render: (record) => <DateCell date={record.archivedDate} /> },
                 { label: "Type", accessor: "type" },
@@ -150,8 +184,21 @@ export default function Archives() {
               ]}
             />
 
-            <div className="flex items-center justify-center border-t border-gray-100 px-4 py-3">
-              <TablePagination currentPage={page} pageCount={pageCount} onPageChange={setPage} />
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+              <TablePagination currentPage={page} pageCount={pageCount} onPageChange={changePage} />
+              <div className="flex items-center gap-2">
+                {selectedRecords.length > 0 && (
+                  <CommonButton compact variant="gray" disabled={restoring} onClick={clearSelectedRecords}>Cancel</CommonButton>
+                )}
+                <CommonButton
+                  compact
+                  variant={selectedRecords.length > 0 ? "orange" : "gray"}
+                  disabled={restoring || selectedRecords.length === 0}
+                  onClick={() => setBulkRestoreOpen(true)}
+                >
+                  <RotateCcw size={14} /> Restore selected ({selectedRecords.length})
+                </CommonButton>
+              </div>
             </div>
           </div>
         </section>

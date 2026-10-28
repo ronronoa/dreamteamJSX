@@ -18,6 +18,9 @@ export function useArchivesDashboard() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [restoreTarget, setRestoreTarget] = useState<ArchiveRecord | null>(null);
+  const [selectedRecords, setSelectedRecords] = useState<ArchiveRecord[]>([]);
+  const [bulkRestoreOpen, setBulkRestoreOpen] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<ArchiveRecord | null>(null);
   const [restoring, setRestoring] = useState(false);
 
@@ -48,6 +51,8 @@ export function useArchivesDashboard() {
   }, [loadArchives]);
 
   const pageCount = getPageCount(totalMatching, PAGE_SIZE);
+  const allPageRecordsSelected = records.length > 0
+    && records.every((record) => selectedRecords.some((selected) => selected.archiveId === record.archiveId));
   const statCards = useMemo(() => [
     { label: "Archived records", value: stats.totalCount.toLocaleString(), sub: "Total archived entries", variant: "primary" as const },
     { label: "Operation Log", value: stats.operationCount.toLocaleString(), sub: "Archived operations" },
@@ -64,6 +69,7 @@ export function useArchivesDashboard() {
     try {
       await restoreArchiveRecord(accessToken, restoreTarget.sourceType, restoreTarget.sourceId);
       setRestoreTarget(null);
+      setSelectedRecords((current) => current.filter((record) => record.archiveId !== restoreTarget.archiveId));
       if (page > 1 && records.length === 1) {
         setPage(page - 1);
       } else {
@@ -76,21 +82,84 @@ export function useArchivesDashboard() {
     }
   }
 
+  async function handleRestoreSelected() {
+    if (!accessToken || selectedRecords.length === 0 || restoring) return;
+
+    setRestoring(true);
+    setPageError("");
+    setRestoreMessage("");
+    try {
+      const results = await Promise.allSettled(selectedRecords.map((record) =>
+        restoreArchiveRecord(accessToken, record.sourceType, record.sourceId),
+      ));
+      const failedRecords = selectedRecords.filter((_record, index) => results[index]?.status === "rejected");
+      const restoredCount = selectedRecords.length - failedRecords.length;
+
+      setSelectedRecords(failedRecords);
+      setBulkRestoreOpen(false);
+      setRestoreMessage(`${restoredCount} archived record${restoredCount === 1 ? "" : "s"} restored.`);
+
+      if (page > 1 && restoredCount >= records.length) {
+        setPage(page - 1);
+      } else {
+        await loadArchives();
+      }
+
+      if (failedRecords.length > 0) {
+        setPageError(`${failedRecords.length} record${failedRecords.length === 1 ? "" : "s"} could not be restored. You can retry the selected records.`);
+      }
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Could not restore the selected records.");
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  function toggleRecordSelection(record: ArchiveRecord) {
+    setSelectedRecords((current) => current.some((selected) => selected.archiveId === record.archiveId)
+      ? current.filter((selected) => selected.archiveId !== record.archiveId)
+      : [...current, record]);
+  }
+
+  function toggleSelectAllPage() {
+    setSelectedRecords((current) => {
+      if (allPageRecordsSelected) {
+        return current.filter((selected) => !records.some((record) => record.archiveId === selected.archiveId));
+      }
+
+      const selectedIds = new Set(current.map((record) => record.archiveId));
+      return [...current, ...records.filter((record) => !selectedIds.has(record.archiveId))];
+    });
+  }
+
+  function changePage(nextPage: number) {
+    setSelectedRecords([]);
+    setPage(nextPage);
+  }
+
+  function clearSelectedRecords() {
+    setSelectedRecords([]);
+  }
+
   function updateSearch(value: string) {
     setSearch(value);
+    setSelectedRecords([]);
     setPage(1);
   }
 
   function updateSourceType(value: string) {
     setSourceType(value);
+    setSelectedRecords([]);
     setPage(1);
     setFilterOpen(false);
   }
 
   return {
-    records, totalMatching, stats, page, setPage, search, sourceType,
+    records, totalMatching, stats, page, changePage, search, sourceType,
     filterOpen, setFilterOpen, loading, pageError, restoreTarget, setRestoreTarget,
     selectedRecord, setSelectedRecord, restoring, pageCount, statCards,
-    handleRestore, updateSearch, updateSourceType, loadArchives,
+    selectedRecords, allPageRecordsSelected, bulkRestoreOpen, setBulkRestoreOpen, restoreMessage,
+    handleRestore, handleRestoreSelected, toggleRecordSelection, toggleSelectAllPage,
+    clearSelectedRecords, updateSearch, updateSourceType, loadArchives,
   };
 }
