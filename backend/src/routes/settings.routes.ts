@@ -8,7 +8,7 @@ const databaseBackupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 2, st
 export const settingsRoutes = Router()
 
 settingsRoutes.get("/settings", requireAuth, settingsController.get)
-settingsRoutes.get("/settings/database-backup", requireAuth, requireRole("SUPER_ADMIN"), databaseBackupLimiter, settingsController.downloadDatabaseBackup)
+settingsRoutes.post("/settings/database-backup", requireAuth, requireRole("SUPER_ADMIN"), databaseBackupLimiter, settingsController.downloadDatabaseBackup)
 settingsRoutes.patch("/settings/workspace", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), settingsController.updateWorkspace)
 settingsRoutes.patch("/settings/preferences", requireAuth, settingsController.updatePreferences)
 settingsRoutes.put("/settings/global-pin", requireAuth, requireRole("SUPER_ADMIN", "DEPARTMENT_HEAD", "DEPUTY"), globalPinLimiter, settingsController.setGlobalPin)

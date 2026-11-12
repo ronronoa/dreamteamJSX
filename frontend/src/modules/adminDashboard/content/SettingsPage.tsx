@@ -4,7 +4,7 @@ import { useNavigate } from "react-router"
 import CommonButton from "@/components/common/widgets/CommonButton"
 import CommonInput from "@/components/common/widgets/CommonInput"
 import { useAuth } from "@/store/useAuth"
-import { downloadDatabaseBackup, fetchSettings, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
+import { downloadBackupChecksum, downloadDatabaseBackup, fetchSettings, updateUserPreferences, updateWorkspaceSettings, type SettingsResponse } from "@/api/settings"
 import { ROUTES } from "@/routes"
 import { Row, Select, SettingsSection, Toggle } from "./settings/SettingsPrimitives"
 
@@ -26,6 +26,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [backingUp, setBackingUp] = useState(false)
+  const [backupPassword, setBackupPassword] = useState("")
+  const [backupPasswordConfirmation, setBackupPasswordConfirmation] = useState("")
+  const [downloadedBackup, setDownloadedBackup] = useState<{ filename: string; checksum: string } | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   // const [pin, setPin] = useState("")
@@ -77,12 +80,25 @@ export default function SettingsPage() {
       return
     }
 
+    if (backupPassword.length < 12 || backupPassword.length > 128) {
+      setError("Use a backup password of 12 to 128 characters.")
+      return
+    }
+    if (backupPassword !== backupPasswordConfirmation) {
+      setError("Backup passwords do not match.")
+      return
+    }
+
     setBackingUp(true)
+    setDownloadedBackup(null)
     setError("")
     setMessage("")
     try {
-      await downloadDatabaseBackup(session.accessToken)
-      setMessage("Database backup downloaded. Store it somewhere secure.")
+      const backup = await downloadDatabaseBackup(session.accessToken, backupPassword)
+      setDownloadedBackup(backup)
+      setBackupPassword("")
+      setBackupPasswordConfirmation("")
+      setMessage("Encrypted backup downloaded and SHA-256 verified. Keep your password separately; it is required to restore the backup.")
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not download the database backup.")
     } finally {
@@ -252,12 +268,41 @@ export default function SettingsPage() {
       }
 
       {canDownloadDatabaseBackup && (
-        <SettingsSection icon={Database} title="Database backup" description="Download a PostgreSQL backup of the current database.">
-          <Row label="Download backup" hint="The backup contains sensitive system data. Store it securely." isLast>
+        <SettingsSection icon={Database} title="Database backup" description="Download an AES-256 encrypted PostgreSQL backup with SHA-256 verification.">
+          <Row label="Backup password" hint="Use 12 to 128 characters. Save this password separately; it cannot be recovered.">
+            <CommonInput
+              id="backup-password"
+              aria-label="Backup password"
+              type="password"
+              showPasswordToggle
+              maxLength={128}
+              value={backupPassword}
+              onChange={(event) => setBackupPassword(event.target.value)}
+              disabled={backingUp}
+            />
+          </Row>
+          <Row label="Confirm backup password">
+            <CommonInput
+              id="backup-password-confirmation"
+              aria-label="Confirm backup password"
+              type="password"
+              maxLength={128}
+              value={backupPasswordConfirmation}
+              onChange={(event) => setBackupPasswordConfirmation(event.target.value)}
+              disabled={backingUp}
+            />
+          </Row>
+          <Row label="Download backup" hint="Your password is required to decrypt the backup before restoring it." isLast>
             <CommonButton compact disabled={backingUp} onClick={() => void createDatabaseBackup()}>
               {backingUp ? "Preparing backup…" : "Download database backup"}
             </CommonButton>
           </Row>
+          {downloadedBackup && (
+            <div className="space-y-2 pt-3 text-sm">
+              <p className="break-all">SHA-256: {downloadedBackup.checksum}</p>
+              <CommonButton compact onClick={() => downloadBackupChecksum(downloadedBackup)}>Download SHA-256 checksum</CommonButton>
+            </div>
+          )}
         </SettingsSection>
       )}
     </div>

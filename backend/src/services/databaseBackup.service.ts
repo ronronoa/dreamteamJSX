@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
-import { createWriteStream } from "node:fs";
 import { access, link, mkdir, open, rm, unlink } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import { constants } from "node:fs";
@@ -71,7 +70,8 @@ export async function createDailyDatabaseBackup(): Promise<void> {
 
     await pipeline(
       dumpProcess.stdout,
-      createWriteStream(temporaryPath, { fd: backupFile.fd, autoClose: true }),
+      // Let the FileHandle track closure so garbage collection cannot close it again.
+      backupFile.createWriteStream(),
     );
     const { exitCode, signal } = await processClosed;
     if (exitCode !== 0) {

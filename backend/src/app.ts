@@ -13,7 +13,7 @@ app.use(helmet());
   app.use(cors({
     origin: [ "http://localhost:5173", "https://dreamteamjsx.web.app" ],
     credentials: true,
-    exposedHeaders: ["Retry-After", "Content-Disposition"],
+    exposedHeaders: ["Retry-After", "Content-Disposition", "X-Backup-SHA256"],
   }));
 
 app.use(express.json());

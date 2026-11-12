@@ -1,5 +1,9 @@
 import { z } from "zod"
 
+export const DatabaseBackupSchema = z.object({
+  password: z.string().min(12, "Use a backup password of at least 12 characters.").max(128),
+})
+
 const SESSION_TIMEOUTS = ["1-min", "2-min", "15-min", "30-min", "1-hour", "2-hours"] as const
 const ARCHIVE_RETENTION_OPTIONS = ["6-months", "1-year", "3-years", "5-years", "10-years", "Never"] as const
 

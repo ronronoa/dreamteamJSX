@@ -41,9 +41,11 @@ export const updateUserPreferences = (token: string, preferences: Partial<UserPr
 export const setGlobalPin = (token: string, pin: string) =>
   request<{ success: boolean }>("/settings/global-pin", token, "PUT", { pin })
 
-export async function downloadDatabaseBackup(token: string): Promise<void> {
+export async function downloadDatabaseBackup(token: string, password: string): Promise<{ filename: string; checksum: string }> {
   const response = await apiFetch("/settings/database-backup", {
-    headers: { Authorization: `Bearer ${token}` },
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
   })
   if (!response.ok) {
     const result = await response.json().catch(() => ({}))
@@ -51,10 +53,29 @@ export async function downloadDatabaseBackup(token: string): Promise<void> {
   }
 
   const backupBlob = await response.blob()
+  const checksum = response.headers.get("X-Backup-SHA256")
+  if (!checksum || !/^[a-f0-9]{64}$/.test(checksum)) {
+    throw new Error("The server did not provide a valid SHA-256 checksum. Please try again.")
+  }
+  const digest = await crypto.subtle.digest("SHA-256", await backupBlob.arrayBuffer())
+  const actualChecksum = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
+  if (actualChecksum !== checksum) throw new Error("Backup verification failed. Please download it again.")
+
+  const filename = getBackupFilename(response.headers.get("Content-Disposition"))
+  saveDownload(backupBlob, filename)
+  return { filename, checksum }
+}
+
+export function downloadBackupChecksum(backup: { filename: string; checksum: string }): void {
+  const checksumFile = new Blob([`${backup.checksum}  ${backup.filename}\n`], { type: "text/plain" })
+  saveDownload(checksumFile, `${backup.filename}.sha256`)
+}
+
+function saveDownload(backupBlob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(backupBlob)
   const link = document.createElement("a")
   link.href = objectUrl
-  link.download = getBackupFilename(response.headers.get("Content-Disposition"))
+  link.download = filename
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -63,5 +84,5 @@ export async function downloadDatabaseBackup(token: string): Promise<void> {
 
 function getBackupFilename(contentDisposition: string | null): string {
   const filename = contentDisposition?.match(/filename="([^"]+)"/)?.[1]
-  return filename ?? "elms-database-backup.dump"
+  return filename ?? "elms-database-backup.dump.enc"
 }

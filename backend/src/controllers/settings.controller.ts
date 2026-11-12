@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from "express"
-import { SetGlobalPinSchema, UpdateUserPreferencesSchema, UpdateWorkspaceSettingsSchema } from "@/schemas/settings.schema"
+import { DatabaseBackupSchema, SetGlobalPinSchema, UpdateUserPreferencesSchema, UpdateWorkspaceSettingsSchema } from "@/schemas/settings.schema"
 import { settingsService } from "@/services/settings.service"
 import { pinService } from "@/services/pin.service"
 import { UnauthorizedError, ValidationError } from "@/shared/errors/app-error"
 import { z } from "zod"
-import { startDatabaseDump } from "@/services/databaseBackup.service"
+import { prepareEncryptedDatabaseBackup } from "@/services/encryptedDatabaseBackup.service"
 import { InternalError } from "@/shared/errors/app-error"
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
@@ -41,53 +41,34 @@ export const settingsController = {
       res.json(await pinService.setGlobalPin(getUserId(req), input.pin))
     } catch (error) { next(error) }
   },
-  async downloadDatabaseBackup(_req: Request, res: Response, next: NextFunction) {
-    let dumpProcess: ReturnType<typeof startDatabaseDump>;
-    try {
-      dumpProcess = startDatabaseDump();
-      dumpProcess.stdin.end();
-    } catch {
-      next(new InternalError("Could not start the database backup."));
-      return;
-    }
-
-    const date = new Date().toISOString().slice(0, 10);
-    res.setHeader("Content-Type", "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="elms-database-backup-${date}.dump"`);
+  async downloadDatabaseBackup(req: Request, res: Response, next: NextFunction) {
+    const cancellation = new AbortController();
+    const cancelBackup = () => cancellation.abort();
+    res.once("close", cancelBackup);
     res.setHeader("Cache-Control", "no-store");
-    dumpProcess.stderr.resume();
-    let processErrorHandled = false;
-
-    dumpProcess.stdout.on("data", (chunk: Buffer) => {
-      if (res.write(chunk)) return;
-      dumpProcess.stdout.pause();
-      res.once("drain", () => dumpProcess.stdout.resume());
-    });
-
-    dumpProcess.on("error", () => {
-      processErrorHandled = true;
-      if (res.headersSent) {
-        res.destroy();
+    try {
+      const { password } = parseBody(DatabaseBackupSchema, req.body);
+      const backup = await prepareEncryptedDatabaseBackup(password, cancellation.signal);
+      const date = new Date().toISOString().slice(0, 10);
+      res.setHeader("X-Backup-SHA256", backup.checksum);
+      res.download(backup.filePath, `elms-database-backup-${date}.dump.enc`, (error) => {
+        res.off("close", cancelBackup);
+        void backup.cleanup().catch(() => console.error("Could not remove temporary encrypted backup."));
+        if (!error) return;
+        if (res.headersSent) {
+          res.destroy();
+          return;
+        }
+        next(error);
+      });
+    } catch (error) {
+      res.off("close", cancelBackup);
+      if (res.destroyed) return;
+      if (error instanceof ValidationError) {
+        next(error);
         return;
       }
-      next(new InternalError("The database backup tool could not start. Configure PG_DUMP_PATH on the server or add pg_dump to PATH."));
-    });
-
-    dumpProcess.on("close", (exitCode) => {
-      if (processErrorHandled || res.destroyed || res.writableEnded) return;
-      if (exitCode === 0) {
-        res.end();
-        return;
-      }
-      if (!res.headersSent) {
-        next(new InternalError("The database backup failed."));
-        return;
-      }
-      res.destroy();
-    });
-
-    res.on("close", () => {
-      if (!res.writableEnded) dumpProcess.kill();
-    });
+      next(new InternalError("Could not create the encrypted backup. Check the server's pg_dump configuration."));
+    }
   },
 }
