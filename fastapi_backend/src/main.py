@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="trOCR",
+    title="Local Qwen OCR",
     docs_url="/docs"
 )
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.main:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8080,
         # reload=True,
     )

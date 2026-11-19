@@ -2,7 +2,7 @@ import type { Request, Response as ExpressResponse, NextFunction } from "express
 import { env } from "@/config/env";
 import { BadGatewayError, ValidationError } from "@/shared/errors";
 
-const OCR_REQUEST_TIMEOUT_MS = 120_000;
+const OCR_REQUEST_TIMEOUT_MS = 360_000;
 
 function getSafeImageFilename(mimeType: string) {
   const extensionByMimeType: Record<string, string> = {
@@ -16,7 +16,6 @@ function getSafeImageFilename(mimeType: string) {
 
 export const ocrController = {
   async scanPatientLogImage(req: Request, res: ExpressResponse, next: NextFunction) {
-    console.log("ocr start")
     try {
       if (!env.OCR_BACKEND_URL) {
         throw new BadGatewayError("Image scanning is not configured. Set OCR_BACKEND_URL on the server.");
@@ -41,8 +40,15 @@ export const ocrController = {
           body: requestBody,
           signal: AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS),
         });
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.name === "TimeoutError") {
+          throw new BadGatewayError("Local OCR took too long. Try a smaller or clearer image.");
+        }
         throw new BadGatewayError("Could not reach the OCR service. Try again shortly.");
+      }
+
+      if (ocrResponse.status === 503) {
+        throw new BadGatewayError("Local OCR is busy or unavailable. Check the OCR service and try again.");
       }
 
       if (!ocrResponse.ok) {

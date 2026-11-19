@@ -179,7 +179,6 @@ export default function CreateReportWithAI({
 
     try {
       const result = await scanPatientLogImage(file);
-      console.log("PatientLog OCR response:", result);
       setScanResult({
         ...result,
         teamInformation: {
